@@ -33,6 +33,11 @@ import { useWakeLock } from '../hooks/useWakeLock';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useSwipeDown } from '../hooks/useSwipeDown';
 import {
+  announceElimination,
+  announceOvershoot,
+  announceTurn,
+} from '../../tts';
+import {
   CheckIcon,
   ClipboardIcon,
   ForfeitIcon,
@@ -40,11 +45,13 @@ import {
   LiveIcon,
   MenuIcon,
   RematchIcon,
+  ShareIcon,
   StarIcon,
   TargetIcon,
   TrophyIcon,
   UndoIcon,
 } from '../components/icons';
+import { buildShareCard, shareCard } from '../../shareCard';
 import { suggestThrow } from '../../molkky/rules';
 
 const COLORBLIND_SYMBOLS = [
@@ -71,7 +78,7 @@ const COLORBLIND_SYMBOLS = [
 const EMPTY_PLAYERS: readonly { id: string; avatarBlobKey?: string }[] = [];
 
 export function MatchView() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const navigate = useNavigate();
   const current = useMatchStore(s => s.current);
   const recordThrow = useMatchStore(s => s.recordThrow);
@@ -88,6 +95,7 @@ export function MatchView() {
   const colorblind = useSettingsStore(s => s.colorblind);
   const outdoor = useSettingsStore(s => s.outdoor);
   const coachEnabled = useSettingsStore(s => s.coach);
+  const voiceEnabled = useSettingsStore(s => s.voiceAnnouncer);
   const toggleHighlight = useMatchStore(s => s.toggleHighlight);
   // Memoise the player list so the inline `?? []` fallback doesn't hand
   // useAvatarUrls a fresh array reference on every render — see hook
@@ -140,11 +148,40 @@ export function MatchView() {
         setShake(false);
         setFlash('none');
       }, 600);
+      if (voiceEnabled) announceOvershoot(locale);
     } else if (pendingFeedback === 'victory') {
       setFlash('win');
+    } else if (
+      pendingFeedback === 'elimination' &&
+      voiceEnabled &&
+      currentInfo
+    ) {
+      announceElimination(currentInfo.player.name, locale);
     }
     clearFeedback();
-  }, [pendingFeedback, playFeedback, clearFeedback]);
+  }, [
+    pendingFeedback,
+    playFeedback,
+    clearFeedback,
+    voiceEnabled,
+    locale,
+    currentInfo,
+  ]);
+
+  // Voice "à toi NAME" when the active player changes. Skip the very
+  // first render — speaking on mount feels intrusive.
+  const lastSpokenPlayerRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!voiceEnabled || !currentInfo) return;
+    const id = currentInfo.player.id;
+    if (lastSpokenPlayerRef.current === null) {
+      lastSpokenPlayerRef.current = id;
+      return;
+    }
+    if (lastSpokenPlayerRef.current === id) return;
+    lastSpokenPlayerRef.current = id;
+    announceTurn(currentInfo.player.name, locale);
+  }, [currentInfo, voiceEnabled, locale]);
 
   const history = useMatchStore(s => s.history);
   const lastFinished = useMemo(() => history[0], [history]);
@@ -907,7 +944,34 @@ function VictoryScreen({
   onRematch,
   onHistory,
 }: VictoryScreenProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const [sharing, setSharing] = useState(false);
+
+  const handleShare = async () => {
+    setSharing(true);
+    try {
+      const blob = await buildShareCard({
+        winnerName,
+        ranking: ranking.map(r => ({
+          rank: r.rank,
+          name: r.name,
+          color: r.color,
+          finalScore: r.finalScore,
+          eliminated: r.eliminated,
+        })),
+        locale,
+      });
+      if (blob) {
+        await shareCard(
+          blob,
+          `mister-molkky-${new Date().toISOString().slice(0, 10)}.png`,
+          t('match.shareText', { name: winnerName })
+        );
+      }
+    } finally {
+      setSharing(false);
+    }
+  };
   return (
     <Modal open onClose={onClose}>
       <div className="mm-victory-pop flex flex-col items-center gap-3 text-center">
@@ -959,6 +1023,16 @@ function VictoryScreen({
         ))}
       </ol>
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          onClick={handleShare}
+          disabled={sharing}
+          className="touch-target flex items-center justify-center gap-2 rounded-lg border px-4 font-semibold disabled:opacity-50"
+          style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
+        >
+          <ShareIcon size={18} />
+          {sharing ? t('common.loading') : t('match.shareCard')}
+        </button>
         <button
           type="button"
           onClick={onHistory}

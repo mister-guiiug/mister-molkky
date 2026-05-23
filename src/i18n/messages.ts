@@ -134,6 +134,8 @@ export interface Messages {
     predictionsTitle: string;
     predictionsHint: string;
     predictionsCorrect: string;
+    shareCard: string;
+    shareText: string;
     forfeitPlayer: string;
     forfeitPlayerTitle: string;
     forfeitPlayerHint: string;
@@ -487,6 +489,8 @@ const fr: Messages = {
     predictionsHint:
       'Chacun parie sur le gagnant — résultats à la fin de la partie.',
     predictionsCorrect: 'Pronostic juste : {names}',
+    shareCard: 'Partager le résultat',
+    shareText: '{name} gagne notre partie de Mölkky !',
     forfeitPlayer: 'Faire abandonner un joueur',
     forfeitPlayerTitle: 'Qui abandonne ?',
     forfeitPlayerHint:
@@ -849,6 +853,8 @@ const en: Messages = {
     predictionsHint:
       'Everyone bets on the winner — results revealed at the end of the match.',
     predictionsCorrect: 'Correct prediction: {names}',
+    shareCard: 'Share result',
+    shareText: '{name} won our Mölkky match!',
     forfeitPlayer: 'Forfeit a player',
     forfeitPlayerTitle: 'Who forfeits?',
     forfeitPlayerHint: 'The player drops out; others keep playing.',
