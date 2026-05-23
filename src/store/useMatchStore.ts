@@ -190,7 +190,14 @@ export const useMatchStore = create<MatchStoreState>()(
         set({ current: nextState, pendingFeedback: feedback });
 
         if (afterOutcome.winnerId) {
-          get().finishMatch();
+          try {
+            get().finishMatch();
+          } catch (err) {
+            // Surface the error in the console so a bad ranking
+            // computation doesn't silently freeze the victory flow.
+            // eslint-disable-next-line no-console
+            console.error('[match] finishMatch failed:', err);
+          }
         }
 
         return {
@@ -285,14 +292,17 @@ export const useMatchStore = create<MatchStoreState>()(
         );
         if (!outcome.winnerId) return null;
 
+        // Walk forward in the throws and replay 1..n at each step to
+        // detect the order in which actors were eliminated. Using the
+        // loop index (instead of state.throws.indexOf) keeps this O(n²)
+        // rather than O(n³) — matters once a match goes long.
         const eliminationOrder: string[] = [];
-        let runningElim = new Set<string>();
-        for (const t of state.throws) {
-          const before = runningElim.size;
+        const runningElim = new Set<string>();
+        for (let i = 0; i < state.throws.length; i += 1) {
           const replay = replayThrows(
             actorIds,
             state.throws
-              .slice(0, state.throws.indexOf(t) + 1)
+              .slice(0, i + 1)
               .map(x => ({ playerId: x.playerId, fallenPins: x.fallenPins })),
             settings,
             actorMap
@@ -303,7 +313,6 @@ export const useMatchStore = create<MatchStoreState>()(
               eliminationOrder.push(pid);
             }
           }
-          if (runningElim.size === before) continue;
         }
         const ranking = buildRanking(actorIds, outcome, eliminationOrder);
 

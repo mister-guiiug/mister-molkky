@@ -66,25 +66,35 @@ export const useLiveStore = create<LiveState>()((set, get) => ({
   },
 
   pushThrows: async throws => {
-    const { matchId, role } = get();
-    if (!matchId || role !== 'host') return;
+    const { matchId, role, status } = get();
+    // status==='finished' guard: once the host has pushed the winner we
+    // stop mirroring throws — otherwise a quick Rematch would push throws
+    // of the NEW match into the old (finished) row, and the next finish
+    // would target an already-archived row.
+    if (!matchId || role !== 'host' || status === 'finished') return;
     try {
       await pushLiveState(matchId, { throws });
     } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[live] pushThrows failed:', err);
       set({ error: (err as Error).message });
     }
   },
 
   pushFinish: async winnerId => {
-    const { matchId, role } = get();
-    if (!matchId || role !== 'host') return;
+    const { matchId, role, status } = get();
+    if (!matchId || role !== 'host' || status === 'finished') return;
+    // Flip status first so any concurrent pushThrows from the React
+    // effects can short-circuit before they hit the network.
+    set({ status: 'finished' });
     try {
       await pushLiveState(matchId, {
         winner_id: winnerId,
         finished_at: new Date().toISOString(),
       });
-      set({ status: 'finished' });
     } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[live] pushFinish failed:', err);
       set({ error: (err as Error).message });
     }
   },
