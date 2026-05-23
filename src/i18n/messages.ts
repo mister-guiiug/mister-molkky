@@ -273,6 +273,12 @@ export interface Messages {
     coachHint: string;
     voiceAnnouncer: string;
     voiceAnnouncerHint: string;
+    cloudSync: string;
+    cloudSyncHint: string;
+    cloudPush: string;
+    cloudPull: string;
+    cloudSyncing: string;
+    cloudLastSync: string;
     export: string;
     import: string;
     importFailed: string;
@@ -647,6 +653,13 @@ const fr: Messages = {
     voiceAnnouncer: 'Annonceur vocal',
     voiceAnnouncerHint:
       'Lit à voix haute le joueur à jouer et les ratés/dépassements (mains libres).',
+    cloudSync: 'Sync cloud (multi-appareils)',
+    cloudSyncHint:
+      'Sauvegarde / récupère ton roster, ton historique et tes templates sur tous tes appareils. Last-write-wins, voir docs/cloud-sync.md.',
+    cloudPush: 'Envoyer vers le cloud',
+    cloudPull: 'Récupérer du cloud',
+    cloudSyncing: 'Synchronisation…',
+    cloudLastSync: 'Dernière sync : {date}',
     export: 'Exporter mes données (JSON)',
     import: 'Importer un fichier',
     importFailed: 'Import impossible',
@@ -1023,6 +1036,13 @@ const en: Messages = {
     voiceAnnouncer: 'Voice announcer',
     voiceAnnouncerHint:
       'Reads out the player to throw and miss/overshoot events (hands-free).',
+    cloudSync: 'Cloud sync (multi-device)',
+    cloudSyncHint:
+      'Push / pull your roster, history and templates across devices. Last-write-wins; see docs/cloud-sync.md.',
+    cloudPush: 'Push to cloud',
+    cloudPull: 'Pull from cloud',
+    cloudSyncing: 'Syncing…',
+    cloudLastSync: 'Last sync: {date}',
     export: 'Export my data (JSON)',
     import: 'Import a file',
     importFailed: 'Import failed',
