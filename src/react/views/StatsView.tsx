@@ -7,8 +7,10 @@ import {
   averageScorePerMatch,
   averageScorePerThrow,
   computeStats,
+  headToHead,
   winRate,
 } from '../../molkky/stats';
+import { detectAchievements } from '../../molkky/achievements';
 import { PageContainer } from '../components/layout/PageContainer';
 import { ALL_PIN_NUMBERS } from '../../molkky/pins-layout';
 
@@ -155,9 +157,176 @@ export function StatsView() {
               })}
             </ul>
           </section>
+
+          <AchievementsSection playerId={selected.player.id} />
+          <HeadToHeadSection
+            sourcePlayerId={selected.player.id}
+            playerOptions={playersWithStats.map(x => x.player)}
+          />
         </>
       )}
     </PageContainer>
+  );
+}
+
+function AchievementsSection({ playerId }: { playerId: string }) {
+  const { t } = useI18n();
+  const history = useMatchStore(s => s.history);
+  const unlocked = useMemo(
+    () => detectAchievements(playerId, history),
+    [playerId, history]
+  );
+  return (
+    <section
+      className="mt-4 rounded-2xl border p-4"
+      style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+    >
+      <h3 className="mb-3 text-sm font-bold uppercase" style={{ color: 'var(--muted)' }}>
+        {t('stats.achievements')}
+      </h3>
+      {unlocked.length === 0 ? (
+        <p className="m-0 text-sm" style={{ color: 'var(--muted)' }}>
+          {t('stats.achievementsEmpty')}
+        </p>
+      ) : (
+        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {unlocked.map(a => (
+            <li
+              key={a.def.id}
+              className="rounded-lg border p-2"
+              style={{
+                borderColor: 'var(--accent)',
+                background: 'color-mix(in srgb, var(--accent) 8%, var(--surface))',
+              }}
+            >
+              <div className="flex items-center gap-1 text-base font-bold">
+                <span aria-hidden>{a.def.icon}</span>
+                <span className="truncate">{t(a.def.labelKey)}</span>
+              </div>
+              <p className="m-0 text-[0.7rem]" style={{ color: 'var(--muted)' }}>
+                {t(a.def.descKey)}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function HeadToHeadSection({
+  sourcePlayerId,
+  playerOptions,
+}: {
+  sourcePlayerId: string;
+  playerOptions: { id: string; name: string; color: string }[];
+}) {
+  const { t } = useI18n();
+  const history = useMatchStore(s => s.history);
+  const opponents = playerOptions.filter(p => p.id !== sourcePlayerId);
+  const [opponentId, setOpponentId] = useState<string | null>(
+    opponents[0]?.id ?? null
+  );
+  const matchesInput = useMemo(
+    () =>
+      history.map(m => ({
+        playerIds: m.config.players.map(p => p.id),
+        throws: m.throws.map(t => ({
+          playerId: t.playerId,
+          fallenPins: [...t.fallenPins],
+        })),
+        winnerId: m.winnerId as string | null,
+        settings: {
+          targetScore: m.config.targetScore,
+          overshootPenalty: m.config.overshootPenalty,
+          maxMisses: m.config.maxMisses,
+          variant: m.config.variant ?? 'classic',
+        },
+      })),
+    [history]
+  );
+  const h2h = useMemo(() => {
+    if (!opponentId) return null;
+    return headToHead(matchesInput, sourcePlayerId, opponentId);
+  }, [matchesInput, sourcePlayerId, opponentId]);
+
+  if (opponents.length === 0) return null;
+  const sourcePlayer = playerOptions.find(p => p.id === sourcePlayerId);
+  const opponent = opponents.find(p => p.id === opponentId) ?? opponents[0]!;
+
+  return (
+    <section
+      className="mt-4 rounded-2xl border p-4"
+      style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+    >
+      <h3 className="mb-3 text-sm font-bold uppercase" style={{ color: 'var(--muted)' }}>
+        {t('stats.headToHead')}
+      </h3>
+      <div className="mb-3 flex flex-wrap gap-2">
+        {opponents.map(p => {
+          const active = p.id === opponentId;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setOpponentId(p.id)}
+              className="touch-target flex items-center gap-2 rounded-full border px-3 text-sm font-semibold"
+              style={{
+                background: active
+                  ? `color-mix(in srgb, ${p.color} 22%, var(--surface))`
+                  : 'var(--surface)',
+                borderColor: active ? p.color : 'var(--border)',
+              }}
+            >
+              <span
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ background: p.color }}
+              />
+              {p.name}
+            </button>
+          );
+        })}
+      </div>
+      {h2h && h2h.sharedMatches === 0 ? (
+        <p className="m-0 text-sm" style={{ color: 'var(--muted)' }}>
+          {t('stats.headToHeadNoMatches')}
+        </p>
+      ) : (
+        h2h && (
+          <div className="space-y-2">
+            <p className="m-0 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+              {t('stats.headToHeadMatches', { n: h2h.sharedMatches })}
+            </p>
+            <table className="w-full text-sm">
+              <tbody>
+                <H2HRow label={t('stats.matchesWon')} a={h2h.winsA} b={h2h.winsB} />
+                <H2HRow label={t('stats.avgScore')} a={Math.round(h2h.avgScoreA)} b={Math.round(h2h.avgScoreB)} />
+                <H2HRow label={t('stats.accuracy')} a={(h2h.accuracyA).toFixed(2)} b={(h2h.accuracyB).toFixed(2)} />
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td className="pt-2 text-[0.7rem]" style={{ color: 'var(--muted)' }}>
+                    {sourcePlayer?.name} ←→ {opponent.name}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )
+      )}
+    </section>
+  );
+}
+
+function H2HRow({ label, a, b }: { label: string; a: number | string; b: number | string }) {
+  return (
+    <tr className="border-t" style={{ borderColor: 'var(--border)' }}>
+      <td className="py-1.5 pr-2 text-right font-black tabular-nums">{a}</td>
+      <td className="py-1.5 text-center text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+        {label}
+      </td>
+      <td className="py-1.5 pl-2 text-left font-black tabular-nums">{b}</td>
+    </tr>
   );
 }
 

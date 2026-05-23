@@ -162,6 +162,20 @@ export interface Messages {
     achievements: string;
     achievementsEmpty: string;
   };
+  achievements: {
+    firstFifty: string;
+    firstFiftyDesc: string;
+    threeInARow: string;
+    threeInARowDesc: string;
+    fastWin: string;
+    fastWinDesc: string;
+    perfectGame: string;
+    perfectGameDesc: string;
+    veteran: string;
+    veteranDesc: string;
+    comeback: string;
+    comebackDesc: string;
+  };
   players: {
     title: string;
     addPlayer: string;
@@ -395,6 +409,20 @@ const fr: Messages = {
     headToHeadNoMatches: 'Aucune partie commune entre ces deux joueurs',
     achievements: 'Badges',
     achievementsEmpty: 'Aucun badge débloqué pour le moment.',
+  },
+  achievements: {
+    firstFifty: 'Premier pile 50',
+    firstFiftyDesc: 'Gagner une partie en atteignant exactement le score cible.',
+    threeInARow: 'Triplé',
+    threeInARowDesc: '3 victoires consécutives.',
+    fastWin: 'Victoire éclair',
+    fastWinDesc: 'Gagner une partie en moins de 10 lancers.',
+    perfectGame: 'Partie parfaite',
+    perfectGameDesc: 'Gagner sans manquer un seul lancer.',
+    veteran: 'Vétéran',
+    veteranDesc: '10 parties jouées.',
+    comeback: 'Remontada',
+    comebackDesc: 'Gagner après un dépassement de score.',
   },
   players: {
     title: 'Joueurs',
@@ -632,6 +660,20 @@ const en: Messages = {
     headToHeadNoMatches: 'These two players never met in a match',
     achievements: 'Badges',
     achievementsEmpty: 'No badges unlocked yet.',
+  },
+  achievements: {
+    firstFifty: 'First exact 50',
+    firstFiftyDesc: 'Win a match by hitting exactly the target score.',
+    threeInARow: 'Hat-trick',
+    threeInARowDesc: '3 wins in a row.',
+    fastWin: 'Quick win',
+    fastWinDesc: 'Win a match in fewer than 10 throws.',
+    perfectGame: 'Perfect game',
+    perfectGameDesc: 'Win without missing a single throw.',
+    veteran: 'Veteran',
+    veteranDesc: '10 matches played.',
+    comeback: 'Comeback',
+    comebackDesc: 'Win after an overshoot.',
   },
   players: {
     title: 'Players',
