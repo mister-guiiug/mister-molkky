@@ -1,9 +1,23 @@
 import type { FinishedMatch } from '../schemas';
 
+/**
+ * Symbolic icon name for an achievement. The UI layer maps this name to
+ * a concrete Lucide React component — keeping the rules module free of
+ * any React dependency. See `react/components/icons.tsx`.
+ */
+export type AchievementIconName =
+  | 'target'
+  | 'flame'
+  | 'zap'
+  | 'trophy'
+  | 'medal'
+  | 'trending-up';
+
 export interface AchievementDef {
   readonly id: string;
-  readonly icon: string;
-  readonly labelKey: 'achievements.firstFifty'
+  readonly iconName: AchievementIconName;
+  readonly labelKey:
+    | 'achievements.firstFifty'
     | 'achievements.threeInARow'
     | 'achievements.fastWin'
     | 'achievements.perfectGame'
@@ -25,37 +39,37 @@ export interface UnlockedAchievement {
 const DEFS: AchievementDef[] = [
   {
     id: 'first-fifty',
-    icon: '🎯',
+    iconName: 'target',
     labelKey: 'achievements.firstFifty',
     descKey: 'achievements.firstFiftyDesc',
   },
   {
     id: 'three-in-a-row',
-    icon: '🔥',
+    iconName: 'flame',
     labelKey: 'achievements.threeInARow',
     descKey: 'achievements.threeInARowDesc',
   },
   {
     id: 'fast-win',
-    icon: '⚡',
+    iconName: 'zap',
     labelKey: 'achievements.fastWin',
     descKey: 'achievements.fastWinDesc',
   },
   {
     id: 'perfect-game',
-    icon: '🏆',
+    iconName: 'trophy',
     labelKey: 'achievements.perfectGame',
     descKey: 'achievements.perfectGameDesc',
   },
   {
     id: 'veteran',
-    icon: '🎖️',
+    iconName: 'medal',
     labelKey: 'achievements.veteran',
     descKey: 'achievements.veteranDesc',
   },
   {
     id: 'comeback',
-    icon: '💪',
+    iconName: 'trending-up',
     labelKey: 'achievements.comeback',
     descKey: 'achievements.comebackDesc',
   },
@@ -85,7 +99,11 @@ export function detectAchievements(
     const playerThrows = match.throws.filter(t => t.playerId === playerId);
     const finalScoreEntry = match.ranking.find(r => r.playerId === playerId);
 
-    if (isWin && !seen.has('first-fifty') && finalScoreEntry?.finalScore === match.config.targetScore) {
+    if (
+      isWin &&
+      !seen.has('first-fifty') &&
+      finalScoreEntry?.finalScore === match.config.targetScore
+    ) {
       seen.add('first-fifty');
       out.push({
         def: DEFS[0]!,
@@ -93,7 +111,12 @@ export function detectAchievements(
         matchId: match.id,
       });
     }
-    if (isWin && !seen.has('fast-win') && playerThrows.length > 0 && playerThrows.length < 10) {
+    if (
+      isWin &&
+      !seen.has('fast-win') &&
+      playerThrows.length > 0 &&
+      playerThrows.length < 10
+    ) {
       seen.add('fast-win');
       out.push({
         def: DEFS[2]!,
