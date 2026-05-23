@@ -43,6 +43,10 @@ const COLORBLIND_SYMBOLS = [
   '♦', '♠', '◐', '◑', '◒', '◓', '☼', '✖',
 ];
 
+// Stable empty array reference for useAvatarUrls when there is no
+// active match — avoids handing the hook a fresh ref on every render.
+const EMPTY_PLAYERS: readonly { id: string; avatarBlobKey?: string }[] = [];
+
 export function MatchView() {
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -60,7 +64,14 @@ export function MatchView() {
   const scoreHistories = useScoreHistories();
   const colorblind = useSettingsStore(s => s.colorblind);
   const outdoor = useSettingsStore(s => s.outdoor);
-  const avatarUrls = useAvatarUrls(current?.config.players ?? []);
+  // Memoise the player list so the inline `?? []` fallback doesn't hand
+  // useAvatarUrls a fresh array reference on every render — see hook
+  // comment for why that would freeze the screen.
+  const matchPlayers = useMemo(
+    () => current?.config.players ?? EMPTY_PLAYERS,
+    [current]
+  );
+  const avatarUrls = useAvatarUrls(matchPlayers);
 
   const symbolForActor = (id: string) => {
     if (!colorblind) return undefined;

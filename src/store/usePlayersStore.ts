@@ -121,11 +121,23 @@ export function pickNextColor(existing: Player[]): string {
  * Fetch all avatar URLs for the given players. Returns a Map keyed by
  * playerId. URLs are revoked on unmount to avoid leaking blob: URLs into
  * the browser's resource list.
+ *
+ * The effect is keyed on a *content* signature of the players list
+ * (id + avatar key joined into a string) instead of the array reference,
+ * because call sites frequently pass an inline default like
+ * `current?.config.players ?? []` — that empty array is a fresh ref on
+ * every render. Re-running the effect every render would call
+ * setUrls(new Map()) every render, which is a fresh Map ref → another
+ * re-render → infinite loop → frozen UI. Comparing the signature
+ * defuses that landmine while keeping the avatar refresh behaviour.
  */
 export function useAvatarUrls(
   players: readonly { id: string; avatarBlobKey?: string }[]
 ): Map<string, string> {
   const [urls, setUrls] = useState<Map<string, string>>(new Map());
+  const signature = players
+    .map(p => `${p.id}:${p.avatarBlobKey ?? ''}`)
+    .join('|');
 
   useEffect(() => {
     let cancelled = false;
@@ -145,15 +157,26 @@ export function useAvatarUrls(
         created.forEach(u => URL.revokeObjectURL(u));
         return;
       }
-      setUrls(
-        new Map(entries.filter((e): e is readonly [string, string] => Boolean(e)))
+      const next = new Map(
+        entries.filter((e): e is readonly [string, string] => Boolean(e))
       );
+      // Only update state when the resolved URL set actually changed —
+      // otherwise React would treat the new Map ref as a state change and
+      // re-render for no reason.
+      setUrls(prev => {
+        if (prev.size !== next.size) return next;
+        for (const [k, v] of next) {
+          if (prev.get(k) !== v) return next;
+        }
+        return prev;
+      });
     });
     return () => {
       cancelled = true;
       created.forEach(u => URL.revokeObjectURL(u));
     };
-  }, [players]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signature]);
 
   return urls;
 }
