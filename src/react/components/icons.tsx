@@ -31,7 +31,10 @@ import {
   RotateCw,
   Settings,
   Share2,
+  Lightbulb,
   Shuffle,
+  Star,
+  StarOff,
   Target,
   Trash2,
   TrendingUp,
@@ -89,6 +92,9 @@ export const CoffeeIcon = wrap(Coffee as IconComponent, 'CoffeeIcon');
 export const ShuffleIcon = wrap(Shuffle as IconComponent, 'ShuffleIcon');
 export const ForfeitIcon = wrap(DoorOpen as IconComponent, 'ForfeitIcon');
 export const TargetIcon = wrap(Target as IconComponent, 'TargetIcon');
+export const LightbulbIcon = wrap(Lightbulb as IconComponent, 'LightbulbIcon');
+export const StarIcon = wrap(Star as IconComponent, 'StarIcon');
+export const StarOffIcon = wrap(StarOff as IconComponent, 'StarOffIcon');
 export const FlameIcon = wrap(Flame as IconComponent, 'FlameIcon');
 export const ZapIcon = wrap(Zap as IconComponent, 'ZapIcon');
 export const MedalIcon = wrap(Medal as IconComponent, 'MedalIcon');

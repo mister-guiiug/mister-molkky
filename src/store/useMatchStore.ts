@@ -50,6 +50,12 @@ interface MatchStoreState {
    * with that actor as the winner.
    */
   forfeitActor: (actorId: string) => void;
+  /**
+   * Toggle a star on a throw (by id). Stored as a string[] so the same
+   * highlight survives undo/edit-by-id round-trips. No-op if the id is
+   * unknown.
+   */
+  toggleHighlight: (throwId: string) => void;
   finishMatch: () => FinishedMatch | null;
   clearFeedback: () => void;
 
@@ -131,6 +137,7 @@ export const useMatchStore = create<MatchStoreState>()(
           throws: [],
           startedAt: Date.now(),
           forfeitedActorIds: [],
+          highlightedThrowIds: [],
         });
         set({ current, pendingFeedback: null });
       },
@@ -305,6 +312,17 @@ export const useMatchStore = create<MatchStoreState>()(
 
       abandonMatch: () => set({ current: null, pendingFeedback: null }),
 
+      toggleHighlight: throwId => {
+        const state = get().current;
+        if (!state) return;
+        if (!state.throws.some(t => t.id === throwId)) return;
+        const has = state.highlightedThrowIds.includes(throwId);
+        const next = has
+          ? state.highlightedThrowIds.filter(id => id !== throwId)
+          : [...state.highlightedThrowIds, throwId];
+        set({ current: { ...state, highlightedThrowIds: next } });
+      },
+
       forfeitActor: actorId => {
         const state = get().current;
         if (!state) return;
@@ -402,6 +420,7 @@ export const useMatchStore = create<MatchStoreState>()(
           finishedAt: Date.now(),
           winnerId: outcome.winnerId,
           ranking: rankingToSchema(ranking),
+          highlightedThrowIds: state.highlightedThrowIds,
         });
 
         set(s => ({

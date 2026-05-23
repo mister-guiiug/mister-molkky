@@ -113,6 +113,11 @@ export interface Messages {
     undo: string;
     abandon: string;
     abandonConfirm: string;
+    coachLabel: string;
+    coachSingle: string;
+    coachMulti: string;
+    coachAvoid: string;
+    markHighlight: string;
     forfeitPlayer: string;
     forfeitPlayerTitle: string;
     forfeitPlayerHint: string;
@@ -232,6 +237,10 @@ export interface Messages {
     outdoorHint: string;
     colorblind: string;
     colorblindHint: string;
+    coach: string;
+    coachHint: string;
+    voiceAnnouncer: string;
+    voiceAnnouncerHint: string;
     export: string;
     import: string;
     importFailed: string;
@@ -423,6 +432,11 @@ const fr: Messages = {
     undo: 'Annuler',
     abandon: 'Abandonner la partie',
     abandonConfirm: 'Abandonner la partie en cours ?',
+    coachLabel: 'Conseil du coach',
+    coachSingle: 'Vise la quille {n} pour gagner pile.',
+    coachMulti: 'Fais tomber {n} quilles pour gagner pile.',
+    coachAvoid: 'Évite : {pins}',
+    markHighlight: 'Marquer comme moment fort',
     forfeitPlayer: 'Faire abandonner un joueur',
     forfeitPlayerTitle: 'Qui abandonne ?',
     forfeitPlayerHint:
@@ -545,6 +559,12 @@ const fr: Messages = {
     outdoorHint: 'Quilles agrandies et contraste poussé pour jouer au soleil.',
     colorblind: 'Mode daltonien',
     colorblindHint: 'Ajoute des symboles (★ ▲ ●) en plus des couleurs.',
+    coach: 'Coach in-match',
+    coachHint:
+      'Affiche la quille ou le combo optimal pour gagner pile au prochain lancer.',
+    voiceAnnouncer: 'Annonceur vocal',
+    voiceAnnouncerHint:
+      'Lit à voix haute le joueur à jouer et les ratés/dépassements (mains libres).',
     export: 'Exporter mes données (JSON)',
     import: 'Importer un fichier',
     importFailed: 'Import impossible',
@@ -740,6 +760,11 @@ const en: Messages = {
     undo: 'Undo',
     abandon: 'Abandon match',
     abandonConfirm: 'Abandon the current match?',
+    coachLabel: 'Coach hint',
+    coachSingle: 'Aim for pin {n} for an exact win.',
+    coachMulti: 'Knock down {n} pins for an exact win.',
+    coachAvoid: 'Avoid: {pins}',
+    markHighlight: 'Mark as highlight',
     forfeitPlayer: 'Forfeit a player',
     forfeitPlayerTitle: 'Who forfeits?',
     forfeitPlayerHint: 'The player drops out; others keep playing.',
@@ -860,6 +885,12 @@ const en: Messages = {
     outdoorHint: 'Larger pins and boosted contrast for daylight play.',
     colorblind: 'Colourblind mode',
     colorblindHint: 'Adds symbols (★ ▲ ●) in addition to colours.',
+    coach: 'In-match coach',
+    coachHint:
+      'Shows the optimal pin or combo to win exactly on the next throw.',
+    voiceAnnouncer: 'Voice announcer',
+    voiceAnnouncerHint:
+      'Reads out the player to throw and miss/overshoot events (hands-free).',
     export: 'Export my data (JSON)',
     import: 'Import a file',
     importFailed: 'Import failed',
