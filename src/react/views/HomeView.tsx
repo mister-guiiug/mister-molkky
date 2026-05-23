@@ -16,6 +16,7 @@ import { PwaInstallPrompt } from '../components/PwaInstallPrompt';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { PlayIcon, TrashIcon } from '../components/icons';
 import { isSupabaseConfigured } from '../../supabase';
+import { AppFooter } from '../components/layout/AppFooter';
 
 export function HomeView() {
   const { t } = useI18n();
@@ -204,6 +205,8 @@ export function HomeView() {
         }}
         onCancel={() => setConfirmDelete(null)}
       />
+
+      <AppFooter />
 
       {!hasSeenWelcome && <WelcomeTutorial />}
       <PwaInstallPrompt />

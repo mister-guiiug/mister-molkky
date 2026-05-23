@@ -132,7 +132,15 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
 
   return (
     <div className="flex flex-col gap-4">
-      <ol className="flex gap-2" aria-label="Étapes">
+      <ol
+        className="sticky top-[-1.25rem] -mx-5 -mt-5 flex gap-2 border-b px-5 py-3"
+        aria-label="Étapes"
+        style={{
+          background: 'var(--surface)',
+          borderColor: 'var(--border)',
+          zIndex: 1,
+        }}
+      >
         {STEPS.map((s, i) => (
           <li
             key={s}
@@ -188,6 +196,28 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
               <PlusIcon size={20} />
             </button>
           </div>
+
+          {roster.length > 0 && (
+            <div className="flex items-center justify-between gap-2">
+              <span
+                className="text-xs"
+                style={{ color: 'var(--muted)' }}
+              >
+                {roster.length} {t('nav.players').toLowerCase()}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  navigate(ROUTES.players);
+                }}
+                className="text-xs font-semibold underline"
+                style={{ color: 'var(--primary)' }}
+              >
+                {t('players.title')} →
+              </button>
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-2">
             {roster.length === 0 && (
@@ -531,7 +561,14 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
         </div>
       )}
 
-      <footer className="flex items-center justify-between gap-2 pt-2">
+      <footer
+        className="sticky bottom-[-1.25rem] -mx-5 -mb-5 flex items-center justify-between gap-2 border-t px-5 py-3"
+        style={{
+          background: 'var(--surface)',
+          borderColor: 'var(--border)',
+          zIndex: 1,
+        }}
+      >
         <button
           type="button"
           onClick={() => {

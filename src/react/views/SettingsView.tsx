@@ -13,6 +13,7 @@ import { PageContainer } from '../components/layout/PageContainer';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { isSupabaseConfigured } from '../../supabase';
 import { forceAppUpdate } from '../../register-sw';
+import { AppFooter } from '../components/layout/AppFooter';
 
 declare const __APP_VERSION__: string | undefined;
 
@@ -269,6 +270,8 @@ export function SettingsView() {
           {t('settings.version')}: {typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.1.0'}
         </p>
       </Section>
+
+      <AppFooter />
 
       <ConfirmDialog
         open={confirmErase}

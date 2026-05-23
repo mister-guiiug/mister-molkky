@@ -39,13 +39,13 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
       onClick={onClose}
     >
       <div
-        className={`mm-toast-pop w-full ${widths[size]} rounded-t-2xl sm:rounded-2xl border shadow-xl`}
+        className={`mm-toast-pop flex w-full ${widths[size]} max-h-[92dvh] flex-col rounded-t-2xl sm:rounded-2xl border shadow-xl sm:max-h-[88dvh]`}
         style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
         onClick={e => e.stopPropagation()}
       >
         {title && (
           <header
-            className="flex items-center justify-between border-b px-5 py-4"
+            className="flex shrink-0 items-center justify-between border-b px-5 py-4"
             style={{ borderColor: 'var(--border)' }}
           >
             <h2 className="m-0 text-lg font-bold">{title}</h2>
@@ -59,7 +59,9 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
             </button>
           </header>
         )}
-        <div className="p-5">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5">
+          {children}
+        </div>
       </div>
     </div>
   );
