@@ -70,14 +70,28 @@ export function PinsBoard({
     }
   };
 
+  // The board is wrapped in an overflow-auto container so it can be panned
+  // by drag (mouse) or swipe (touch) when the viewport is narrower than
+  // the minimum usable size — keeps each pin tappable (~50 px) even on
+  // a small phone with the keyboard open.
+  const minBoardWidth = outdoor ? 380 : 320;
+  const minBoardHeight = (minBoardWidth * VIEW_H) / VIEW_W;
   return (
     <div
-      className={`relative mx-auto w-full ${outdoor ? 'max-w-xl' : 'max-w-md'} ${shaking ? 'mm-shake' : ''}`}
+      className={`mx-auto w-full ${outdoor ? 'max-w-xl' : 'max-w-md'} overflow-auto overscroll-contain rounded-2xl ${shaking ? 'mm-shake' : ''}`}
       style={{
-        aspectRatio: `${VIEW_W} / ${VIEW_H}`,
-        filter: outdoor ? 'contrast(1.15)' : undefined,
+        WebkitOverflowScrolling: 'touch',
       }}
     >
+      <div
+        className="relative mx-auto"
+        style={{
+          minWidth: `${minBoardWidth}px`,
+          minHeight: `${minBoardHeight}px`,
+          aspectRatio: `${VIEW_W} / ${VIEW_H}`,
+          filter: outdoor ? 'contrast(1.15)' : undefined,
+        }}
+      >
       <svg
         viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
         className="block h-full w-full"
@@ -189,6 +203,7 @@ export function PinsBoard({
           );
         })}
       </svg>
+      </div>
     </div>
   );
 }

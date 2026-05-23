@@ -21,14 +21,19 @@ export function MatchOnboardingHint() {
     markSeen();
   };
 
+  // Anchored to the viewport top (just under the sticky match header) so it
+  // never collides with the validate/miss/undo buttons or the bottom tab
+  // bar — those are the most-tapped areas on /partie.
   return (
     <div
       role="status"
       aria-live="polite"
-      className="bottom-safe-3 mm-toast-pop fixed left-1/2 z-30 flex max-w-md -translate-x-1/2 flex-col gap-2 rounded-2xl border-2 px-4 py-3 text-center shadow-xl"
+      className="mm-toast-pop fixed left-1/2 z-40 flex max-w-md -translate-x-1/2 flex-col gap-2 rounded-2xl border-2 px-4 py-3 text-center shadow-xl"
       style={{
         background: 'var(--surface)',
         borderColor: 'var(--primary)',
+        top: 'calc(env(safe-area-inset-top, 0px) + 4.5rem)',
+        width: 'min(28rem, calc(100vw - 1.5rem))',
       }}
     >
       <p className="m-0 text-sm font-semibold">
