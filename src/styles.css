@@ -44,43 +44,48 @@ html[data-theme='light'] {
 html[data-theme='dark'] {
   color-scheme: dark;
 
-  --bg: #11140f;
-  --surface: #1d211a;
-  --surface-input: #1d211a;
-  --surface-highlight: rgba(60, 102, 34, 0.18);
+  /* Slightly bumped background luminance (~+3 %) so surfaces feel
+     less murky; calmed the primary/accent/wood saturation so the
+     UI stops reading as a Christmas-tree at night. */
+  --bg: #141813;
+  --surface: #1f241d;
+  --surface-input: #1f241d;
+  --surface-highlight: rgba(96, 132, 76, 0.14);
   --text: #ecede5;
-  --muted: #9a9d92;
-  --primary: #6da943;
-  --primary-hover: #8bc760;
-  --primary-light: #8bc760;
-  --primary-deep: #4a7c2a;
-  --accent: #f0b15a;
-  --danger: #ef5350;
-  --danger-hover: #f87171;
-  --warning: #fbbf24;
-  --success: #65c372;
-  --border: rgba(148, 163, 132, 0.22);
-  --wood-light: #d4a972;
-  --wood-deep: #8b6028;
+  --muted: #989b90;
+  --primary: #7eb455;
+  --primary-hover: #93c66c;
+  --primary-light: #93c66c;
+  --primary-deep: #5a8a37;
+  --accent: #e1a566;
+  --danger: #e85a55;
+  --danger-hover: #ef7773;
+  --warning: #f3b347;
+  --success: #6cbf78;
+  --border: rgba(148, 163, 132, 0.18);
+  --wood-light: #c79f6e;
+  --wood-deep: #855a25;
   --wood-shadow: #2a1c0c;
 
-  --accent-rgb: 109, 169, 67;
+  --accent-rgb: 126, 180, 85;
   --ink-rgb: 236, 237, 229;
 
-  --shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 
+  /* Softened the radials by ~30 % opacity so they read as ambient
+     lighting instead of a colour wash. */
   --body-bg:
     radial-gradient(
       circle at 18% -10%,
-      rgba(74, 124, 42, 0.32) 0%,
+      rgba(74, 124, 42, 0.22) 0%,
       transparent 55%
     ),
     radial-gradient(
       circle at 110% 100%,
-      rgba(212, 137, 43, 0.18) 0%,
+      rgba(212, 137, 43, 0.12) 0%,
       transparent 55%
     ),
-    #11140f;
+    #141813;
 }
 
 *,
@@ -202,6 +207,16 @@ body {
   100% { transform: scale(1); opacity: 1; }
 }
 
+@keyframes mm-skeleton-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.85; }
+}
+
+@keyframes mm-view-enter {
+  0% { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
 .mm-pin-fall { animation: mm-pin-fall 0.45s cubic-bezier(.2,.8,.2,1) forwards; }
 .mm-pin-stand { animation: mm-pin-stand 0.4s cubic-bezier(.2,.8,.2,1) forwards; }
 .mm-score-pop { animation: mm-score-pop 0.4s cubic-bezier(.2,.8,.2,1); }
@@ -209,6 +224,8 @@ body {
 .mm-glow { animation: mm-glow 1.4s ease-in-out infinite; }
 .mm-toast-pop { animation: mm-toast-pop 0.3s ease-out; }
 .mm-victory-pop { animation: mm-victory-pop 0.7s cubic-bezier(.2,.8,.2,1); }
+.mm-skeleton { animation: mm-skeleton-pulse 1.4s ease-in-out infinite; }
+.mm-view-enter { animation: mm-view-enter 0.22s cubic-bezier(.2,.8,.2,1) both; }
 
 @media (prefers-reduced-motion: reduce) {
   .mm-pin-fall,
@@ -217,7 +234,9 @@ body {
   .mm-shake,
   .mm-glow,
   .mm-toast-pop,
-  .mm-victory-pop {
+  .mm-victory-pop,
+  .mm-skeleton,
+  .mm-view-enter {
     animation: none !important;
   }
 }

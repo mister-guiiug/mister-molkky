@@ -8,6 +8,7 @@ import {
 } from 'react-router-dom';
 import { Shell } from './components/layout/Shell';
 import { HomeView } from './views/HomeView';
+import { ViewSkeleton } from './components/Skeleton';
 import { useI18n } from '../i18n/useI18n';
 import { LEGACY_REDIRECTS, ROUTES, type RouteKey } from '../routes';
 
@@ -55,12 +56,8 @@ function DocumentTitle() {
 
 function RouteFallback() {
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="flex min-h-[40vh] items-center justify-center text-sm opacity-60"
-    >
-      …
+    <div role="status" aria-live="polite">
+      <ViewSkeleton />
     </div>
   );
 }
@@ -78,7 +75,10 @@ function AppRoutes() {
           <Route path={ROUTES.players} element={<PlayersView />} />
           <Route path={ROUTES.settings} element={<SettingsView />} />
           <Route path={ROUTES.joinLive} element={<JoinLiveView />} />
-          <Route path={`${ROUTES.spectator}/:code`} element={<SpectatorView />} />
+          <Route
+            path={`${ROUTES.spectator}/:code`}
+            element={<SpectatorView />}
+          />
           {Object.entries(LEGACY_REDIRECTS).map(([legacy, target]) => (
             <Route
               key={legacy}

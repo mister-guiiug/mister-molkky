@@ -50,7 +50,10 @@ export function registerServiceWorker(): void {
  * because on some iOS PWA installs those calls can hang forever, and
  * the user just wants to see the page reload.
  */
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | undefined> {
+function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number
+): Promise<T | undefined> {
   return Promise.race([
     promise,
     new Promise<undefined>(resolve => setTimeout(() => resolve(undefined), ms)),
@@ -70,61 +73,114 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | undefined>
  * IndexedDB and localStorage are intentionally left alone so the user
  * keeps their players, history, settings and templates.
  *
- * A 2 s safety timeout wraps the SW + cache work: if any browser API
- * hangs (seen on iOS Safari PWA), we force the reload anyway so the
- * UX never freezes on a clickable-but-dead button.
+ * Mobile-specific notes:
+ * - On iOS Safari standalone (PWA installed to home screen), the
+ *   `serviceWorker.getRegistrations()` or `caches.keys()` calls can
+ *   hang for several seconds. We cap the wait at 600 ms — long enough
+ *   to land the cleanup on a healthy connection, short enough that the
+ *   button never feels dead.
+ * - Some Android Chrome webviews ignore `location.href = ...` when
+ *   fired from an async continuation (the user-gesture token has
+ *   expired). We try `assign` → `href` → `replace` → `reload` in
+ *   sequence, and schedule an unconditional `reload()` fallback so
+ *   *something* always happens within ~1.5 s of the tap.
  */
 export async function forceAppUpdate(): Promise<void> {
-  const unregisterAllSW = async () => {
-    if (!('serviceWorker' in navigator)) return;
+  const target = (() => {
+    const base = import.meta.env.BASE_URL || '/';
+    const url = new URL(base, window.location.origin);
+    url.searchParams.set('_t', Date.now().toString(36));
+    return url.toString();
+  })();
+
+  // Unconditional safety net: if EVERY navigation strategy below is
+  // silently dropped (seen on a couple of locked-down corporate
+  // webviews), the page still reloads in ~1.5 s — far better than a
+  // dead button.
+  const safetyTimer = window.setTimeout(() => {
     try {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(
-        registrations.map(reg => reg.unregister().catch(() => false))
-      );
+      window.location.reload();
     } catch {
-      /* ignore — proceed to cache wipe */
+      /* truly nothing left to try */
+    }
+  }, 1500);
+
+  const cleanup = (async () => {
+    if ('serviceWorker' in navigator) {
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(
+          registrations.map(reg => reg.unregister().catch(() => false))
+        );
+      } catch {
+        /* ignore — proceed to cache wipe */
+      }
+    }
+    if (typeof caches !== 'undefined') {
+      try {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k).catch(() => false)));
+      } catch {
+        /* ignore — proceed to reload */
+      }
+    }
+  })();
+
+  // Race cleanup against a short cap so the button never feels stuck.
+  // 600 ms is enough for a healthy SW + cache cleanup on mobile while
+  // still feeling responsive if iOS Safari's APIs hang.
+  await withTimeout(cleanup, 600);
+
+  // Try every navigation strategy in order. Whichever the runtime
+  // honours first wins — the rest are no-ops (we'll already have
+  // unloaded).
+  const navigate = () => {
+    try {
+      window.location.assign(target);
+      return true;
+    } catch {
+      /* try next */
+    }
+    try {
+      window.location.href = target;
+      return true;
+    } catch {
+      /* try next */
+    }
+    try {
+      window.location.replace(target);
+      return true;
+    } catch {
+      /* try next */
+    }
+    try {
+      window.location.reload();
+      return true;
+    } catch {
+      return false;
     }
   };
 
-  const wipeAllCaches = async () => {
-    if (typeof caches === 'undefined') return;
-    try {
-      const keys = await caches.keys();
-      await Promise.all(keys.map(k => caches.delete(k).catch(() => false)));
-    } catch {
-      /* ignore — proceed to reload */
-    }
-  };
-
-  await withTimeout(
-    Promise.all([unregisterAllSW(), wipeAllCaches()]),
-    2000
-  );
-
-  // Always reload to the app root, NOT the current route. After we
-  // unregister the SW, the next navigation request hits GitHub Pages
-  // directly — and GH Pages doesn't know about client-side routes
-  // like /parametres, so it returns 404. The root path (= BASE_URL)
-  // is always served, the SPA boots, BrowserRouter then takes over
-  // and restores the user where they were (or to home if not deep-
-  // linked).
-  const base = import.meta.env.BASE_URL || '/';
-  const url = new URL(base, window.location.origin);
-  url.searchParams.set('_t', Date.now().toString(36));
-
-  // Some iOS PWA installs ignore replace() but honour assigning to href.
-  // Fire both — whichever the runtime applies first wins.
-  try {
-    window.location.href = url.toString();
-  } catch {
-    /* ignore */
+  const navigated = navigate();
+  // If the synchronous navigation attempt didn't throw, the safety
+  // timer is no longer needed (page is unloading). If it did throw,
+  // the safety timer is the last line of defence.
+  if (navigated) {
+    window.clearTimeout(safetyTimer);
   }
+
+  // Belt-and-braces: schedule a second attempt 150 ms later in case
+  // the first was queued behind a still-pending microtask flush
+  // (observed on iOS 17 PWA).
   setTimeout(() => {
     try {
-      window.location.replace(url.toString());
+      window.location.replace(target);
     } catch {
-      window.location.reload();
+      try {
+        window.location.reload();
+      } catch {
+        /* give up — safetyTimer (if still armed) will catch this */
+      }
     }
-  }, 100);
+  }, 150);
 }
