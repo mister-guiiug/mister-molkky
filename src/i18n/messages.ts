@@ -184,6 +184,13 @@ export interface Messages {
     throwsLabel: string;
     won: string;
     against: string;
+    replay: string;
+    replayTitle: string;
+    replayPlay: string;
+    replayPause: string;
+    replayReset: string;
+    replayFrame: string;
+    replayScrub: string;
   };
   stats: {
     title: string;
@@ -540,6 +547,13 @@ const fr: Messages = {
     throwsLabel: 'Lancers',
     won: 'gagne',
     against: 'contre',
+    replay: 'Replay animé',
+    replayTitle: 'Replay de la partie',
+    replayPlay: 'Lecture',
+    replayPause: 'Pause',
+    replayReset: 'Recommencer',
+    replayFrame: 'Lancer {n} / {total}',
+    replayScrub: 'Naviguer dans le replay',
   },
   stats: {
     title: 'Statistiques',
@@ -903,6 +917,13 @@ const en: Messages = {
     throwsLabel: 'Throws',
     won: 'wins',
     against: 'against',
+    replay: 'Animated replay',
+    replayTitle: 'Match replay',
+    replayPlay: 'Play',
+    replayPause: 'Pause',
+    replayReset: 'Restart',
+    replayFrame: 'Throw {n} / {total}',
+    replayScrub: 'Scrub through replay',
   },
   stats: {
     title: 'Stats',

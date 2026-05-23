@@ -5,8 +5,9 @@ import { PageContainer } from '../components/layout/PageContainer';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { PullIndicator } from '../components/PullIndicator';
-import { TrashIcon, TrophyIcon } from '../components/icons';
+import { PlayIcon, TrashIcon, TrophyIcon } from '../components/icons';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { MatchReplay } from '../components/MatchReplay';
 import type { FinishedMatch, RuleVariant } from '../../schemas';
 
 type VariantFilter = 'all' | RuleVariant;
@@ -39,6 +40,7 @@ export function HistoryView() {
   const [duration, setDuration] = useState<DurationFilter>('all');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selected, setSelected] = useState<FinishedMatch | null>(null);
+  const [replayMatch, setReplayMatch] = useState<FinishedMatch | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<FinishedMatch | null>(
     null
@@ -301,6 +303,17 @@ export function HistoryView() {
             <div className="flex justify-end gap-2">
               <button
                 type="button"
+                onClick={() => {
+                  setReplayMatch(selected);
+                  setSelected(null);
+                }}
+                className="touch-target flex items-center gap-2 rounded-lg border px-4 text-sm font-semibold"
+                style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
+              >
+                <PlayIcon size={16} /> {t('history.replay')}
+              </button>
+              <button
+                type="button"
                 onClick={() => setConfirmRemove(selected)}
                 className="touch-target rounded-lg border px-4 text-sm font-semibold"
                 style={{ borderColor: 'var(--danger)', color: 'var(--danger)' }}
@@ -333,6 +346,14 @@ export function HistoryView() {
         }}
         onCancel={() => setConfirmRemove(null)}
       />
+
+      {replayMatch && (
+        <MatchReplay
+          match={replayMatch}
+          open
+          onClose={() => setReplayMatch(null)}
+        />
+      )}
     </PageContainer>
   );
 }
