@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../../i18n/useI18n';
 import {
-  selectCurrentPlayer,
-  selectScores,
+  useCurrentPlayerInfo,
+  useScores,
   useMatchStore,
 } from '../../store/useMatchStore';
 import { ALL_PIN_NUMBERS } from '../../molkky/pins-layout';
@@ -33,8 +33,8 @@ export function MatchView() {
   const clearFeedback = useMatchStore(s => s.clearFeedback);
   const playFeedback = useFeedback();
 
-  const currentInfo = useMatchStore(selectCurrentPlayer);
-  const scores = useMatchStore(selectScores);
+  const currentInfo = useCurrentPlayerInfo();
+  const scores = useScores();
 
   const [fallen, setFallen] = useState<Set<number>>(new Set());
   const [confirmAbandon, setConfirmAbandon] = useState(false);
