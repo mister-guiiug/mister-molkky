@@ -121,6 +121,14 @@ export interface Messages {
     coachSingle: string;
     coachMulti: string;
     coachAvoid: string;
+    callYourShot: string;
+    callYourShotTitle: string;
+    callYourShotPrompt: string;
+    callYourShotHint: string;
+    callYourShotClear: string;
+    calledPinIs: string;
+    calledHit: string;
+    calledMiss: string;
     markHighlight: string;
     predictions: string;
     predictionsTitle: string;
@@ -261,6 +269,17 @@ export interface Messages {
     about: string;
     aboutText: string;
     version: string;
+  };
+  practice: {
+    title: string;
+    cta: string;
+    hint: string;
+    targetLabel: string;
+    aimFor: string;
+    recordAttempt: string;
+    reset: string;
+    noAttempts: string;
+    recentAttempts: string;
   };
   install: {
     text: string;
@@ -448,6 +467,15 @@ const fr: Messages = {
     coachSingle: 'Vise la quille {n} pour gagner pile.',
     coachMulti: 'Fais tomber {n} quilles pour gagner pile.',
     coachAvoid: 'Évite : {pins}',
+    callYourShot: 'Annoncer',
+    callYourShotTitle: 'Annoncer la quille visée',
+    callYourShotPrompt: 'Annonce ta quille avant de lancer ?',
+    callYourShotHint:
+      'Choisis la quille que tu vises — si tu la touches seule, le coup est marqué « ✓ » dans l’historique.',
+    callYourShotClear: 'Retirer l’annonce',
+    calledPinIs: 'Tu annonces : quille {n}',
+    calledHit: 'Quille annoncée touchée',
+    calledMiss: 'Quille annoncée manquée',
     markHighlight: 'Marquer comme moment fort',
     predictions: 'Pronostics',
     predictionsTitle: 'Qui va gagner ?',
@@ -597,6 +625,17 @@ const fr: Messages = {
     aboutText:
       'Mister Mölkky — application offline, vos données restent sur votre appareil.',
     version: 'Version',
+  },
+  practice: {
+    title: 'Entraînement solo',
+    cta: 'Entraînement solo',
+    hint: 'Choisis une quille cible et lance — l’app suit ta précision par numéro de quille.',
+    targetLabel: 'Quille à viser',
+    aimFor: 'Tu vises la quille {n}',
+    recordAttempt: 'Enregistrer le lancer',
+    reset: 'Tout effacer',
+    noAttempts: '0 lancer',
+    recentAttempts: 'Lancers récents',
   },
   install: {
     text: 'Installer l’application sur cet appareil ?',
@@ -785,6 +824,15 @@ const en: Messages = {
     coachSingle: 'Aim for pin {n} for an exact win.',
     coachMulti: 'Knock down {n} pins for an exact win.',
     coachAvoid: 'Avoid: {pins}',
+    callYourShot: 'Call shot',
+    callYourShotTitle: 'Call your shot',
+    callYourShotPrompt: 'Call a pin before throwing?',
+    callYourShotHint:
+      'Pick the pin you’re aiming for — if you hit only that pin, the throw is marked "✓" in the log.',
+    callYourShotClear: 'Clear call',
+    calledPinIs: 'Calling: pin {n}',
+    calledHit: 'Called pin hit',
+    calledMiss: 'Called pin missed',
     markHighlight: 'Mark as highlight',
     predictions: 'Predictions',
     predictionsTitle: 'Who will win?',
@@ -930,6 +978,17 @@ const en: Messages = {
     about: 'About',
     aboutText: 'Mister Mölkky — offline app, your data stays on your device.',
     version: 'Version',
+  },
+  practice: {
+    title: 'Solo practice',
+    cta: 'Solo practice',
+    hint: 'Pick a target pin and throw — the app tracks your accuracy per pin.',
+    targetLabel: 'Target pin',
+    aimFor: 'Aiming for pin {n}',
+    recordAttempt: 'Record attempt',
+    reset: 'Clear all',
+    noAttempts: '0 attempts',
+    recentAttempts: 'Recent attempts',
   },
   install: {
     text: 'Install this app on your device?',

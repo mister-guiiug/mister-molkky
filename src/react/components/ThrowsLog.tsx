@@ -93,6 +93,29 @@ export function ThrowsLog({ open, onClose }: ThrowsLogProps) {
                   >
                     {pinsLabel}
                   </span>
+                  {tr.calledPin != null &&
+                    (() => {
+                      const hit =
+                        tr.fallenPins.length === 1 &&
+                        tr.fallenPins[0] === tr.calledPin;
+                      return (
+                        <span
+                          className="rounded-md border px-1.5 py-0.5 text-[0.6rem] font-bold tabular-nums"
+                          style={{
+                            borderColor: hit
+                              ? 'var(--success)'
+                              : 'var(--muted)',
+                            color: hit ? 'var(--success)' : 'var(--muted)',
+                          }}
+                          title={
+                            hit ? t('match.calledHit') : t('match.calledMiss')
+                          }
+                        >
+                          {hit ? '✓' : '✗'}
+                          {tr.calledPin}
+                        </span>
+                      );
+                    })()}
                   <span className="w-10 text-right text-base font-black tabular-nums">
                     +{tr.computedScore}
                   </span>

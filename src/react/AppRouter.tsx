@@ -33,6 +33,9 @@ const JoinLiveView = lazy(() =>
 const SpectatorView = lazy(() =>
   import('./views/SpectatorView').then(m => ({ default: m.SpectatorView }))
 );
+const PracticeView = lazy(() =>
+  import('./views/PracticeView').then(m => ({ default: m.PracticeView }))
+);
 
 function DocumentTitle() {
   const location = useLocation();
@@ -79,6 +82,7 @@ function AppRoutes() {
             path={`${ROUTES.spectator}/:code`}
             element={<SpectatorView />}
           />
+          <Route path={ROUTES.practice} element={<PracticeView />} />
           {Object.entries(LEGACY_REDIRECTS).map(([legacy, target]) => (
             <Route
               key={legacy}

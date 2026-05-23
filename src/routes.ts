@@ -7,9 +7,16 @@ export const ROUTES = {
   settings: '/parametres',
   joinLive: '/rejoindre',
   spectator: '/direct',
+  practice: '/entrainement',
 } as const;
 
-export type RouteKey = 'home' | 'match' | 'history' | 'stats' | 'players' | 'settings';
+export type RouteKey =
+  | 'home'
+  | 'match'
+  | 'history'
+  | 'stats'
+  | 'players'
+  | 'settings';
 
 export const LEGACY_REDIRECTS: Record<string, string> = {
   '/match': ROUTES.match,

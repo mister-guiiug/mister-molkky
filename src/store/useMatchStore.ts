@@ -34,7 +34,10 @@ interface MatchStoreState {
   pendingFeedback: FeedbackEvent | null;
 
   startMatch: (config: MatchConfig) => void;
-  recordThrow: (fallenPins: number[]) => {
+  recordThrow: (
+    fallenPins: number[],
+    options?: { calledPin?: number }
+  ) => {
     ok: boolean;
     overshoot: boolean;
     eliminated: boolean;
@@ -154,7 +157,7 @@ export const useMatchStore = create<MatchStoreState>()(
         set({ current, pendingFeedback: null });
       },
 
-      recordThrow: fallenPins => {
+      recordThrow: (fallenPins, options) => {
         const state = get().current;
         if (!state)
           return { ok: false, overshoot: false, eliminated: false, won: false };
@@ -211,6 +214,7 @@ export const useMatchStore = create<MatchStoreState>()(
           computedScore: evaluation.score,
           resultedInElimination: willBeEliminated,
           resultedInOvershoot: evaluation.overshoot,
+          ...(options?.calledPin ? { calledPin: options.calledPin } : {}),
         });
 
         const nextThrows = [...state.throws, newThrow];
