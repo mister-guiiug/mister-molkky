@@ -45,26 +45,59 @@ export function registerServiceWorker(): void {
   });
 }
 
+/**
+ * Try to apply a waiting service worker update (the "nice path" — same as
+ * tapping the SW update banner). Returns true if a waiting worker was
+ * activated. Caller should fall back to forceAppUpdate() if it returns
+ * false, which means there is no pending update and the user is just
+ * asking "give me the very latest version, NOW".
+ */
+async function tryActivateWaitingWorker(): Promise<boolean> {
+  if (!updateSWFn) return false;
+  try {
+    await updateSWFn(true);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Nuclear refresh: unregister every service worker, wipe every Cache
+ * Storage entry, then reload with a cache-busting query string. This
+ * defeats the SW intercepting the navigation request and re-serving
+ * the stale HTML — which was why the previous version of this helper
+ * silently no-op'd when no waiting worker was present.
+ *
+ * IndexedDB and localStorage are intentionally left alone so the user
+ * keeps their players, history, settings and templates.
+ */
 export async function forceAppUpdate(): Promise<void> {
+  if (await tryActivateWaitingWorker()) return;
+
   try {
     if ('serviceWorker' in navigator) {
       const registrations = await navigator.serviceWorker.getRegistrations();
       await Promise.all(
-        registrations.map(reg => reg.update().catch(() => undefined))
+        registrations.map(reg => reg.unregister().catch(() => false))
       );
     }
   } catch {
-    /* registration check failed, fall through to reload */
+    /* ignore — proceed to cache wipe */
   }
 
-  if (updateSWFn) {
-    try {
-      await updateSWFn(true);
-      return;
-    } catch {
-      /* fall through */
+  try {
+    if (typeof caches !== 'undefined') {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(key => caches.delete(key).catch(() => false)));
     }
+  } catch {
+    /* ignore — proceed to reload */
   }
 
-  window.location.reload();
+  // Cache-busting query string makes sure the browser pulls a fresh
+  // index.html from the network (relevant for the GH Pages CDN edge cache).
+  const url = new URL(window.location.href);
+  url.searchParams.set('_t', Date.now().toString(36));
+  window.location.replace(url.toString());
 }
