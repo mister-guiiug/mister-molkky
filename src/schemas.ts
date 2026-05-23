@@ -78,6 +78,10 @@ export const ThrowSchema = z.object({
   computedScore: z.number().int().min(0).max(12),
   resultedInElimination: z.boolean().default(false),
   resultedInOvershoot: z.boolean().default(false),
+  // Call-your-shot: pin the player announced they would hit before
+  // throwing. Optional — only set when the user enabled the feature.
+  // Used to render a hit/miss badge in the throws log.
+  calledPin: z.number().int().min(1).max(12).optional(),
 });
 export type Throw = z.infer<typeof ThrowSchema>;
 

@@ -41,6 +41,7 @@ import {
   MenuIcon,
   RematchIcon,
   StarIcon,
+  TargetIcon,
   TrophyIcon,
   UndoIcon,
 } from '../components/icons';
@@ -116,6 +117,10 @@ export function MatchView() {
   const [liveShareOpen, setLiveShareOpen] = useState(false);
   const [forfeitSheetOpen, setForfeitSheetOpen] = useState(false);
   const [predictionsOpen, setPredictionsOpen] = useState(false);
+  // Call-your-shot: pin the active player has announced before throwing.
+  // Cleared after every recordThrow so each shot is a fresh declaration.
+  const [calledPin, setCalledPin] = useState<number | null>(null);
+  const [callPickerOpen, setCallPickerOpen] = useState(false);
   const liveRole = useLiveStore(s => s.role);
   const liveCode = useLiveStore(s => s.code);
   const pushLiveThrows = useLiveStore(s => s.pushThrows);
@@ -185,21 +190,26 @@ export function MatchView() {
 
   const validateThrow = () => {
     const pins = Array.from(fallen).sort((a, b) => a - b);
-    const res = recordThrow(pins);
+    const res = recordThrow(
+      pins,
+      calledPin != null ? { calledPin } : undefined
+    );
     if (!res.ok) return;
     setFallen(new Set());
+    setCalledPin(null);
     if (res.eliminated && currentInfo) {
       setEliminationToast(currentInfo.player.name);
     }
   };
 
   const handleMiss = () => {
-    const res = recordThrow([]);
+    const res = recordThrow([], calledPin != null ? { calledPin } : undefined);
     if (!res.ok) return;
     if (res.eliminated && currentInfo) {
       setEliminationToast(currentInfo.player.name);
     }
     setFallen(new Set());
+    setCalledPin(null);
   };
 
   const handleUndo = () => {
@@ -458,6 +468,34 @@ export function MatchView() {
       />
 
       <section className="mt-4 flex flex-col gap-2">
+        {/*
+          Call-your-shot bar. Compact one-liner with current declaration
+          and a "Modifier" tap to reopen the picker. Empty state nudges
+          the user with a small ghost button instead of taking vertical
+          space with a permanent CTA.
+        */}
+        <div
+          className="flex items-center justify-between gap-2 rounded-lg border border-dashed px-3 py-1.5 text-xs"
+          style={{
+            borderColor: calledPin != null ? 'var(--accent)' : 'var(--border)',
+            color: calledPin != null ? 'var(--accent)' : 'var(--muted)',
+          }}
+        >
+          <span className="flex items-center gap-1 font-semibold">
+            <TargetIcon size={14} />
+            {calledPin != null
+              ? t('match.calledPinIs', { n: calledPin })
+              : t('match.callYourShotPrompt')}
+          </span>
+          <button
+            type="button"
+            onClick={() => setCallPickerOpen(true)}
+            className="touch-target rounded px-2 font-bold underline"
+          >
+            {calledPin != null ? t('common.edit') : t('match.callYourShot')}
+          </button>
+        </div>
+
         <button
           type="button"
           onClick={validateThrow}
@@ -738,6 +776,56 @@ export function MatchView() {
         open={predictionsOpen}
         onClose={() => setPredictionsOpen(false)}
       />
+
+      <Modal
+        open={callPickerOpen}
+        onClose={() => setCallPickerOpen(false)}
+        title={t('match.callYourShotTitle')}
+        size="sm"
+      >
+        <p className="m-0 mb-3 text-sm" style={{ color: 'var(--muted)' }}>
+          {t('match.callYourShotHint')}
+        </p>
+        <div className="grid grid-cols-4 gap-2">
+          {ALL_PIN_NUMBERS.map(pin => {
+            const selected = calledPin === pin;
+            return (
+              <button
+                key={pin}
+                type="button"
+                onClick={() => {
+                  setCalledPin(pin);
+                  setCallPickerOpen(false);
+                }}
+                className="touch-target rounded-lg border-2 py-3 text-xl font-black tabular-nums"
+                style={{
+                  borderColor: selected ? 'var(--accent)' : 'var(--border)',
+                  background: selected
+                    ? 'color-mix(in srgb, var(--accent) 18%, var(--surface))'
+                    : 'var(--surface)',
+                  color: selected ? 'var(--accent)' : 'var(--text)',
+                }}
+                aria-pressed={selected}
+              >
+                {pin}
+              </button>
+            );
+          })}
+        </div>
+        {calledPin != null && (
+          <button
+            type="button"
+            onClick={() => {
+              setCalledPin(null);
+              setCallPickerOpen(false);
+            }}
+            className="touch-target mt-3 w-full rounded-lg border px-3 text-sm font-bold"
+            style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}
+          >
+            {t('match.callYourShotClear')}
+          </button>
+        )}
+      </Modal>
 
       {showVictory && lastFinished && (
         <>

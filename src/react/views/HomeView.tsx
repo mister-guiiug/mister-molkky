@@ -14,7 +14,7 @@ import { MatchSetupWizard } from '../components/MatchSetupWizard';
 import { WelcomeTutorial } from '../components/WelcomeTutorial';
 import { PwaInstallPrompt } from '../components/PwaInstallPrompt';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { LiveIcon, PlayIcon, TrashIcon } from '../components/icons';
+import { LiveIcon, PlayIcon, TargetIcon, TrashIcon } from '../components/icons';
 import { isSupabaseConfigured } from '../../supabase';
 import { AppFooter } from '../components/layout/AppFooter';
 
@@ -23,7 +23,9 @@ export function HomeView() {
   const navigate = useNavigate();
   const [setupOpen, setSetupOpen] = useState(false);
   const [editTemplate, setEditTemplate] = useState<MatchTemplate | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<MatchTemplate | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<MatchTemplate | null>(
+    null
+  );
   const current = useMatchStore(s => s.current);
   const startMatch = useMatchStore(s => s.startMatch);
   const hasSeenWelcome = useSettingsStore(s => s.hasSeenWelcome);
@@ -113,6 +115,21 @@ export function HomeView() {
           </button>
         )}
 
+        <button
+          type="button"
+          onClick={() => navigate(ROUTES.practice)}
+          className="touch-target flex items-center justify-between rounded-2xl border-2 px-5 py-3 text-left font-bold"
+          style={{
+            borderColor: 'var(--accent)',
+            color: 'var(--accent)',
+          }}
+        >
+          <span className="flex items-center gap-2">
+            <TargetIcon size={20} />
+            {t('practice.cta')}
+          </span>
+        </button>
+
         {templates.length > 0 && (
           <section
             className="rounded-2xl border p-4"
@@ -121,7 +138,10 @@ export function HomeView() {
               background: 'var(--surface)',
             }}
           >
-            <h2 className="m-0 mb-3 text-xs font-bold uppercase" style={{ color: 'var(--muted)' }}>
+            <h2
+              className="m-0 mb-3 text-xs font-bold uppercase"
+              style={{ color: 'var(--muted)' }}
+            >
               {t('home.templates')}
             </h2>
             <ul className="flex flex-col gap-2">
@@ -141,9 +161,13 @@ export function HomeView() {
                     >
                       <span>
                         <span className="block font-bold">{tpl.name}</span>
-                        <span className="block text-xs" style={{ color: 'var(--muted)' }}>
+                        <span
+                          className="block text-xs"
+                          style={{ color: 'var(--muted)' }}
+                        >
                           {tpl.targetScore} pts · {tpl.playerIds.length} joueurs
-                          {missingPlayers > 0 && ` · ${missingPlayers} manquant(s)`}
+                          {missingPlayers > 0 &&
+                            ` · ${missingPlayers} manquant(s)`}
                         </span>
                       </span>
                       <PlayIcon size={18} />
