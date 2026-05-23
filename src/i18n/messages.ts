@@ -177,6 +177,10 @@ export interface Messages {
     headToHeadNoMatches: string;
     achievements: string;
     achievementsEmpty: string;
+    streakAndTrend: string;
+    currentStreak: string;
+    bestWinStreak: string;
+    winRateTrend: string;
   };
   achievements: {
     firstFifty: string;
@@ -475,6 +479,10 @@ const fr: Messages = {
     headToHeadNoMatches: 'Aucune partie commune entre ces deux joueurs',
     achievements: 'Badges',
     achievementsEmpty: 'Aucun badge débloqué pour le moment.',
+    streakAndTrend: 'Séries & tendance',
+    currentStreak: 'Série en cours',
+    bestWinStreak: 'Meilleure série',
+    winRateTrend: 'Taux de victoire (glissant sur {n})',
   },
   achievements: {
     firstFifty: 'Premier pile 50',
@@ -778,6 +786,10 @@ const en: Messages = {
     headToHeadNoMatches: 'These two players never met in a match',
     achievements: 'Badges',
     achievementsEmpty: 'No badges unlocked yet.',
+    streakAndTrend: 'Streaks & trend',
+    currentStreak: 'Current streak',
+    bestWinStreak: 'Best win streak',
+    winRateTrend: 'Win rate (rolling over {n})',
   },
   achievements: {
     firstFifty: 'First exact 50',

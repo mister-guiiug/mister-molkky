@@ -7,9 +7,13 @@ import {
   averageScorePerMatch,
   averageScorePerThrow,
   computeStats,
+  computeWinRateTrend,
+  computeWinStreak,
   headToHead,
   winRate,
+  type MatchTimelineEntry,
 } from '../../molkky/stats';
+import { Sparkline } from '../components/Sparkline';
 import { detectAchievements } from '../../molkky/achievements';
 import { PageContainer } from '../components/layout/PageContainer';
 import { ALL_PIN_NUMBERS } from '../../molkky/pins-layout';
@@ -193,6 +197,10 @@ export function StatsView() {
             </ul>
           </section>
 
+          <StreakAndTrendSection
+            playerId={selected.player.id}
+            color={selected.player.color}
+          />
           <AchievementsSection playerId={selected.player.id} />
           <HeadToHeadSection
             sourcePlayerId={selected.player.id}
@@ -408,6 +416,78 @@ function H2HRow({
       </td>
       <td className="py-1.5 pl-2 text-left font-black tabular-nums">{b}</td>
     </tr>
+  );
+}
+
+/**
+ * Cross-match streak summary + rolling win-rate sparkline. Computed from
+ * the full FinishedMatch history filtered down to matches the focused
+ * player took part in.
+ */
+function StreakAndTrendSection({
+  playerId,
+  color,
+}: {
+  playerId: string;
+  color: string;
+}) {
+  const { t } = useI18n();
+  const history = useMatchStore(s => s.history);
+  const { streak, trend, played } = useMemo(() => {
+    const timeline: MatchTimelineEntry[] = history
+      .filter(m => m.config.players.some(p => p.id === playerId))
+      .map(m => ({
+        id: m.id,
+        finishedAt: m.finishedAt,
+        won: m.winnerId === playerId,
+      }));
+    return {
+      streak: computeWinStreak(timeline),
+      trend: computeWinRateTrend(timeline, 10),
+      played: timeline.length,
+    };
+  }, [history, playerId]);
+
+  if (played === 0) return null;
+
+  return (
+    <section
+      className="mt-4 rounded-2xl border p-4"
+      style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+    >
+      <h3
+        className="mb-3 text-sm font-bold uppercase"
+        style={{ color: 'var(--muted)' }}
+      >
+        {t('stats.streakAndTrend')}
+      </h3>
+      <div className="grid grid-cols-2 gap-2">
+        <Cell label={t('stats.currentStreak')} value={streak.currentStreak} />
+        <Cell label={t('stats.bestWinStreak')} value={streak.bestStreak} />
+      </div>
+      {trend.length >= 2 && (
+        <div className="mt-3">
+          <p
+            className="m-0 mb-1 text-xs font-bold uppercase"
+            style={{ color: 'var(--muted)' }}
+          >
+            {t('stats.winRateTrend', { n: '10' })}
+          </p>
+          {/*
+            We scale the sparkline values to a 0..1 fraction and pass
+            `max=1` so the Y axis is "100 % win rate" regardless of how
+            high the actual values get.
+          */}
+          <Sparkline
+            values={trend}
+            color={color}
+            width={320}
+            height={48}
+            max={1}
+          />
+        </div>
+      )}
+    </section>
   );
 }
 
