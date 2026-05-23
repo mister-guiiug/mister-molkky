@@ -7,6 +7,8 @@ import {
   useScores,
   useMatchStore,
 } from '../../store/useMatchStore';
+import { useAvatarUrls } from '../../store/usePlayersStore';
+import { useSettingsStore } from '../../store/useSettingsStore';
 import { ALL_PIN_NUMBERS } from '../../molkky/pins-layout';
 import { ROUTES } from '../../routes';
 import { PageContainer } from '../components/layout/PageContainer';
@@ -20,10 +22,16 @@ import { FullscreenToggle } from '../components/FullscreenToggle';
 import { Modal } from '../components/Modal';
 import { ThrowsLog } from '../components/ThrowsLog';
 import { Sparkline } from '../components/Sparkline';
+import { MatchOnboardingHint } from '../components/OnboardingHint';
 import { useFeedback } from '../hooks/useFeedback';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { TrophyIcon, UndoIcon, MenuIcon, CheckIcon } from '../components/icons';
+
+const COLORBLIND_SYMBOLS = [
+  '★', '▲', '●', '◆', '■', '✦', '♥', '♣',
+  '♦', '♠', '◐', '◑', '◒', '◓', '☼', '✖',
+];
 
 export function MatchView() {
   const { t } = useI18n();
@@ -40,6 +48,15 @@ export function MatchView() {
   const currentInfo = useCurrentPlayerInfo();
   const scores = useScores();
   const scoreHistories = useScoreHistories();
+  const colorblind = useSettingsStore(s => s.colorblind);
+  const outdoor = useSettingsStore(s => s.outdoor);
+  const avatarUrls = useAvatarUrls(current?.config.players ?? []);
+
+  const symbolForActor = (id: string) => {
+    if (!colorblind) return undefined;
+    const idx = current?.config.players.findIndex(p => p.id === id) ?? -1;
+    return idx >= 0 ? COLORBLIND_SYMBOLS[idx % COLORBLIND_SYMBOLS.length] : undefined;
+  };
 
   const [fallen, setFallen] = useState<Set<number>>(new Set());
   const [confirmAbandon, setConfirmAbandon] = useState(false);
@@ -258,6 +275,7 @@ export function MatchView() {
         onSelectAll={selectAll}
         playerColor={currentInfo?.player.color}
         shaking={shake}
+        outdoor={outdoor}
       />
 
       <section className="mt-4 flex flex-col gap-2">
@@ -324,6 +342,7 @@ export function MatchView() {
                       active={team.id === currentPid}
                       eliminated={s?.eliminated}
                       hasWon={s?.hasWon}
+                      symbol={symbolForActor(team.playerIds[0] ?? '')}
                       compact
                     />
                     <Sparkline
@@ -349,6 +368,8 @@ export function MatchView() {
                       active={p.id === currentPid}
                       eliminated={s?.eliminated}
                       hasWon={s?.hasWon}
+                      avatarUrl={avatarUrls.get(p.id)}
+                      symbol={symbolForActor(p.id)}
                       compact
                     />
                     <Sparkline
@@ -434,6 +455,8 @@ export function MatchView() {
         playerName={eliminationToast}
         onDismiss={() => setEliminationToast(null)}
       />
+
+      <MatchOnboardingHint />
 
       {showVictory && lastFinished && (
         <>

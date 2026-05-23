@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { safeLocalStorage } from '../storage';
@@ -114,4 +115,45 @@ export const usePlayersStore = create<PlayersState>()(
 
 export function pickNextColor(existing: Player[]): string {
   return nextColor(existing);
+}
+
+/**
+ * Fetch all avatar URLs for the given players. Returns a Map keyed by
+ * playerId. URLs are revoked on unmount to avoid leaking blob: URLs into
+ * the browser's resource list.
+ */
+export function useAvatarUrls(
+  players: readonly { id: string; avatarBlobKey?: string }[]
+): Map<string, string> {
+  const [urls, setUrls] = useState<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    let cancelled = false;
+    const created: string[] = [];
+    Promise.all(
+      players
+        .filter(p => p.avatarBlobKey)
+        .map(async p => {
+          const blob = await idbGetBlob(p.avatarBlobKey!);
+          if (!blob) return null;
+          const url = URL.createObjectURL(blob);
+          created.push(url);
+          return [p.id, url] as const;
+        })
+    ).then(entries => {
+      if (cancelled) {
+        created.forEach(u => URL.revokeObjectURL(u));
+        return;
+      }
+      setUrls(
+        new Map(entries.filter((e): e is readonly [string, string] => Boolean(e)))
+      );
+    });
+    return () => {
+      cancelled = true;
+      created.forEach(u => URL.revokeObjectURL(u));
+    };
+  }, [players]);
+
+  return urls;
 }
