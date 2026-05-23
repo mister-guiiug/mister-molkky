@@ -217,18 +217,33 @@ body {
   100% { opacity: 1; transform: translateY(0); }
 }
 
+/*
+  Modal entry animation. Distinct from mm-toast-pop because the toast
+  one carries `translateX(-50%)` for its absolutely-positioned use case
+  (the install bandeau); applying it inside a flex-centered Modal made
+  the panel start half a width to the left and slide back to centre —
+  exactly the "loads on the left then recenters" glitch users reported.
+  This variant only scales + lifts on the Y axis.
+*/
+@keyframes mm-modal-pop {
+  0% { transform: translateY(8px) scale(0.96); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
 .mm-pin-fall { animation: mm-pin-fall 0.45s cubic-bezier(.2,.8,.2,1) forwards; }
 .mm-pin-stand { animation: mm-pin-stand 0.4s cubic-bezier(.2,.8,.2,1) forwards; }
 .mm-score-pop { animation: mm-score-pop 0.4s cubic-bezier(.2,.8,.2,1); }
 .mm-shake { animation: mm-shake 0.5s; }
 .mm-glow { animation: mm-glow 1.4s ease-in-out infinite; }
 .mm-toast-pop { animation: mm-toast-pop 0.3s ease-out; }
+.mm-modal-pop { animation: mm-modal-pop 0.22s cubic-bezier(.2,.8,.2,1) both; }
 .mm-victory-pop { animation: mm-victory-pop 0.7s cubic-bezier(.2,.8,.2,1); }
 .mm-skeleton { animation: mm-skeleton-pulse 1.4s ease-in-out infinite; }
 .mm-view-enter { animation: mm-view-enter 0.22s cubic-bezier(.2,.8,.2,1) both; }
 
 @media (prefers-reduced-motion: reduce) {
   .mm-pin-fall,
+  .mm-modal-pop,
   .mm-pin-stand,
   .mm-score-pop,
   .mm-shake,
