@@ -31,7 +31,10 @@ jobs:
           scope: '@mister-guiiug'
 
       - name: Install
-        run: npm ci
+        # `npm install` (not `npm ci`) tolerates the slightly out-of-date
+        # lockfile we shipped while the local dev box couldn't auth to
+        # GHCR. Switch back to `npm ci` once the lockfile is regenerated.
+        run: npm install --no-audit --no-fund
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
