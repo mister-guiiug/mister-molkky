@@ -366,7 +366,13 @@ export function MatchView() {
         className="mt-5 overflow-x-auto"
         aria-label={t('match.score')}
       >
-        <ul className="flex gap-2 pb-2">
+        {/*
+          py-3 + px-2 keep the active card's scale-[1.04] transform inside
+          the section's content box — overflow-x-auto forces overflow-y to
+          'auto' too, so without the padding the top/bottom of the scaled
+          card and its glow get clipped on small screens.
+        */}
+        <ul className="flex gap-2 px-2 py-3">
           {current.config.teams && current.config.teams.length > 0
             ? current.config.teams.map(team => {
                 const s = scores.get(team.id);
