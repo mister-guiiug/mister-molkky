@@ -119,7 +119,10 @@ export const SettingsSchema = z.object({
   sounds: z.boolean().default(true),
   vibrations: z.boolean().default(true),
   wakeLock: z.boolean().default(true),
+  outdoor: z.boolean().default(false),
+  colorblind: z.boolean().default(false),
   hasSeenWelcome: z.boolean().default(false),
+  hasSeenMatchOnboarding: z.boolean().default(false),
 });
 export type Settings = z.infer<typeof SettingsSchema>;
 

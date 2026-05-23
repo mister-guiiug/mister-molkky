@@ -9,6 +9,8 @@ interface PlayerCardProps {
   eliminated?: boolean;
   hasWon?: boolean;
   compact?: boolean;
+  avatarUrl?: string;
+  symbol?: string;
   onClick?: () => void;
 }
 
@@ -21,6 +23,8 @@ export function PlayerCard({
   eliminated,
   hasWon,
   compact,
+  avatarUrl,
+  symbol,
   onClick,
 }: PlayerCardProps) {
   const opacity = eliminated ? 0.55 : 1;
@@ -39,13 +43,20 @@ export function PlayerCard({
       }}
     >
       <span
-        className="block h-2 w-full rounded-full"
+        className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full text-xs font-black text-white"
         style={{ background: player.color }}
         aria-hidden
-      />
+      >
+        {avatarUrl ? (
+          <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+        ) : (
+          player.name.slice(0, 2).toUpperCase()
+        )}
+      </span>
       <span className="truncate text-sm font-bold">
         {hasWon && '🏆 '}
         {eliminated && '✗ '}
+        {symbol && <span aria-hidden>{symbol} </span>}
         {player.name}
       </span>
       <span

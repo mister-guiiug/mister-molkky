@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { INITIAL_LAYOUT, LAYOUT_BOUNDS } from '../../molkky/pins-layout';
 import { useI18n } from '../../i18n/useI18n';
+import { usePlaySound } from '../hooks/useFeedback';
 
 interface PinsBoardProps {
   fallen: Set<number>;
@@ -9,6 +10,7 @@ interface PinsBoardProps {
   disabled?: boolean;
   playerColor?: string;
   shaking?: boolean;
+  outdoor?: boolean;
 }
 
 const PIN_RADIUS = 26;
@@ -36,8 +38,10 @@ export function PinsBoard({
   disabled,
   playerColor = 'var(--primary)',
   shaking,
+  outdoor,
 }: PinsBoardProps) {
   const { t } = useI18n();
+  const playSound = usePlaySound();
   const longPressTimers = useRef<Map<number, number>>(new Map());
 
   useEffect(() => {
@@ -68,8 +72,11 @@ export function PinsBoard({
 
   return (
     <div
-      className={`relative mx-auto w-full max-w-md ${shaking ? 'mm-shake' : ''}`}
-      style={{ aspectRatio: `${VIEW_W} / ${VIEW_H}` }}
+      className={`relative mx-auto w-full ${outdoor ? 'max-w-xl' : 'max-w-md'} ${shaking ? 'mm-shake' : ''}`}
+      style={{
+        aspectRatio: `${VIEW_W} / ${VIEW_H}`,
+        filter: outdoor ? 'contrast(1.15)' : undefined,
+      }}
     >
       <svg
         viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
@@ -136,12 +143,16 @@ export function PinsBoard({
               onClick={e => {
                 if (longPressTimers.current.has(pin)) return;
                 e.preventDefault();
-                if (!disabled) onToggle(pin);
+                if (!disabled) {
+                  playSound(fallen.has(pin) ? 'pin-untap' : 'pin-tap');
+                  onToggle(pin);
+                }
               }}
               onKeyDown={e => {
                 if (disabled) return;
                 if (e.key === ' ' || e.key === 'Enter') {
                   e.preventDefault();
+                  playSound(fallen.has(pin) ? 'pin-untap' : 'pin-tap');
                   onToggle(pin);
                 }
               }}

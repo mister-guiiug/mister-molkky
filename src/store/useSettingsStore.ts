@@ -8,7 +8,10 @@ interface SettingsState extends Settings {
   toggleSounds: () => void;
   toggleVibrations: () => void;
   toggleWakeLock: () => void;
+  toggleOutdoor: () => void;
+  toggleColorblind: () => void;
   markWelcomeSeen: () => void;
+  markMatchOnboardingSeen: () => void;
   reset: () => void;
 }
 
@@ -22,7 +25,10 @@ export const useSettingsStore = create<SettingsState>()(
       toggleSounds: () => set(s => ({ sounds: !s.sounds })),
       toggleVibrations: () => set(s => ({ vibrations: !s.vibrations })),
       toggleWakeLock: () => set(s => ({ wakeLock: !s.wakeLock })),
+      toggleOutdoor: () => set(s => ({ outdoor: !s.outdoor })),
+      toggleColorblind: () => set(s => ({ colorblind: !s.colorblind })),
       markWelcomeSeen: () => set({ hasSeenWelcome: true }),
+      markMatchOnboardingSeen: () => set({ hasSeenMatchOnboarding: true }),
       reset: () => set({ ...DEFAULTS }),
     }),
     {

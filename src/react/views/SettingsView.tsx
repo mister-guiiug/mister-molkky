@@ -154,6 +154,24 @@ export function SettingsView() {
         />
       </Section>
 
+      <Section label={t('settings.outdoor')}>
+        <Toggle
+          checked={settings.outdoor}
+          onChange={settings.toggleOutdoor}
+          label={t('settings.outdoor')}
+          hint={t('settings.outdoorHint')}
+        />
+      </Section>
+
+      <Section label={t('settings.colorblind')}>
+        <Toggle
+          checked={settings.colorblind}
+          onChange={settings.toggleColorblind}
+          label={t('settings.colorblind')}
+          hint={t('settings.colorblindHint')}
+        />
+      </Section>
+
       <Section label={t('settings.export')}>
         <div className="flex flex-col gap-2">
           <button
