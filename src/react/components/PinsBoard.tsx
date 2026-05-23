@@ -20,10 +20,11 @@ const VIEW_H = 320;
 
 // Padding inside the board so the edge pins (5, 6 horizontally; 1, 2 at
 // the bottom) stay clear of the rounded corners + overflow-hidden clip.
-// The bottom padding leaves room for the "↑ Touchez ↑" hint.
+// PAD_BOTTOM is generous so the "↑ Touchez ↑" hint sits cleanly below
+// the bottom row of pins instead of being covered by them.
 const PAD_X = 50;
-const PAD_TOP = 40;
-const PAD_BOTTOM = 56;
+const PAD_TOP = 36;
+const PAD_BOTTOM = 76;
 
 function projectX(x: number): number {
   const usable = VIEW_W - PAD_X * 2;
@@ -122,8 +123,8 @@ export function PinsBoard({
       }}
     >
       <span
-        className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xs font-semibold"
-        style={{ bottom: '0.5rem', color: 'var(--muted)' }}
+        className="pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-xs font-semibold"
+        style={{ bottom: '0.6rem', color: 'var(--muted)' }}
       >
         ↑ {t('match.tap')} ↑
       </span>
