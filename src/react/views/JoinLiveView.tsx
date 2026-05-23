@@ -6,6 +6,7 @@ import { useLiveStore } from '../../store/useLiveStore';
 import { isSupabaseConfigured } from '../../supabase';
 import { normalizeCode } from '../../live/liveMatch';
 import { PageContainer } from '../components/layout/PageContainer';
+import { CameraIcon } from '../components/icons';
 
 export function JoinLiveView() {
   const { t } = useI18n();
@@ -141,13 +142,14 @@ export function JoinLiveView() {
         <button
           type="button"
           onClick={startScan}
-          className="touch-target w-full rounded-lg border-2 py-3 font-bold"
+          className="touch-target flex w-full items-center justify-center gap-2 rounded-lg border-2 py-3 font-bold"
           style={{
             borderColor: 'var(--primary)',
             color: 'var(--primary)',
           }}
         >
-          📷 {t('live.joinScan')}
+          <CameraIcon size={20} />
+          {t('live.joinScan')}
         </button>
       ) : (
         <div className="flex flex-col gap-2">

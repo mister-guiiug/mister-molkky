@@ -14,7 +14,7 @@ import { MatchSetupWizard } from '../components/MatchSetupWizard';
 import { WelcomeTutorial } from '../components/WelcomeTutorial';
 import { PwaInstallPrompt } from '../components/PwaInstallPrompt';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { PlayIcon, TrashIcon } from '../components/icons';
+import { LiveIcon, PlayIcon, TrashIcon } from '../components/icons';
 import { isSupabaseConfigured } from '../../supabase';
 import { AppFooter } from '../components/layout/AppFooter';
 
@@ -103,7 +103,10 @@ export function HomeView() {
               color: 'var(--primary)',
             }}
           >
-            <span>📡 {t('live.join')}</span>
+            <span className="flex items-center gap-2">
+              <LiveIcon size={20} />
+              {t('live.join')}
+            </span>
             <span className="text-xs font-semibold uppercase tracking-wider">
               {t('live.activeBadge')}
             </span>

@@ -28,7 +28,15 @@ import { useLiveStore } from '../../store/useLiveStore';
 import { useFeedback } from '../hooks/useFeedback';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-import { TrophyIcon, UndoIcon, MenuIcon, CheckIcon } from '../components/icons';
+import {
+  CheckIcon,
+  ClipboardIcon,
+  LiveIcon,
+  MenuIcon,
+  RematchIcon,
+  TrophyIcon,
+  UndoIcon,
+} from '../components/icons';
 
 const COLORBLIND_SYMBOLS = [
   '★', '▲', '●', '◆', '■', '✦', '♥', '♣',
@@ -452,7 +460,7 @@ export function MatchView() {
               className="touch-target flex w-full items-center gap-2 rounded-lg border px-3 font-semibold"
               style={{ borderColor: 'var(--border)' }}
             >
-              📋 {t('match.throwsLog')}
+              <ClipboardIcon size={18} /> {t('match.throwsLog')}
             </button>
           </li>
           <li>
@@ -468,9 +476,10 @@ export function MatchView() {
                 color: liveRole === 'host' ? 'var(--danger)' : 'var(--primary)',
               }}
             >
+              <LiveIcon size={18} />
               {liveRole === 'host'
-                ? `🔴 ${t('live.activeBadge')} (${liveCode})`
-                : `📡 ${t('live.shareTitle')}`}
+                ? `${t('live.activeBadge')} (${liveCode})`
+                : t('live.shareTitle')}
             </button>
           </li>
           <li>
@@ -625,10 +634,11 @@ function VictoryScreen({
         <button
           type="button"
           onClick={onRematch}
-          className="touch-target rounded-lg px-4 font-bold text-white"
+          className="touch-target flex items-center justify-center gap-2 rounded-lg px-4 font-bold text-white"
           style={{ background: 'var(--primary)' }}
         >
-          🔁 {t('match.rematch')}
+          <RematchIcon size={18} />
+          {t('match.rematch')}
         </button>
       </div>
     </Modal>

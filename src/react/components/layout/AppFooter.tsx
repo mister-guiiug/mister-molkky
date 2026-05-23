@@ -1,3 +1,5 @@
+import { CoffeeIcon } from '../icons';
+
 const REPO_URL = 'https://github.com/mister-guiiug/mister-molkky';
 const BMAC_URL = 'https://buymeacoffee.com/mister.guiiug';
 
@@ -33,7 +35,8 @@ export function AppFooter() {
           className="flex items-center gap-1.5 rounded-full px-3 py-1 font-bold text-yellow-900 transition hover:brightness-95"
           style={{ background: '#fbbf24' }}
         >
-          ☕ Buy me a coffee
+          <CoffeeIcon size={14} />
+          Buy me a coffee
         </a>
       </div>
       <p className="m-0">
