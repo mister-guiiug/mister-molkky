@@ -18,18 +18,23 @@ interface PinsBoardProps {
 const VIEW_W = 360;
 const VIEW_H = 320;
 
+// Padding inside the board so the edge pins (5, 6 horizontally; 1, 2 at
+// the bottom) stay clear of the rounded corners + overflow-hidden clip.
+// The bottom padding leaves room for the "↑ Touchez ↑" hint.
+const PAD_X = 50;
+const PAD_TOP = 40;
+const PAD_BOTTOM = 56;
+
 function projectX(x: number): number {
-  const padding = 30;
-  const usable = VIEW_W - padding * 2;
+  const usable = VIEW_W - PAD_X * 2;
   const span = LAYOUT_BOUNDS.maxX - LAYOUT_BOUNDS.minX;
-  return padding + ((x - LAYOUT_BOUNDS.minX) / span) * usable;
+  return PAD_X + ((x - LAYOUT_BOUNDS.minX) / span) * usable;
 }
 
 function projectY(y: number): number {
-  const padding = 24;
-  const usable = VIEW_H - padding * 2 - 30;
+  const usable = VIEW_H - PAD_TOP - PAD_BOTTOM;
   const span = LAYOUT_BOUNDS.maxY - LAYOUT_BOUNDS.minY;
-  return VIEW_H - padding - ((y - LAYOUT_BOUNDS.minY) / span) * usable;
+  return VIEW_H - PAD_BOTTOM - ((y - LAYOUT_BOUNDS.minY) / span) * usable;
 }
 
 /**
@@ -54,38 +59,52 @@ export function PinsBoard({
   const { t } = useI18n();
   const playSound = usePlaySound();
   const longPressTimers = useRef<Map<number, number>>(new Map());
+  // Pins for which the long-press fired since the last click. We
+  // consume this set in onClick to skip the toggle that would otherwise
+  // happen for the short-tap path.
+  const longPressFired = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     return () => {
       longPressTimers.current.forEach(id => window.clearTimeout(id));
       longPressTimers.current.clear();
+      longPressFired.current.clear();
     };
   }, []);
 
-  const handlePointerDown = (pin: number) => {
-    if (disabled) return;
-    if (!onSelectAll) return;
+  const armLongPress = (pin: number) => {
+    if (disabled || !onSelectAll) return;
     const tid = window.setTimeout(() => {
+      longPressFired.current.add(pin);
       onSelectAll();
       longPressTimers.current.delete(pin);
     }, 500);
     longPressTimers.current.set(pin, tid);
   };
 
-  const handlePointerUpOrLeave = (pin: number, fired: boolean) => {
+  const cancelLongPress = (pin: number) => {
     const tid = longPressTimers.current.get(pin);
     if (tid !== undefined) {
       window.clearTimeout(tid);
       longPressTimers.current.delete(pin);
-      if (fired) onToggle(pin);
     }
   };
 
-  // Pin size as a percentage of the container width. The original SVG used
-  // r=26 inside a 360-wide viewBox → ~14.4 % per pin; we bump it to 15 %
-  // so the touch target stays comfortable on small viewports (380 px →
-  // 57 px button), 17 % in outdoor mode for low-light readability.
-  const pinSizePct = outdoor ? 17 : 15;
+  const handleClick = (pin: number) => {
+    if (disabled) return;
+    cancelLongPress(pin);
+    if (longPressFired.current.has(pin)) {
+      longPressFired.current.delete(pin);
+      return;
+    }
+    playSound(fallen.has(pin) ? 'pin-untap' : 'pin-tap');
+    onToggle(pin);
+  };
+
+  // Pin size as a percentage of the container width. Sized to stay clear
+  // of the rounded-corner clip even at the extreme x/y positions; the
+  // projection padding above does the heavy lifting.
+  const pinSizePct = outdoor ? 15 : 13;
 
   return (
     <div
@@ -124,17 +143,12 @@ export function PinsBoard({
               state: isDown ? t('match.pinDown') : t('match.pinStanding'),
             })}
             disabled={disabled}
-            onPointerDown={() => handlePointerDown(pin)}
-            onPointerUp={() => handlePointerUpOrLeave(pin, true)}
-            onPointerLeave={() => handlePointerUpOrLeave(pin, false)}
-            onPointerCancel={() => handlePointerUpOrLeave(pin, false)}
+            onPointerDown={() => armLongPress(pin)}
+            onPointerLeave={() => cancelLongPress(pin)}
+            onPointerCancel={() => cancelLongPress(pin)}
             onClick={e => {
-              if (longPressTimers.current.has(pin)) return;
               e.preventDefault();
-              if (!disabled) {
-                playSound(fallen.has(pin) ? 'pin-untap' : 'pin-tap');
-                onToggle(pin);
-              }
+              handleClick(pin);
             }}
             className={`absolute flex items-center justify-center rounded-full text-lg font-black tabular-nums transition-transform ${isDown ? 'mm-pin-fall' : 'mm-pin-stand'}`}
             style={{
