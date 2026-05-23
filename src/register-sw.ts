@@ -102,9 +102,15 @@ export async function forceAppUpdate(): Promise<void> {
     2000
   );
 
-  // Cache-busting query string defeats the GH Pages CDN edge cache AND
-  // any HTTP cache layer that survives SW unregister on iOS.
-  const url = new URL(window.location.href);
+  // Always reload to the app root, NOT the current route. After we
+  // unregister the SW, the next navigation request hits GitHub Pages
+  // directly — and GH Pages doesn't know about client-side routes
+  // like /parametres, so it returns 404. The root path (= BASE_URL)
+  // is always served, the SPA boots, BrowserRouter then takes over
+  // and restores the user where they were (or to home if not deep-
+  // linked).
+  const base = import.meta.env.BASE_URL || '/';
+  const url = new URL(base, window.location.origin);
   url.searchParams.set('_t', Date.now().toString(36));
 
   // Some iOS PWA installs ignore replace() but honour assigning to href.
