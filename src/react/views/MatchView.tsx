@@ -27,6 +27,7 @@ import { LiveShareSheet } from '../components/LiveShareSheet';
 import { ForfeitPlayerSheet } from '../components/ForfeitPlayerSheet';
 import { PredictionsSheet } from '../components/PredictionsSheet';
 import { Chrono } from '../components/Chrono';
+import { SituationPhoto } from '../components/SituationPhoto';
 import { useLiveStore } from '../../store/useLiveStore';
 import { useFeedback } from '../hooks/useFeedback';
 import { useWakeLock } from '../hooks/useWakeLock';
@@ -495,6 +496,9 @@ export function MatchView() {
           );
         })()}
 
+      <div className="mb-2 flex items-center justify-end">
+        <SituationPhoto />
+      </div>
       <PinsBoard
         fallen={fallen}
         onToggle={togglePin}
