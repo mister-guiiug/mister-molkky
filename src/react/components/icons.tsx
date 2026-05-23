@@ -12,7 +12,10 @@ import {
   ArrowLeft,
   ArrowRight,
   BarChart3,
+  Camera,
   Check,
+  ClipboardList,
+  Coffee,
   History as HistoryGlyph,
   Home,
   Maximize2,
@@ -20,6 +23,9 @@ import {
   Minimize2,
   Play,
   Plus,
+  Radio,
+  RefreshCw,
+  RotateCw,
   Settings,
   Share2,
   Trash2,
@@ -60,3 +66,9 @@ export const MinimizeIcon = wrap(Minimize2 as IconComponent, 'MinimizeIcon');
 export const TrophyIcon = wrap(Trophy as IconComponent, 'TrophyIcon');
 export const ShareIcon = wrap(Share2 as IconComponent, 'ShareIcon');
 export const MenuIcon = wrap(Menu as IconComponent, 'MenuIcon');
+export const RefreshIcon = wrap(RefreshCw as IconComponent, 'RefreshIcon');
+export const RematchIcon = wrap(RotateCw as IconComponent, 'RematchIcon');
+export const ClipboardIcon = wrap(ClipboardList as IconComponent, 'ClipboardIcon');
+export const LiveIcon = wrap(Radio as IconComponent, 'LiveIcon');
+export const CameraIcon = wrap(Camera as IconComponent, 'CameraIcon');
+export const CoffeeIcon = wrap(Coffee as IconComponent, 'CoffeeIcon');

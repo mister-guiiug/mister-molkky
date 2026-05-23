@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useI18n } from '../../i18n/useI18n';
 import { useSettingsStore } from '../../store/useSettingsStore';
+import { RefreshIcon } from '../components/icons';
 import { useMatchStore } from '../../store/useMatchStore';
 import { usePlayersStore } from '../../store/usePlayersStore';
 import {
@@ -225,10 +226,11 @@ export function SettingsView() {
                 setUpdating(false);
               }
             }}
-            className="touch-target rounded-lg border px-4 text-sm font-bold disabled:opacity-50"
+            className="touch-target flex items-center justify-center gap-2 rounded-lg border px-4 text-sm font-bold disabled:opacity-50"
             style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
           >
-            🔄 {updating ? t('settings.forceUpdateInProgress') : t('settings.forceUpdate')}
+            <RefreshIcon size={18} className={updating ? 'animate-spin' : undefined} />
+            {updating ? t('settings.forceUpdateInProgress') : t('settings.forceUpdate')}
           </button>
           <p className="m-0 text-xs" style={{ color: 'var(--muted)' }}>
             {t('settings.forceUpdateHint')}
