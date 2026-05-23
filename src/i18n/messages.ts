@@ -143,6 +143,15 @@ export interface Messages {
     title: string;
     empty: string;
     filter: string;
+    filters: string;
+    filterAll: string;
+    filterVariant: string;
+    filterSize: string;
+    filterDuration: string;
+    filterDurationShort: string;
+    filterDurationMedium: string;
+    filterDurationLong: string;
+    filterReset: string;
     search: string;
     searchPlaceholder: string;
     deleteAll: string;
@@ -445,6 +454,15 @@ const fr: Messages = {
     title: 'Historique des parties',
     empty: 'Aucune partie terminée pour le moment.',
     filter: 'Filtrer',
+    filters: 'Filtres',
+    filterAll: 'Tout',
+    filterVariant: 'Variante',
+    filterSize: 'Nombre de joueurs',
+    filterDuration: 'Durée',
+    filterDurationShort: '< 10 min',
+    filterDurationMedium: '10–25 min',
+    filterDurationLong: '> 25 min',
+    filterReset: 'Réinitialiser les filtres',
     search: 'Rechercher',
     searchPlaceholder: 'Nom de joueur…',
     deleteAll: 'Tout effacer',
@@ -752,6 +770,15 @@ const en: Messages = {
     title: 'Match history',
     empty: 'No finished matches yet.',
     filter: 'Filter',
+    filters: 'Filters',
+    filterAll: 'All',
+    filterVariant: 'Variant',
+    filterSize: 'Player count',
+    filterDuration: 'Duration',
+    filterDurationShort: '< 10 min',
+    filterDurationMedium: '10–25 min',
+    filterDurationLong: '> 25 min',
+    filterReset: 'Reset filters',
     search: 'Search',
     searchPlaceholder: 'Player name…',
     deleteAll: 'Delete all',
