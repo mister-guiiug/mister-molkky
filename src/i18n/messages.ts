@@ -47,6 +47,10 @@ export interface Messages {
     aboutGame: string;
     aboutGameText: string;
     seeRules: string;
+    templates: string;
+    templatesEmpty: string;
+    templateUseConfirm: string;
+    templateDelete: string;
   };
   setup: {
     title: string;
@@ -69,8 +73,25 @@ export interface Messages {
     startMatch: string;
     needMinPlayers: string;
     needMinPlayersHint: string;
+    saveAsTemplate: string;
+    templateNamePlaceholder: string;
+    templateSaved: string;
+    variant: string;
+    variantClassic: string;
+    variantInverse: string;
+    variantFree: string;
+    variantClassicHint: string;
+    variantInverseHint: string;
+    variantFreeHint: string;
   };
   match: {
+    rematch: string;
+    throwsLog: string;
+    throwsLogEmpty: string;
+    editThrow: string;
+    editThrowHint: string;
+    throwNumber: string;
+    fallenPins: string;
     turnOf: string;
     score: string;
     miss: string;
@@ -133,6 +154,13 @@ export interface Messages {
     topPin: string;
     none: string;
     pinFrequency: string;
+    headToHead: string;
+    headToHeadPickFirst: string;
+    headToHeadPickSecond: string;
+    headToHeadMatches: string;
+    headToHeadNoMatches: string;
+    achievements: string;
+    achievementsEmpty: string;
   };
   players: {
     title: string;
@@ -157,6 +185,10 @@ export interface Messages {
     vibrations: string;
     wakeLock: string;
     wakeLockHint: string;
+    outdoor: string;
+    outdoorHint: string;
+    colorblind: string;
+    colorblindHint: string;
     export: string;
     import: string;
     importFailed: string;
@@ -248,6 +280,10 @@ const fr: Messages = {
     aboutGameText:
       'Jeu de quilles finlandais : visez la « mölkky » (le bâton) pour faire tomber des quilles numérotées. Premier à 50 pile gagne.',
     seeRules: 'Voir les règles',
+    templates: 'Mes templates',
+    templatesEmpty: 'Aucun template enregistré. Lance une partie et sauvegarde-la pour la rejouer en 1 tap.',
+    templateUseConfirm: 'Lancer une partie avec ce template ?',
+    templateDelete: 'Supprimer ce template ?',
   },
   setup: {
     title: 'Nouvelle partie',
@@ -271,8 +307,25 @@ const fr: Messages = {
     needMinPlayers: 'Sélectionnez au moins 2 joueurs',
     needMinPlayersHint:
       'Créez d’abord des joueurs depuis l’onglet Joueurs si vous n’en avez pas.',
+    saveAsTemplate: 'Enregistrer comme template',
+    templateNamePlaceholder: 'Nom du template (ex. soirée du jeudi)',
+    templateSaved: 'Template enregistré',
+    variant: 'Variante',
+    variantClassic: 'Classique',
+    variantInverse: 'Inversée',
+    variantFree: 'Libre',
+    variantClassicHint: '0 → 50 pile pour gagner, dépassement = 25.',
+    variantInverseHint: '50 → 0 pile pour gagner, dépassement = +5.',
+    variantFreeHint: 'Pas de retour à 25 sur dépassement (passe juste au tour suivant).',
   },
   match: {
+    rematch: 'Rejouer mêmes joueurs',
+    throwsLog: 'Tous les lancers',
+    throwsLogEmpty: 'Aucun lancer encore.',
+    editThrow: 'Modifier ce lancer',
+    editThrowHint: 'Sélectionne les quilles tombées',
+    throwNumber: 'Lancer #{n}',
+    fallenPins: 'Quilles tombées',
     turnOf: 'Au tour de',
     score: 'Score',
     miss: 'Raté',
@@ -335,6 +388,13 @@ const fr: Messages = {
     topPin: 'Quille préférée',
     none: '—',
     pinFrequency: 'Quilles touchées',
+    headToHead: 'Face-à-face',
+    headToHeadPickFirst: 'Choisir le 1ᵉʳ joueur',
+    headToHeadPickSecond: 'Choisir le 2ᵉ joueur',
+    headToHeadMatches: '{n} parties communes',
+    headToHeadNoMatches: 'Aucune partie commune entre ces deux joueurs',
+    achievements: 'Badges',
+    achievementsEmpty: 'Aucun badge débloqué pour le moment.',
   },
   players: {
     title: 'Joueurs',
@@ -360,6 +420,10 @@ const fr: Messages = {
     wakeLock: 'Garder l’écran allumé en partie',
     wakeLockHint:
       'L’écran reste actif tant qu’une partie est en cours (compatible Android / iOS Safari).',
+    outdoor: 'Mode extérieur (gros bouton)',
+    outdoorHint: 'Quilles agrandies et contraste poussé pour jouer au soleil.',
+    colorblind: 'Mode daltonien',
+    colorblindHint: 'Ajoute des symboles (★ ▲ ●) en plus des couleurs.',
     export: 'Exporter mes données (JSON)',
     import: 'Importer un fichier',
     importFailed: 'Import impossible',
@@ -453,6 +517,10 @@ const en: Messages = {
     aboutGameText:
       'Finnish skittles game: throw the "mölkky" stick to knock down numbered pins. First to exactly 50 wins.',
     seeRules: 'See the rules',
+    templates: 'My templates',
+    templatesEmpty: 'No saved templates yet. Start a match and save it to replay in one tap.',
+    templateUseConfirm: 'Start a match from this template?',
+    templateDelete: 'Delete this template?',
   },
   setup: {
     title: 'New match',
@@ -476,8 +544,25 @@ const en: Messages = {
     needMinPlayers: 'Pick at least 2 players',
     needMinPlayersHint:
       'Create players from the Players tab first if you don’t have any.',
+    saveAsTemplate: 'Save as template',
+    templateNamePlaceholder: 'Template name (e.g. Thursday night)',
+    templateSaved: 'Template saved',
+    variant: 'Variant',
+    variantClassic: 'Classic',
+    variantInverse: 'Reverse',
+    variantFree: 'Free',
+    variantClassicHint: '0 → exactly 50 wins, overshoot drops to 25.',
+    variantInverseHint: '50 → exactly 0 wins, overshoot adds 5.',
+    variantFreeHint: 'No drop-to-25 on overshoot (turn just ends).',
   },
   match: {
+    rematch: 'Replay same players',
+    throwsLog: 'All throws',
+    throwsLogEmpty: 'No throws yet.',
+    editThrow: 'Edit this throw',
+    editThrowHint: 'Tap the fallen pins',
+    throwNumber: 'Throw #{n}',
+    fallenPins: 'Fallen pins',
     turnOf: 'Turn of',
     score: 'Score',
     miss: 'Miss',
@@ -540,6 +625,13 @@ const en: Messages = {
     topPin: 'Favourite pin',
     none: '—',
     pinFrequency: 'Pins hit',
+    headToHead: 'Head-to-head',
+    headToHeadPickFirst: 'Pick first player',
+    headToHeadPickSecond: 'Pick second player',
+    headToHeadMatches: '{n} shared matches',
+    headToHeadNoMatches: 'These two players never met in a match',
+    achievements: 'Badges',
+    achievementsEmpty: 'No badges unlocked yet.',
   },
   players: {
     title: 'Players',
@@ -565,6 +657,10 @@ const en: Messages = {
     wakeLock: 'Keep screen awake during a match',
     wakeLockHint:
       'The screen stays on as long as a match is in progress (Android / iOS Safari supported).',
+    outdoor: 'Outdoor mode (bigger pins)',
+    outdoorHint: 'Larger pins and boosted contrast for daylight play.',
+    colorblind: 'Colourblind mode',
+    colorblindHint: 'Adds symbols (★ ▲ ●) in addition to colours.',
     export: 'Export my data (JSON)',
     import: 'Import a file',
     importFailed: 'Import failed',

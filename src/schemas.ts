@@ -77,11 +77,24 @@ export const CurrentMatchStateSchema = z.object({
 });
 export type CurrentMatchState = z.infer<typeof CurrentMatchStateSchema>;
 
+export const MatchTemplateSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1).max(40),
+  targetScore: TargetScoreSchema,
+  overshootPenalty: z.number().int().min(0).max(50),
+  maxMisses: z.number().int().min(1).max(5),
+  teamMode: TeamModeSchema.default('solo'),
+  playerIds: z.array(PlayerIdSchema).default([]),
+  createdAt: z.number().int(),
+});
+export type MatchTemplate = z.infer<typeof MatchTemplateSchema>;
+
 export const ExportBundleSchema = z.object({
   version: z.literal(1),
   exportedAt: z.number().int(),
   players: z.array(PlayerSchema),
   matches: z.array(FinishedMatchSchema),
+  templates: z.array(MatchTemplateSchema).optional(),
 });
 export type ExportBundle = z.infer<typeof ExportBundleSchema>;
 

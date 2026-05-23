@@ -3,9 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../../i18n/useI18n';
 import { usePlayersStore, pickNextColor } from '../../store/usePlayersStore';
 import { useMatchStore } from '../../store/useMatchStore';
+import { useTemplatesStore } from '../../store/useTemplatesStore';
 import {
   MatchConfigSchema,
+  type MatchTemplate,
   type Player,
+  type PlayerId,
   type TargetScore,
 } from '../../schemas';
 import { ROUTES } from '../../routes';
@@ -13,20 +16,34 @@ import { PlusIcon, CheckIcon, ArrowLeftIcon, ArrowRightIcon } from './icons';
 
 type Step = 'players' | 'rules' | 'recap';
 
-export function MatchSetupWizard({ onClose }: { onClose: () => void }) {
+interface MatchSetupWizardProps {
+  onClose: () => void;
+  initialTemplate?: MatchTemplate;
+}
+
+export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardProps) {
   const { t } = useI18n();
   const navigate = useNavigate();
   const roster = usePlayersStore(s => s.players);
   const addPlayer = usePlayersStore(s => s.add);
   const startMatch = useMatchStore(s => s.startMatch);
+  const addTemplate = useTemplatesStore(s => s.add);
 
   const [step, setStep] = useState<Step>('players');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>(
+    () => initialTemplate?.playerIds?.filter(id => roster.some(p => p.id === id)) ?? []
+  );
   const [quickName, setQuickName] = useState('');
-  const [targetScore, setTargetScore] = useState<TargetScore>(50);
-  const [overshootPenalty, setOvershootPenalty] = useState(25);
-  const [maxMisses, setMaxMisses] = useState(3);
+  const [targetScore, setTargetScore] = useState<TargetScore>(
+    initialTemplate?.targetScore ?? 50
+  );
+  const [overshootPenalty, setOvershootPenalty] = useState(
+    initialTemplate?.overshootPenalty ?? 25
+  );
+  const [maxMisses, setMaxMisses] = useState(initialTemplate?.maxMisses ?? 3);
   const [shuffle, setShuffle] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const [templateSaved, setTemplateSaved] = useState(false);
 
   const orderedPlayers = useMemo<Player[]>(() => {
     const map = new Map(roster.map(p => [p.id, p]));
@@ -359,6 +376,52 @@ export function MatchSetupWizard({ onClose }: { onClose: () => void }) {
               </li>
             ))}
           </ol>
+
+          <div
+            className="rounded-lg border border-dashed p-3"
+            style={{ borderColor: 'var(--border)' }}
+          >
+            {templateSaved ? (
+              <p className="m-0 flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--success)' }}>
+                <CheckIcon size={16} /> {t('setup.templateSaved')}
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  type="text"
+                  value={templateName}
+                  onChange={e => setTemplateName(e.target.value)}
+                  placeholder={t('setup.templateNamePlaceholder')}
+                  maxLength={40}
+                  className="touch-target flex-1 rounded-lg border px-3 text-sm"
+                  style={{
+                    background: 'var(--surface-input)',
+                    borderColor: 'var(--border)',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!templateName.trim()) return;
+                    addTemplate({
+                      name: templateName.trim(),
+                      targetScore,
+                      overshootPenalty,
+                      maxMisses,
+                      teamMode: 'solo',
+                      playerIds: orderedPlayers.map(p => p.id as PlayerId),
+                    });
+                    setTemplateSaved(true);
+                  }}
+                  disabled={!templateName.trim()}
+                  className="touch-target rounded-lg border px-3 text-sm font-bold disabled:opacity-50"
+                  style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                >
+                  {t('setup.saveAsTemplate')}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

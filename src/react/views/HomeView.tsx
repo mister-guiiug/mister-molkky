@@ -3,21 +3,51 @@ import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../../i18n/useI18n';
 import { useMatchStore } from '../../store/useMatchStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
+import { useTemplatesStore } from '../../store/useTemplatesStore';
+import { usePlayersStore } from '../../store/usePlayersStore';
 import { ROUTES } from '../../routes';
+import { MatchConfigSchema, type MatchTemplate } from '../../schemas';
 import { PageContainer } from '../components/layout/PageContainer';
 import { Logo } from '../components/Logo';
 import { Modal } from '../components/Modal';
 import { MatchSetupWizard } from '../components/MatchSetupWizard';
 import { WelcomeTutorial } from '../components/WelcomeTutorial';
 import { PwaInstallPrompt } from '../components/PwaInstallPrompt';
-import { PlayIcon } from '../components/icons';
+import { ConfirmDialog } from '../components/ConfirmDialog';
+import { PlayIcon, TrashIcon } from '../components/icons';
 
 export function HomeView() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [setupOpen, setSetupOpen] = useState(false);
+  const [editTemplate, setEditTemplate] = useState<MatchTemplate | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<MatchTemplate | null>(null);
   const current = useMatchStore(s => s.current);
+  const startMatch = useMatchStore(s => s.startMatch);
   const hasSeenWelcome = useSettingsStore(s => s.hasSeenWelcome);
+  const templates = useTemplatesStore(s => s.templates);
+  const removeTemplate = useTemplatesStore(s => s.remove);
+  const roster = usePlayersStore(s => s.players);
+
+  const launchTemplate = (tpl: MatchTemplate) => {
+    const players = tpl.playerIds
+      .map(id => roster.find(p => p.id === id))
+      .filter((p): p is NonNullable<typeof p> => Boolean(p));
+    if (players.length < 2) {
+      setEditTemplate(tpl);
+      return;
+    }
+    const config = MatchConfigSchema.parse({
+      players,
+      targetScore: tpl.targetScore,
+      overshootPenalty: tpl.overshootPenalty,
+      maxMisses: tpl.maxMisses,
+      teamMode: tpl.teamMode,
+      shufflePlayers: false,
+    });
+    startMatch(config);
+    navigate(ROUTES.match);
+  };
 
   return (
     <PageContainer>
@@ -61,6 +91,57 @@ export function HomeView() {
           <PlayIcon size={28} />
         </button>
 
+        {templates.length > 0 && (
+          <section
+            className="rounded-2xl border p-4"
+            style={{
+              borderColor: 'var(--border)',
+              background: 'var(--surface)',
+            }}
+          >
+            <h2 className="m-0 mb-3 text-xs font-bold uppercase" style={{ color: 'var(--muted)' }}>
+              {t('home.templates')}
+            </h2>
+            <ul className="flex flex-col gap-2">
+              {templates.map(tpl => {
+                const missingPlayers = tpl.playerIds.filter(
+                  id => !roster.some(p => p.id === id)
+                ).length;
+                return (
+                  <li key={tpl.id} className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => launchTemplate(tpl)}
+                      className="touch-target flex flex-1 items-center justify-between rounded-lg border px-3 py-2 text-left"
+                      style={{
+                        borderColor: 'var(--border)',
+                      }}
+                    >
+                      <span>
+                        <span className="block font-bold">{tpl.name}</span>
+                        <span className="block text-xs" style={{ color: 'var(--muted)' }}>
+                          {tpl.targetScore} pts · {tpl.playerIds.length} joueurs
+                          {missingPlayers > 0 && ` · ${missingPlayers} manquant(s)`}
+                        </span>
+                      </span>
+                      <PlayIcon size={18} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDelete(tpl)}
+                      className="touch-target rounded-full p-2"
+                      aria-label={t('common.delete')}
+                      style={{ color: 'var(--muted)' }}
+                    >
+                      <TrashIcon size={16} />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+
         <section
           className="rounded-2xl border p-5"
           style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
@@ -78,13 +159,33 @@ export function HomeView() {
       </section>
 
       <Modal
-        open={setupOpen}
-        onClose={() => setSetupOpen(false)}
+        open={setupOpen || Boolean(editTemplate)}
+        onClose={() => {
+          setSetupOpen(false);
+          setEditTemplate(null);
+        }}
         title={t('setup.title')}
         size="lg"
       >
-        <MatchSetupWizard onClose={() => setSetupOpen(false)} />
+        <MatchSetupWizard
+          onClose={() => {
+            setSetupOpen(false);
+            setEditTemplate(null);
+          }}
+          initialTemplate={editTemplate ?? undefined}
+        />
       </Modal>
+
+      <ConfirmDialog
+        open={Boolean(confirmDelete)}
+        message={t('home.templateDelete')}
+        destructive
+        onConfirm={() => {
+          if (confirmDelete) removeTemplate(confirmDelete.id);
+          setConfirmDelete(null);
+        }}
+        onCancel={() => setConfirmDelete(null)}
+      />
 
       {!hasSeenWelcome && <WelcomeTutorial />}
       <PwaInstallPrompt />
