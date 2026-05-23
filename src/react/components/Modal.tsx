@@ -10,7 +10,13 @@ interface ModalProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-export function Modal({ open, onClose, title, children, size = 'md' }: ModalProps) {
+export function Modal({
+  open,
+  onClose,
+  title,
+  children,
+  size = 'md',
+}: ModalProps) {
   const { t } = useI18n();
 
   useEffect(() => {
@@ -39,7 +45,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
       onClick={onClose}
     >
       <div
-        className={`mm-toast-pop flex w-full ${widths[size]} max-h-[92dvh] flex-col rounded-t-2xl sm:rounded-2xl border shadow-xl sm:max-h-[88dvh]`}
+        className={`mm-modal-pop flex w-full ${widths[size]} max-h-[92dvh] flex-col rounded-t-2xl sm:rounded-2xl border shadow-xl sm:max-h-[88dvh]`}
         style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
         onClick={e => e.stopPropagation()}
       >
