@@ -32,7 +32,7 @@ export function PlayerCard({
     <button
       type="button"
       onClick={onClick}
-      className={`relative flex flex-col items-center gap-1 rounded-xl border px-3 py-2 text-center transition ${active ? 'mm-glow scale-[1.04]' : ''} ${compact ? 'min-w-[5rem]' : 'min-w-[6.5rem]'}`}
+      className={`relative flex flex-col items-center gap-1 rounded-xl border px-3 pt-2 pb-3 text-center transition ${active ? 'mm-glow scale-[1.04]' : ''} ${compact ? 'min-w-[5rem]' : 'min-w-[6.5rem]'}`}
       style={{
         background: active
           ? `color-mix(in srgb, ${player.color} 18%, var(--surface))`

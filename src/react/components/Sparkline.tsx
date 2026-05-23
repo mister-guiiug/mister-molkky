@@ -13,9 +13,13 @@ export function Sparkline({
   color = 'var(--primary)',
   max,
 }: SparklineProps) {
-  if (values.length === 0) {
+  // Until the actor has thrown at least once we only have the starting
+  // score in the history. Rendering the line + end-marker in that case
+  // produces an orphan coloured dot under the scoreboard cards, which
+  // reads as a visual glitch. Just emit an empty baseline instead.
+  if (values.length < 2) {
     return (
-      <svg width={width} height={height} aria-hidden>
+      <svg width={width} height={height} aria-hidden className="block">
         <line
           x1={2}
           y1={height - 2}
@@ -23,13 +27,14 @@ export function Sparkline({
           y2={height - 2}
           stroke="var(--border)"
           strokeWidth="1"
+          strokeDasharray="2 3"
         />
       </svg>
     );
   }
 
   const upper = max ?? Math.max(...values, 1);
-  const dx = values.length > 1 ? (width - 4) / (values.length - 1) : 0;
+  const dx = (width - 4) / (values.length - 1);
   const pad = 2;
   const points = values.map((v, i) => {
     const x = pad + i * dx;
@@ -42,7 +47,7 @@ export function Sparkline({
     height - pad - ((values[values.length - 1]! / upper) * (height - pad * 2));
 
   return (
-    <svg width={width} height={height} aria-hidden>
+    <svg width={width} height={height} aria-hidden className="block">
       <polyline
         points={points.join(' ')}
         fill="none"
@@ -51,7 +56,7 @@ export function Sparkline({
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx={lastX} cy={lastY} r={1.6} fill={color} />
+      <circle cx={lastX} cy={lastY} r={1.8} fill={color} />
     </svg>
   );
 }
