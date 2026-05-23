@@ -335,10 +335,14 @@ export const useMatchStore = create<MatchStoreState>()(
         const state = get().current;
         if (!state) return;
         if (!state.throws.some(t => t.id === throwId)) return;
-        const has = state.highlightedThrowIds.includes(throwId);
+        // Defensive ?? [] — even though migrate() backfills this on
+        // rehydrate, a stale in-memory state from before the migration
+        // ran would otherwise crash here.
+        const existing = state.highlightedThrowIds ?? [];
+        const has = existing.includes(throwId);
         const next = has
-          ? state.highlightedThrowIds.filter(id => id !== throwId)
-          : [...state.highlightedThrowIds, throwId];
+          ? existing.filter(id => id !== throwId)
+          : [...existing, throwId];
         set({ current: { ...state, highlightedThrowIds: next } });
       },
 
@@ -347,7 +351,9 @@ export const useMatchStore = create<MatchStoreState>()(
         if (!state) return;
         const knownIds = new Set(state.config.players.map(p => p.id));
         if (!knownIds.has(predictorId as PlayerId)) return;
-        const next = { ...state.predictions };
+        // Same rationale as toggleHighlight — protect against pre-v2
+        // in-memory state where predictions might be missing.
+        const next = { ...(state.predictions ?? {}) };
         if (pickedWinnerId === '') {
           delete next[predictorId];
         } else if (knownIds.has(pickedWinnerId as PlayerId)) {
@@ -497,7 +503,52 @@ export const useMatchStore = create<MatchStoreState>()(
     {
       name: 'mm_match',
       storage: createJSONStorage(() => safeLocalStorage()),
-      version: 1,
+      // Bumped to 2 to trigger the migrate() below — earlier persisted
+      // matches don't carry forfeitedActorIds / highlightedThrowIds /
+      // predictions, and accessing them in the UI (.includes, Object.
+      // entries) was crashing /partie when an old match sat in history.
+      version: 2,
+      migrate: (persistedState: unknown, version) => {
+        if (!persistedState || typeof persistedState !== 'object') {
+          return persistedState as never;
+        }
+        const s = persistedState as {
+          current?: Record<string, unknown> | null;
+          history?: Record<string, unknown>[];
+        };
+        const fillCurrent = (m: Record<string, unknown> | null | undefined) => {
+          if (!m) return m ?? null;
+          return {
+            ...m,
+            forfeitedActorIds: Array.isArray(m.forfeitedActorIds)
+              ? m.forfeitedActorIds
+              : [],
+            highlightedThrowIds: Array.isArray(m.highlightedThrowIds)
+              ? m.highlightedThrowIds
+              : [],
+            predictions:
+              m.predictions && typeof m.predictions === 'object'
+                ? m.predictions
+                : {},
+          };
+        };
+        const fillFinished = (m: Record<string, unknown>) => ({
+          ...m,
+          highlightedThrowIds: Array.isArray(m.highlightedThrowIds)
+            ? m.highlightedThrowIds
+            : [],
+          predictions:
+            m.predictions && typeof m.predictions === 'object'
+              ? m.predictions
+              : {},
+        });
+        return {
+          ...s,
+          current: fillCurrent(s.current),
+          history: Array.isArray(s.history) ? s.history.map(fillFinished) : [],
+          _migratedFrom: version,
+        } as never;
+      },
       partialize: state => ({
         current: state.current,
         history: state.history,
