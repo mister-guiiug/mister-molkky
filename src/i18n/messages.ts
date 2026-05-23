@@ -209,6 +209,9 @@ export interface Messages {
     importApplied: string;
     eraseAll: string;
     eraseAllConfirm: string;
+    forceUpdate: string;
+    forceUpdateHint: string;
+    forceUpdateInProgress: string;
     about: string;
     aboutText: string;
     version: string;
@@ -485,6 +488,10 @@ const fr: Messages = {
     eraseAll: 'Effacer toutes les données',
     eraseAllConfirm:
       'Supprimer définitivement tous les joueurs, parties et réglages ?',
+    forceUpdate: 'Forcer la mise à jour',
+    forceUpdateHint:
+      'Vide le cache du service worker et recharge l’app pour récupérer la dernière version déployée.',
+    forceUpdateInProgress: 'Mise à jour…',
     about: 'À propos',
     aboutText:
       'Mister Mölkky — application offline, vos données restent sur votre appareil.',
@@ -761,6 +768,10 @@ const en: Messages = {
     importApplied: '{n} match(es) imported',
     eraseAll: 'Erase all data',
     eraseAllConfirm: 'Permanently delete all players, matches and settings?',
+    forceUpdate: 'Force update',
+    forceUpdateHint:
+      'Clears the service worker cache and reloads the app to grab the latest deployed version.',
+    forceUpdateInProgress: 'Updating…',
     about: 'About',
     aboutText:
       'Mister Mölkky — offline app, your data stays on your device.',
