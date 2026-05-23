@@ -40,6 +40,7 @@ interface MatchStoreState {
     won: boolean;
   };
   undoLastThrow: () => boolean;
+  editThrow: (throwId: string, fallenPins: number[]) => boolean;
   abandonMatch: () => void;
   finishMatch: () => FinishedMatch | null;
   clearFeedback: () => void;
@@ -170,6 +171,62 @@ export const useMatchStore = create<MatchStoreState>()(
           pendingFeedback: null,
         });
         return true;
+      },
+
+      editThrow: (throwId, fallenPins) => {
+        const state = get().current;
+        if (!state) return false;
+        const idx = state.throws.findIndex(t => t.id === throwId);
+        if (idx < 0) return false;
+        const original = state.throws[idx]!;
+        const settings = settingsFromConfig(state.config);
+        const playerIds = state.config.players.map(p => p.id);
+
+        const updatedThrow: Throw = ThrowSchema.parse({
+          ...original,
+          fallenPins,
+          computedScore:
+            fallenPins.length === 0
+              ? 0
+              : fallenPins.length === 1
+                ? fallenPins[0]!
+                : fallenPins.length,
+        });
+        const candidateThrows = [
+          ...state.throws.slice(0, idx),
+          updatedThrow,
+          ...state.throws.slice(idx + 1),
+        ];
+
+        try {
+          const replay = replayThrows(
+            playerIds,
+            candidateThrows.map(t => ({
+              playerId: t.playerId,
+              fallenPins: t.fallenPins,
+            })),
+            settings
+          );
+          const acceptedThrows = candidateThrows.slice(0, replay.currentTurn);
+          const reconciled = acceptedThrows.map(t => {
+            const player = replay.progress.get(t.playerId);
+            return {
+              ...t,
+              resultedInElimination: player?.eliminated ?? false,
+              resultedInOvershoot: false,
+            };
+          });
+          set({
+            current: { ...state, throws: reconciled },
+            pendingFeedback: null,
+          });
+          if (replay.winnerId) {
+            get().finishMatch();
+          }
+          return true;
+        } catch {
+          return false;
+        }
       },
 
       abandonMatch: () => set({ current: null, pendingFeedback: null }),

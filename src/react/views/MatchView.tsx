@@ -17,6 +17,7 @@ import { EliminationToast } from '../components/EliminationToast';
 import { VictoryConfetti } from '../components/VictoryConfetti';
 import { FullscreenToggle } from '../components/FullscreenToggle';
 import { Modal } from '../components/Modal';
+import { ThrowsLog } from '../components/ThrowsLog';
 import { useFeedback } from '../hooks/useFeedback';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
@@ -29,6 +30,7 @@ export function MatchView() {
   const recordThrow = useMatchStore(s => s.recordThrow);
   const undo = useMatchStore(s => s.undoLastThrow);
   const abandon = useMatchStore(s => s.abandonMatch);
+  const startMatch = useMatchStore(s => s.startMatch);
   const pendingFeedback = useMatchStore(s => s.pendingFeedback);
   const clearFeedback = useMatchStore(s => s.clearFeedback);
   const playFeedback = useFeedback();
@@ -43,6 +45,7 @@ export function MatchView() {
   const [flash, setFlash] = useState<'none' | 'win' | 'overshoot'>('none');
   const [showVictory, setShowVictory] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [throwsLogOpen, setThrowsLogOpen] = useState(false);
   const lastVictoryRef = useRef<string | null>(null);
 
   useWakeLock(Boolean(current));
@@ -142,6 +145,10 @@ export function MatchView() {
             onPlayAgain={() => {
               setShowVictory(false);
               navigate(ROUTES.home);
+            }}
+            onRematch={() => {
+              setShowVictory(false);
+              startMatch({ ...lastFinished.config, shufflePlayers: false });
             }}
             onHistory={() => {
               setShowVictory(false);
@@ -331,6 +338,19 @@ export function MatchView() {
               type="button"
               onClick={() => {
                 setMenuOpen(false);
+                setThrowsLogOpen(true);
+              }}
+              className="touch-target flex w-full items-center gap-2 rounded-lg border px-3 font-semibold"
+              style={{ borderColor: 'var(--border)' }}
+            >
+              📋 {t('match.throwsLog')}
+            </button>
+          </li>
+          <li>
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
                 setConfirmAbandon(true);
               }}
               className="touch-target flex w-full items-center gap-2 rounded-lg border px-3 font-semibold"
@@ -354,6 +374,11 @@ export function MatchView() {
         destructive
       />
 
+      <ThrowsLog
+        open={throwsLogOpen}
+        onClose={() => setThrowsLogOpen(false)}
+      />
+
       <EliminationToast
         playerName={eliminationToast}
         onDismiss={() => setEliminationToast(null)}
@@ -367,6 +392,10 @@ export function MatchView() {
             onPlayAgain={() => {
               setShowVictory(false);
               navigate(ROUTES.home);
+            }}
+            onRematch={() => {
+              setShowVictory(false);
+              startMatch({ ...lastFinished.config, shufflePlayers: false });
             }}
             onHistory={() => {
               setShowVictory(false);
@@ -392,6 +421,7 @@ interface VictoryScreenProps {
   ranking: { name: string; color: string; finalScore: number; eliminated: boolean; rank: number }[];
   onClose: () => void;
   onPlayAgain: () => void;
+  onRematch: () => void;
   onHistory: () => void;
 }
 
@@ -400,6 +430,7 @@ function VictoryScreen({
   ranking,
   onClose,
   onPlayAgain,
+  onRematch,
   onHistory,
 }: VictoryScreenProps) {
   const { t } = useI18n();
@@ -440,7 +471,7 @@ function VictoryScreen({
           </li>
         ))}
       </ol>
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
         <button
           type="button"
           onClick={onHistory}
@@ -452,10 +483,18 @@ function VictoryScreen({
         <button
           type="button"
           onClick={onPlayAgain}
+          className="touch-target rounded-lg border px-4 font-semibold"
+          style={{ borderColor: 'var(--border)' }}
+        >
+          {t('match.playAgain')}
+        </button>
+        <button
+          type="button"
+          onClick={onRematch}
           className="touch-target rounded-lg px-4 font-bold text-white"
           style={{ background: 'var(--primary)' }}
         >
-          {t('match.playAgain')}
+          🔁 {t('match.rematch')}
         </button>
       </div>
     </Modal>
