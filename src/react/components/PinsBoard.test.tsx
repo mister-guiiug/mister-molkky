@@ -61,6 +61,22 @@ describe('PinsBoard', () => {
     expect(calls).toEqual([7]);
   });
 
+  it('fires onToggle exactly once per pointer+click sequence (regression: double-toggle bug)', () => {
+    // The previous version called onToggle from both onPointerUp AND
+    // onClick, which left the pin in its original state after every tap.
+    const calls: number[] = [];
+    const { container } = renderBoard({
+      onToggle: (pin: number) => calls.push(pin),
+    });
+    const pin7 = Array.from(
+      container.querySelectorAll<HTMLButtonElement>('button[aria-pressed]')
+    ).find(b => b.textContent?.trim() === '7')!;
+    fireEvent.pointerDown(pin7);
+    fireEvent.pointerUp(pin7);
+    fireEvent.click(pin7);
+    expect(calls).toEqual([7]);
+  });
+
   it('aria-pressed reflects the fallen set', () => {
     const { container } = renderBoard({ fallen: new Set([3, 7]) });
     const pressed = Array.from(
