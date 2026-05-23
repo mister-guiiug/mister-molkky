@@ -19,10 +19,14 @@ interface LiveState {
   remote: LiveMatchRow | null;
   /** Last error, surfaced to UI banners. */
   error: string | null;
-  status: 'idle' | 'connecting' | 'live' | 'finished';
+  status: 'idle' | 'connecting' | 'live' | 'finished' | 'reconnecting';
   subscription: LiveSubscription | null;
+  /** Auto-reconnect: tracks failed attempts so we give up after a few. */
+  reconnectAttempts: number;
 
-  startHost: (state: CurrentMatchState) => Promise<{ code: string; id: string }>;
+  startHost: (
+    state: CurrentMatchState
+  ) => Promise<{ code: string; id: string }>;
   pushThrows: (throws: Throw[]) => Promise<void>;
   pushFinish: (winnerId: string) => Promise<void>;
   stopHost: () => void;
@@ -33,6 +37,10 @@ interface LiveState {
   clear: () => void;
 }
 
+const MAX_RECONNECT_ATTEMPTS = 5;
+const RECONNECT_DELAY_MS = 4000;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
 export const useLiveStore = create<LiveState>()((set, get) => ({
   role: 'none',
   matchId: null,
@@ -41,6 +49,7 @@ export const useLiveStore = create<LiveState>()((set, get) => ({
   error: null,
   status: 'idle',
   subscription: null,
+  reconnectAttempts: 0,
 
   startHost: async state => {
     set({ status: 'connecting', error: null });
@@ -75,7 +84,6 @@ export const useLiveStore = create<LiveState>()((set, get) => ({
     try {
       await pushLiveState(matchId, { throws });
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.warn('[live] pushThrows failed:', err);
       set({ error: (err as Error).message });
     }
@@ -93,7 +101,6 @@ export const useLiveStore = create<LiveState>()((set, get) => ({
         finished_at: new Date().toISOString(),
       });
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.warn('[live] pushFinish failed:', err);
       set({ error: (err as Error).message });
     }
@@ -113,12 +120,24 @@ export const useLiveStore = create<LiveState>()((set, get) => ({
 
   startViewer: async code => {
     set({ status: 'connecting', error: null });
+    // Cancel any pending reconnect from a previous session — a fresh
+    // user-initiated join takes priority.
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
     try {
       const row = await joinLiveMatch(code);
       const sub = subscribeLiveMatch(
         row.id,
-        next => set({ remote: next }),
-        err => set({ error: err.message })
+        next => {
+          // Successful update — clear any error chip + reset retry budget.
+          set({ remote: next, error: null, reconnectAttempts: 0 });
+        },
+        err => {
+          set({ error: err.message });
+          scheduleViewerReconnect(set, get, code);
+        }
       );
       set({
         role: 'viewer',
@@ -127,15 +146,21 @@ export const useLiveStore = create<LiveState>()((set, get) => ({
         remote: row,
         status: row.finished_at ? 'finished' : 'live',
         subscription: sub,
+        reconnectAttempts: 0,
       });
       return row;
     } catch (err) {
       set({ status: 'idle', error: (err as Error).message });
+      scheduleViewerReconnect(set, get, code);
       throw err;
     }
   },
 
   stopViewer: () => {
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
     get().subscription?.unsubscribe();
     set({
       role: 'none',
@@ -144,10 +169,15 @@ export const useLiveStore = create<LiveState>()((set, get) => ({
       remote: null,
       status: 'idle',
       subscription: null,
+      reconnectAttempts: 0,
     });
   },
 
   clear: () => {
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
     get().subscription?.unsubscribe();
     set({
       role: 'none',
@@ -157,6 +187,34 @@ export const useLiveStore = create<LiveState>()((set, get) => ({
       error: null,
       status: 'idle',
       subscription: null,
+      reconnectAttempts: 0,
     });
   },
 }));
+
+/**
+ * Schedule a viewer reconnect attempt. Backs off after a few tries and
+ * stops so we don't loop forever on a permanently unreachable backend.
+ * Re-runs `startViewer` which re-creates a fresh subscription.
+ */
+function scheduleViewerReconnect(
+  set: (partial: Partial<LiveState>) => void,
+  get: () => LiveState,
+  code: string
+): void {
+  const { reconnectAttempts, role } = get();
+  // Stop if the user navigated away or we already burned through retries.
+  if (role !== 'viewer' && get().status === 'idle') return;
+  if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) return;
+  if (reconnectTimer) clearTimeout(reconnectTimer);
+  set({ status: 'reconnecting', reconnectAttempts: reconnectAttempts + 1 });
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    // Re-enter via startViewer — that path correctly resets subscription
+    // ref and retry counter on success.
+    void useLiveStore
+      .getState()
+      .startViewer(code)
+      .catch(() => undefined);
+  }, RECONNECT_DELAY_MS);
+}
