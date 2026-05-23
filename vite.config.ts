@@ -1,6 +1,7 @@
 import {
   defineConfig,
   type Connect,
+  type Plugin,
   type PluginOption,
   type ViteDevServer,
 } from 'vite';
@@ -56,6 +57,30 @@ export default defineConfig(({ command }) => {
     plugins: [
       react(),
       tailwindcss(),
+      // GitHub Pages serves 404.html for any path it can't resolve. For
+      // a SPA, that means deep links / route refreshes return the stock
+      // "404 — File not found" instead of letting BrowserRouter take
+      // over. Ship a 404.html that is byte-for-byte identical to
+      // index.html — GH Pages serves it, the SPA boots, BrowserRouter
+      // parses the URL and renders the right view.
+      ({
+        name: 'mister-molkky-spa-404',
+        apply: 'build',
+        async closeBundle() {
+          const { copyFile } = await import('node:fs/promises');
+          const { resolve } = await import('node:path');
+          const dist = resolve(process.cwd(), 'dist');
+          try {
+            await copyFile(
+              resolve(dist, 'index.html'),
+              resolve(dist, '404.html')
+            );
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.warn('[spa-404] could not emit 404.html:', err);
+          }
+        },
+      } satisfies Plugin),
       {
         name: 'mister-molkky-trailing-slash',
         configureServer(server: ViteDevServer) {
