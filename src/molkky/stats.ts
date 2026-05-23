@@ -1,5 +1,9 @@
 import type { ThrowRecord } from './rules';
-import { replayThrows, DEFAULT_RULE_SETTINGS, type RuleSettings } from './rules';
+import {
+  replayThrows,
+  DEFAULT_RULE_SETTINGS,
+  type RuleSettings,
+} from './rules';
 
 export interface PlayerStats {
   readonly playerId: string;
@@ -52,10 +56,9 @@ function pickTopPin(freq: Record<number, number>): number | null {
   return bestPin;
 }
 
-export function computeStats(matches: readonly MatchStatsInput[]): Map<
-  string,
-  PlayerStats
-> {
+export function computeStats(
+  matches: readonly MatchStatsInput[]
+): Map<string, PlayerStats> {
   const all = new Map<string, PlayerStats>();
 
   for (const match of matches) {
@@ -92,7 +95,7 @@ export function computeStats(matches: readonly MatchStatsInput[]): Map<
       }
     }
 
-    let runningScores = new Map<string, number>();
+    const runningScores = new Map<string, number>();
     match.playerIds.forEach(id => runningScores.set(id, 0));
     for (const t of match.throws) {
       const stats = all.get(t.playerId);
@@ -160,6 +163,75 @@ export interface HeadToHead {
  * Compute pairwise stats restricted to matches where BOTH players took
  * part. Useful for "who beats whom" battle cards.
  */
+export interface MatchTimelineEntry {
+  /** Original match ID (so the UI can link back). */
+  readonly id: string;
+  readonly finishedAt: number;
+  /** Did the focused player win this match? */
+  readonly won: boolean;
+}
+
+/**
+ * Per-player win-streak summary across all matches they played in. Matches
+ * are expected sorted by `finishedAt` ascending — we sort defensively so
+ * callers can pass any order.
+ *
+ * `currentStreak` counts the *most recent* consecutive wins. It's 0 if
+ * the last match was a loss (or if the player played zero matches).
+ * `bestStreak` is the all-time max consecutive wins.
+ */
+export interface WinStreak {
+  readonly currentStreak: number;
+  readonly bestStreak: number;
+}
+
+export function computeWinStreak(
+  timeline: readonly MatchTimelineEntry[]
+): WinStreak {
+  if (timeline.length === 0) return { currentStreak: 0, bestStreak: 0 };
+  const sorted = [...timeline].sort((a, b) => a.finishedAt - b.finishedAt);
+  let best = 0;
+  let running = 0;
+  for (const t of sorted) {
+    if (t.won) {
+      running += 1;
+      if (running > best) best = running;
+    } else {
+      running = 0;
+    }
+  }
+  // Walk backwards to compute the *current* trailing streak — it's the
+  // number of consecutive wins ending at the most recent match.
+  let current = 0;
+  for (let i = sorted.length - 1; i >= 0; i -= 1) {
+    if (sorted[i]!.won) current += 1;
+    else break;
+  }
+  return { currentStreak: current, bestStreak: best };
+}
+
+/**
+ * Rolling-window win rate at each point in the player's history. Returns
+ * one value per match (oldest → newest), each = winRate over the last
+ * `windowSize` matches up to and including that one. Feeds a sparkline
+ * trend graph in StatsView. Output values are in [0, 1].
+ */
+export function computeWinRateTrend(
+  timeline: readonly MatchTimelineEntry[],
+  windowSize: number
+): number[] {
+  if (timeline.length === 0 || windowSize <= 0) return [];
+  const sorted = [...timeline].sort((a, b) => a.finishedAt - b.finishedAt);
+  const out: number[] = [];
+  for (let i = 0; i < sorted.length; i += 1) {
+    const start = Math.max(0, i - windowSize + 1);
+    const window = sorted.slice(start, i + 1);
+    const wins = window.filter(w => w.won).length;
+    out.push(wins / window.length);
+  }
+  return out;
+}
+
 export function headToHead(
   matches: readonly MatchStatsInput[],
   playerA: string,

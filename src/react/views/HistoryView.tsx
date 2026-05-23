@@ -32,7 +32,9 @@ export function HistoryView() {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<FinishedMatch | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
-  const [confirmRemove, setConfirmRemove] = useState<FinishedMatch | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<FinishedMatch | null>(
+    null
+  );
   const [refreshNonce, setRefreshNonce] = useState(0);
   const onPullRefresh = useCallback(async () => {
     // Local data is already current — bump a nonce so the user sees the
@@ -119,10 +121,15 @@ export function HistoryView() {
                       <span className="block font-bold">
                         {winner?.name ?? '—'} {t('history.won')}
                       </span>
-                      <span className="text-xs" style={{ color: 'var(--muted)' }}>
+                      <span
+                        className="text-xs"
+                        style={{ color: 'var(--muted)' }}
+                      >
                         {formatDate(m.finishedAt, locale)} ·{' '}
-                        {m.config.players.length} {t('nav.players').toLowerCase()} ·{' '}
-                        {m.throws.length} {t('history.throwsLabel').toLowerCase()}
+                        {m.config.players.length}{' '}
+                        {t('nav.players').toLowerCase()} · {m.throws.length}{' '}
+                        {t('history.throwsLabel').toLowerCase()} ·{' '}
+                        {formatDuration(m.finishedAt - m.startedAt)}
                       </span>
                     </span>
                   </button>
@@ -134,7 +141,11 @@ export function HistoryView() {
       )}
 
       {selected && (
-        <Modal open onClose={() => setSelected(null)} title={t('history.title')}>
+        <Modal
+          open
+          onClose={() => setSelected(null)}
+          title={t('history.title')}
+        >
           <div className="flex flex-col gap-3">
             <p className="m-0 text-sm" style={{ color: 'var(--muted)' }}>
               {formatDate(selected.finishedAt, locale)} ·{' '}
@@ -143,7 +154,9 @@ export function HistoryView() {
             </p>
             <ol className="flex flex-col gap-1.5">
               {selected.ranking.map(r => {
-                const p = selected.config.players.find(x => x.id === r.playerId);
+                const p = selected.config.players.find(
+                  x => x.id === r.playerId
+                );
                 return (
                   <li
                     key={r.playerId}
@@ -153,7 +166,10 @@ export function HistoryView() {
                         r.rank === 1 ? 'var(--accent)' : 'var(--border)',
                     }}
                   >
-                    <span className="w-5 text-right text-xs font-bold" style={{ color: 'var(--muted)' }}>
+                    <span
+                      className="w-5 text-right text-xs font-bold"
+                      style={{ color: 'var(--muted)' }}
+                    >
                       {r.rank}
                     </span>
                     <span
@@ -164,7 +180,9 @@ export function HistoryView() {
                       {r.eliminated && '✗ '}
                       {p?.name ?? '—'}
                     </span>
-                    <span className="font-black tabular-nums">{r.finalScore}</span>
+                    <span className="font-black tabular-nums">
+                      {r.finalScore}
+                    </span>
                   </li>
                 );
               })}

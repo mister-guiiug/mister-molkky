@@ -25,6 +25,7 @@ import { Sparkline } from '../components/Sparkline';
 import { MatchOnboardingHint } from '../components/OnboardingHint';
 import { LiveShareSheet } from '../components/LiveShareSheet';
 import { ForfeitPlayerSheet } from '../components/ForfeitPlayerSheet';
+import { Chrono } from '../components/Chrono';
 import { useLiveStore } from '../../store/useLiveStore';
 import { useFeedback } from '../hooks/useFeedback';
 import { useWakeLock } from '../hooks/useWakeLock';
@@ -306,6 +307,11 @@ export function MatchView() {
             ● {t('live.activeBadge')}
           </span>
         )}
+        <Chrono
+          startedAt={current.startedAt}
+          className="rounded-full border px-2 py-0.5 text-xs font-bold tabular-nums"
+          aria-label={t('match.chrono')}
+        />
         <FullscreenToggle />
         <button
           type="button"
