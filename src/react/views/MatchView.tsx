@@ -25,6 +25,7 @@ import { Sparkline } from '../components/Sparkline';
 import { MatchOnboardingHint } from '../components/OnboardingHint';
 import { LiveShareSheet } from '../components/LiveShareSheet';
 import { ForfeitPlayerSheet } from '../components/ForfeitPlayerSheet';
+import { PredictionsSheet } from '../components/PredictionsSheet';
 import { Chrono } from '../components/Chrono';
 import { useLiveStore } from '../../store/useLiveStore';
 import { useFeedback } from '../hooks/useFeedback';
@@ -114,6 +115,7 @@ export function MatchView() {
   const [throwsLogOpen, setThrowsLogOpen] = useState(false);
   const [liveShareOpen, setLiveShareOpen] = useState(false);
   const [forfeitSheetOpen, setForfeitSheetOpen] = useState(false);
+  const [predictionsOpen, setPredictionsOpen] = useState(false);
   const liveRole = useLiveStore(s => s.role);
   const liveCode = useLiveStore(s => s.code);
   const pushLiveThrows = useLiveStore(s => s.pushThrows);
@@ -268,6 +270,7 @@ export function MatchView() {
               );
               return { name: p?.name ?? '?', color: p?.color ?? '#999', ...r };
             })}
+            correctPredictors={resolveCorrectPredictors(lastFinished)}
           />
         )}
       </PageContainer>
@@ -663,6 +666,19 @@ export function MatchView() {
               type="button"
               onClick={() => {
                 setMenuOpen(false);
+                setPredictionsOpen(true);
+              }}
+              className="touch-target flex w-full items-center gap-2 rounded-lg border px-3 font-semibold"
+              style={{ borderColor: 'var(--border)' }}
+            >
+              <TrophyIcon size={18} /> {t('match.predictions')}
+            </button>
+          </li>
+          <li>
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
                 setForfeitSheetOpen(true);
               }}
               className="touch-target flex w-full items-center gap-2 rounded-lg border px-3 font-semibold"
@@ -718,6 +734,11 @@ export function MatchView() {
         onClose={() => setForfeitSheetOpen(false)}
       />
 
+      <PredictionsSheet
+        open={predictionsOpen}
+        onClose={() => setPredictionsOpen(false)}
+      />
+
       {showVictory && lastFinished && (
         <>
           <VictoryConfetti />
@@ -746,11 +767,31 @@ export function MatchView() {
               );
               return { name: p?.name ?? '?', color: p?.color ?? '#999', ...r };
             })}
+            correctPredictors={resolveCorrectPredictors(lastFinished)}
           />
         </>
       )}
     </PageContainer>
   );
+}
+
+/**
+ * Resolve who got their pre-match prediction right. Returns the display
+ * names of predictors who picked the actual winner. Used by the
+ * VictoryScreen to give bragging rights to the lucky punters.
+ */
+function resolveCorrectPredictors(match: {
+  predictions: Record<string, string>;
+  winnerId: string;
+  config: { players: { id: string; name: string }[] };
+}): string[] {
+  const out: string[] = [];
+  for (const [predictorId, pickedId] of Object.entries(match.predictions)) {
+    if (pickedId !== match.winnerId) continue;
+    const predictor = match.config.players.find(p => p.id === predictorId);
+    if (predictor) out.push(predictor.name);
+  }
+  return out;
 }
 
 interface VictoryScreenProps {
@@ -762,6 +803,7 @@ interface VictoryScreenProps {
     eliminated: boolean;
     rank: number;
   }[];
+  correctPredictors?: string[];
   onClose: () => void;
   onPlayAgain: () => void;
   onRematch: () => void;
@@ -771,6 +813,7 @@ interface VictoryScreenProps {
 function VictoryScreen({
   winnerName,
   ranking,
+  correctPredictors = [],
   onClose,
   onPlayAgain,
   onRematch,
@@ -785,6 +828,16 @@ function VictoryScreen({
         <p className="m-0 text-lg">
           {t('match.victoryMessage', { name: winnerName })}
         </p>
+        {correctPredictors.length > 0 && (
+          <p
+            className="m-0 rounded-full border px-3 py-1 text-xs font-bold"
+            style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
+          >
+            {t('match.predictionsCorrect', {
+              names: correctPredictors.join(', '),
+            })}
+          </p>
+        )}
       </div>
       <ol className="my-5 flex flex-col gap-1.5">
         {ranking.map(r => (
