@@ -33,6 +33,16 @@ npm run dev
 | [`miss-badminton`](../miss-badminton) | **Squelette de référence** pour PWA |
 | [`mister-molkky`](.)                  | Ce projet                           |
 
+## Mode direct (optionnel, via Supabase)
+
+Une partie peut être diffusée en temps réel à d'autres devices : le téléphone
+hôte saisit les scores, les spectateurs suivent le scoreboard live via un
+code à 6 caractères ou un QR code.
+
+Pour activer la fonctionnalité, crée un projet Supabase gratuit et applique
+le SQL fourni dans [`docs/live-supabase.md`](./docs/live-supabase.md).
+L'app reste 100% offline sans configuration.
+
 ## Inspiration produit
 
 - [Mölkky® Game Tracker (Tactic Games)](https://play.google.com/store/apps/details?id=com.tacticgames.molkkyscoretracker)

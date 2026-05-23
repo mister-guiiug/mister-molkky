@@ -23,6 +23,8 @@ import { Modal } from '../components/Modal';
 import { ThrowsLog } from '../components/ThrowsLog';
 import { Sparkline } from '../components/Sparkline';
 import { MatchOnboardingHint } from '../components/OnboardingHint';
+import { LiveShareSheet } from '../components/LiveShareSheet';
+import { useLiveStore } from '../../store/useLiveStore';
 import { useFeedback } from '../hooks/useFeedback';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
@@ -66,6 +68,12 @@ export function MatchView() {
   const [showVictory, setShowVictory] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [throwsLogOpen, setThrowsLogOpen] = useState(false);
+  const [liveShareOpen, setLiveShareOpen] = useState(false);
+  const liveRole = useLiveStore(s => s.role);
+  const liveCode = useLiveStore(s => s.code);
+  const pushLiveThrows = useLiveStore(s => s.pushThrows);
+  const pushLiveFinish = useLiveStore(s => s.pushFinish);
+  const lastFinishedRef = useRef<string | null>(null);
   const lastVictoryRef = useRef<string | null>(null);
 
   useWakeLock(Boolean(current));
@@ -95,6 +103,23 @@ export function MatchView() {
       setShowVictory(true);
     }
   }, [current, lastFinished]);
+
+  // Live mirror: when this device is the host, push the current throws[]
+  // to Supabase on every change. Skip the very first effect run after
+  // mount so we don't no-op-update right after createLiveMatch (which
+  // already wrote the initial state). Finish push happens once when
+  // history records the just-finished match.
+  useEffect(() => {
+    if (liveRole !== 'host' || !current) return;
+    void pushLiveThrows(current.throws);
+  }, [liveRole, current?.throws, pushLiveThrows, current]);
+
+  useEffect(() => {
+    if (liveRole !== 'host' || !lastFinished) return;
+    if (lastFinished.id === lastFinishedRef.current) return;
+    lastFinishedRef.current = lastFinished.id;
+    void pushLiveFinish(String(lastFinished.winnerId));
+  }, [liveRole, lastFinished, pushLiveFinish]);
 
   const togglePin = (pin: number) => {
     setFallen(prev => {
@@ -220,6 +245,18 @@ export function MatchView() {
             )}
           </p>
         </div>
+        {liveRole === 'host' && (
+          <span
+            className="mm-glow rounded-full border px-2 py-0.5 text-[0.65rem] font-black uppercase tracking-wider"
+            style={{
+              borderColor: 'var(--danger)',
+              color: 'var(--danger)',
+            }}
+            aria-label={t('live.activeBadge')}
+          >
+            ● {t('live.activeBadge')}
+          </span>
+        )}
         <FullscreenToggle />
         <button
           type="button"
@@ -423,6 +460,24 @@ export function MatchView() {
               type="button"
               onClick={() => {
                 setMenuOpen(false);
+                setLiveShareOpen(true);
+              }}
+              className="touch-target flex w-full items-center gap-2 rounded-lg border px-3 font-semibold"
+              style={{
+                borderColor: liveRole === 'host' ? 'var(--danger)' : 'var(--primary)',
+                color: liveRole === 'host' ? 'var(--danger)' : 'var(--primary)',
+              }}
+            >
+              {liveRole === 'host'
+                ? `🔴 ${t('live.activeBadge')} (${liveCode})`
+                : `📡 ${t('live.shareTitle')}`}
+            </button>
+          </li>
+          <li>
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
                 setConfirmAbandon(true);
               }}
               className="touch-target flex w-full items-center gap-2 rounded-lg border px-3 font-semibold"
@@ -457,6 +512,11 @@ export function MatchView() {
       />
 
       <MatchOnboardingHint />
+
+      <LiveShareSheet
+        open={liveShareOpen}
+        onClose={() => setLiveShareOpen(false)}
+      />
 
       {showVictory && lastFinished && (
         <>

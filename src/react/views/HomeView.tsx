@@ -15,6 +15,7 @@ import { WelcomeTutorial } from '../components/WelcomeTutorial';
 import { PwaInstallPrompt } from '../components/PwaInstallPrompt';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { PlayIcon, TrashIcon } from '../components/icons';
+import { isSupabaseConfigured } from '../../supabase';
 
 export function HomeView() {
   const { t } = useI18n();
@@ -90,6 +91,23 @@ export function HomeView() {
           <span className="text-lg">{t('home.newMatch')}</span>
           <PlayIcon size={28} />
         </button>
+
+        {isSupabaseConfigured() && (
+          <button
+            type="button"
+            onClick={() => navigate('/rejoindre')}
+            className="touch-target flex items-center justify-between rounded-2xl border-2 px-5 py-3 text-left font-bold"
+            style={{
+              borderColor: 'var(--primary)',
+              color: 'var(--primary)',
+            }}
+          >
+            <span>📡 {t('live.join')}</span>
+            <span className="text-xs font-semibold uppercase tracking-wider">
+              {t('live.activeBadge')}
+            </span>
+          </button>
+        )}
 
         {templates.length > 0 && (
           <section

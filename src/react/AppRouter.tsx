@@ -26,6 +26,12 @@ const PlayersView = lazy(() =>
 const SettingsView = lazy(() =>
   import('./views/SettingsView').then(m => ({ default: m.SettingsView }))
 );
+const JoinLiveView = lazy(() =>
+  import('./views/JoinLiveView').then(m => ({ default: m.JoinLiveView }))
+);
+const SpectatorView = lazy(() =>
+  import('./views/SpectatorView').then(m => ({ default: m.SpectatorView }))
+);
 
 function DocumentTitle() {
   const location = useLocation();
@@ -71,6 +77,8 @@ function AppRoutes() {
           <Route path={ROUTES.stats} element={<StatsView />} />
           <Route path={ROUTES.players} element={<PlayersView />} />
           <Route path={ROUTES.settings} element={<SettingsView />} />
+          <Route path={ROUTES.joinLive} element={<JoinLiveView />} />
+          <Route path={`${ROUTES.spectator}/:code`} element={<SpectatorView />} />
           {Object.entries(LEGACY_REDIRECTS).map(([legacy, target]) => (
             <Route
               key={legacy}
