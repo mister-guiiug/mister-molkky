@@ -9,8 +9,12 @@ import {
   type MatchTemplate,
   type Player,
   type PlayerId,
+  type RuleVariant,
   type TargetScore,
+  type Team,
+  type TeamMode,
 } from '../../schemas';
+import { newId } from '../../schemas';
 import { ROUTES } from '../../routes';
 import { PlusIcon, CheckIcon, ArrowLeftIcon, ArrowRightIcon } from './icons';
 
@@ -41,6 +45,10 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
     initialTemplate?.overshootPenalty ?? 25
   );
   const [maxMisses, setMaxMisses] = useState(initialTemplate?.maxMisses ?? 3);
+  const [teamMode, setTeamMode] = useState<TeamMode>(
+    initialTemplate?.teamMode ?? 'solo'
+  );
+  const [variant, setVariant] = useState<RuleVariant>('classic');
   const [shuffle, setShuffle] = useState(false);
   const [templateName, setTemplateName] = useState('');
   const [templateSaved, setTemplateSaved] = useState(false);
@@ -81,14 +89,37 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
 
   const canStart = selectedIds.length >= 2;
 
+  const buildTeams = (players: Player[]): Team[] => {
+    if (teamMode === 'solo') return [];
+    const groupSize = teamMode === 'duo' ? 2 : 3;
+    const teams: Team[] = [];
+    for (let i = 0; i < players.length; i += groupSize) {
+      const members = players.slice(i, i + groupSize);
+      if (members.length === 0) continue;
+      teams.push({
+        id: newId(),
+        name: members.map(m => m.name.split(/\s+/)[0]).join(' & '),
+        color: members[0]!.color,
+        playerIds: members.map(m => m.id as PlayerId),
+      });
+    }
+    return teams;
+  };
+
   const handleStart = () => {
     if (!canStart) return;
+    const teams = buildTeams(orderedPlayers);
+    if (teamMode !== 'solo' && teams.length < 2) {
+      return;
+    }
     const config = MatchConfigSchema.parse({
       players: orderedPlayers,
       targetScore,
       overshootPenalty,
       maxMisses,
-      teamMode: 'solo',
+      teamMode,
+      teams,
+      variant,
       shufflePlayers: shuffle,
     });
     startMatch(config);
@@ -319,6 +350,81 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
               }}
             />
           </label>
+
+          <fieldset>
+            <legend className="mb-2 text-sm font-bold uppercase" style={{ color: 'var(--muted)' }}>
+              {t('setup.teamMode')}
+            </legend>
+            <div className="flex gap-2">
+              {(['solo', 'duo', 'trio'] as TeamMode[]).map(m => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setTeamMode(m)}
+                  className="touch-target flex-1 rounded-lg border px-3 font-bold"
+                  style={{
+                    background:
+                      teamMode === m
+                        ? 'color-mix(in srgb, var(--primary) 16%, var(--surface))'
+                        : 'var(--surface)',
+                    borderColor:
+                      teamMode === m ? 'var(--primary)' : 'var(--border)',
+                    color: teamMode === m ? 'var(--primary)' : 'var(--text)',
+                  }}
+                >
+                  {t(
+                    m === 'solo'
+                      ? 'setup.teamSolo'
+                      : m === 'duo'
+                        ? 'setup.teamDuo'
+                        : 'setup.teamTrio'
+                  )}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend className="mb-2 text-sm font-bold uppercase" style={{ color: 'var(--muted)' }}>
+              {t('setup.variant')}
+            </legend>
+            <div className="flex gap-2">
+              {(['classic', 'inverse', 'free'] as RuleVariant[]).map(v => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setVariant(v)}
+                  className="touch-target flex-1 rounded-lg border px-3 text-sm font-bold"
+                  style={{
+                    background:
+                      variant === v
+                        ? 'color-mix(in srgb, var(--primary) 16%, var(--surface))'
+                        : 'var(--surface)',
+                    borderColor:
+                      variant === v ? 'var(--primary)' : 'var(--border)',
+                    color: variant === v ? 'var(--primary)' : 'var(--text)',
+                  }}
+                >
+                  {t(
+                    v === 'classic'
+                      ? 'setup.variantClassic'
+                      : v === 'inverse'
+                        ? 'setup.variantInverse'
+                        : 'setup.variantFree'
+                  )}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1.5 text-xs" style={{ color: 'var(--muted)' }}>
+              {t(
+                variant === 'classic'
+                  ? 'setup.variantClassicHint'
+                  : variant === 'inverse'
+                    ? 'setup.variantInverseHint'
+                    : 'setup.variantFreeHint'
+              )}
+            </p>
+          </fieldset>
 
           <label className="flex items-center gap-3 rounded-lg border p-3" style={{ borderColor: 'var(--border)' }}>
             <input
