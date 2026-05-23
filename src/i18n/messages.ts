@@ -136,6 +136,13 @@ export interface Messages {
     predictionsCorrect: string;
     shareCard: string;
     shareText: string;
+    photo: string;
+    photoTake: string;
+    photoOpen: string;
+    photoReplace: string;
+    photoClear: string;
+    photoAlt: string;
+    photoTitle: string;
     forfeitPlayer: string;
     forfeitPlayerTitle: string;
     forfeitPlayerHint: string;
@@ -498,6 +505,13 @@ const fr: Messages = {
     predictionsCorrect: 'Pronostic juste : {names}',
     shareCard: 'Partager le résultat',
     shareText: '{name} gagne notre partie de Mölkky !',
+    photo: 'Photo',
+    photoTake: 'Prendre une photo de la situation',
+    photoOpen: 'Agrandir la photo',
+    photoReplace: 'Reprendre une photo',
+    photoClear: 'Supprimer la photo',
+    photoAlt: 'Photo de la situation des quilles',
+    photoTitle: 'Photo de la situation',
     forfeitPlayer: 'Faire abandonner un joueur',
     forfeitPlayerTitle: 'Qui abandonne ?',
     forfeitPlayerHint:
@@ -869,6 +883,13 @@ const en: Messages = {
     predictionsCorrect: 'Correct prediction: {names}',
     shareCard: 'Share result',
     shareText: '{name} won our Mölkky match!',
+    photo: 'Photo',
+    photoTake: 'Take a photo of the situation',
+    photoOpen: 'Open photo',
+    photoReplace: 'Replace photo',
+    photoClear: 'Clear photo',
+    photoAlt: 'Photo of the current pin layout',
+    photoTitle: 'Situation photo',
     forfeitPlayer: 'Forfeit a player',
     forfeitPlayerTitle: 'Who forfeits?',
     forfeitPlayerHint: 'The player drops out; others keep playing.',
