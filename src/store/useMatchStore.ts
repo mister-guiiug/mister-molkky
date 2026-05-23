@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { safeLocalStorage } from '../storage';
@@ -260,10 +261,27 @@ export const useMatchStore = create<MatchStoreState>()(
   )
 );
 
-export function selectCurrentPlayer(
-  state: MatchStoreState
-): { player: Player; score: number; missStreak: number } | null {
-  const match = state.current;
+export interface ScoreSnapshot {
+  score: number;
+  missStreak: number;
+  eliminated: boolean;
+  hasWon: boolean;
+}
+
+export interface CurrentPlayerInfo {
+  player: Player;
+  score: number;
+  missStreak: number;
+}
+
+/**
+ * Compute the cached match outcome from a CurrentMatchState. Pure function;
+ * callers wrap it in useMemo keyed on the state ref so React's
+ * useSyncExternalStore never sees a "new" snapshot for unchanged state — a
+ * fresh object on every getSnapshot call would trip React error #185
+ * (Maximum update depth exceeded).
+ */
+function computeOutcome(match: CurrentMatchState | null) {
   if (!match) return null;
   const settings = settingsFromConfig(match.config);
   const playerIds = match.config.players.map(p => p.id);
@@ -272,44 +290,43 @@ export function selectCurrentPlayer(
     match.throws.map(t => ({ playerId: t.playerId, fallenPins: t.fallenPins })),
     settings
   );
-  const id = ruleCurrentPlayer(playerIds, outcome);
-  if (!id) return null;
-  const player = match.config.players.find(p => p.id === id);
-  if (!player) return null;
-  const progress = outcome.progress.get(id);
-  return {
-    player,
-    score: progress?.score ?? 0,
-    missStreak: progress?.missStreak ?? 0,
-  };
+  return { playerIds, outcome };
 }
 
-export function selectScores(state: MatchStoreState): Map<
-  string,
-  { score: number; missStreak: number; eliminated: boolean; hasWon: boolean }
-> {
-  const match = state.current;
-  const map = new Map<
-    string,
-    { score: number; missStreak: number; eliminated: boolean; hasWon: boolean }
-  >();
-  if (!match) return map;
-  const settings = settingsFromConfig(match.config);
-  const playerIds = match.config.players.map(p => p.id);
-  const outcome = replayThrows(
-    playerIds,
-    match.throws.map(t => ({ playerId: t.playerId, fallenPins: t.fallenPins })),
-    settings
-  );
-  for (const [id, p] of outcome.progress) {
-    map.set(id, {
-      score: p.score,
-      missStreak: p.missStreak,
-      eliminated: p.eliminated,
-      hasWon: p.hasWon,
-    });
-  }
-  return map;
+export function useCurrentPlayerInfo(): CurrentPlayerInfo | null {
+  const match = useMatchStore(s => s.current);
+  return useMemo(() => {
+    const result = computeOutcome(match);
+    if (!result || !match) return null;
+    const id = ruleCurrentPlayer(result.playerIds, result.outcome);
+    if (!id) return null;
+    const player = match.config.players.find(p => p.id === id);
+    if (!player) return null;
+    const progress = result.outcome.progress.get(id);
+    return {
+      player,
+      score: progress?.score ?? 0,
+      missStreak: progress?.missStreak ?? 0,
+    };
+  }, [match]);
+}
+
+export function useScores(): Map<string, ScoreSnapshot> {
+  const match = useMatchStore(s => s.current);
+  return useMemo(() => {
+    const map = new Map<string, ScoreSnapshot>();
+    const result = computeOutcome(match);
+    if (!result) return map;
+    for (const [id, p] of result.outcome.progress) {
+      map.set(id, {
+        score: p.score,
+        missStreak: p.missStreak,
+        eliminated: p.eliminated,
+        hasWon: p.hasWon,
+      });
+    }
+    return map;
+  }, [match]);
 }
 
 export { DEFAULT_RULE_SETTINGS };
