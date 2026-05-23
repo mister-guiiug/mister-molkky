@@ -56,31 +56,47 @@ describe('evaluateThrow', () => {
   });
 
   it('inverse variant: throw subtracts from score', () => {
-    const e = evaluateThrow(50, [7], { ...DEFAULT_RULE_SETTINGS, variant: 'inverse' });
+    const e = evaluateThrow(50, [7], {
+      ...DEFAULT_RULE_SETTINGS,
+      variant: 'inverse',
+    });
     expect(e.nextScore).toBe(43);
     expect(e.wonThisThrow).toBe(false);
   });
 
   it('inverse variant: exact 0 wins', () => {
-    const e = evaluateThrow(7, [7], { ...DEFAULT_RULE_SETTINGS, variant: 'inverse' });
+    const e = evaluateThrow(7, [7], {
+      ...DEFAULT_RULE_SETTINGS,
+      variant: 'inverse',
+    });
     expect(e.nextScore).toBe(0);
     expect(e.wonThisThrow).toBe(true);
   });
 
   it('inverse variant: overshoot adds 5 capped at target', () => {
-    const e = evaluateThrow(3, [12], { ...DEFAULT_RULE_SETTINGS, variant: 'inverse' });
+    const e = evaluateThrow(3, [12], {
+      ...DEFAULT_RULE_SETTINGS,
+      variant: 'inverse',
+    });
     expect(e.overshoot).toBe(true);
     expect(e.nextScore).toBe(8);
   });
 
   it('free variant: overshoot does not reset to 25', () => {
-    const e = evaluateThrow(45, [12], { ...DEFAULT_RULE_SETTINGS, variant: 'free' });
+    const e = evaluateThrow(45, [12], {
+      ...DEFAULT_RULE_SETTINGS,
+      variant: 'free',
+    });
     expect(e.overshoot).toBe(true);
     expect(e.nextScore).toBe(45);
   });
 
   it('respects custom target & penalty', () => {
-    const e = evaluateThrow(20, [7], { ...DEFAULT_RULE_SETTINGS, targetScore: 25, overshootPenalty: 10 });
+    const e = evaluateThrow(20, [7], {
+      ...DEFAULT_RULE_SETTINGS,
+      targetScore: 25,
+      overshootPenalty: 10,
+    });
     expect(e.overshoot).toBe(true);
     expect(e.nextScore).toBe(10);
   });
@@ -121,12 +137,15 @@ describe('replayThrows — basic flow', () => {
   });
 
   it('alternates turns', () => {
-    const out = replayThrows(['a', 'b', 'c'], [
-      { playerId: 'a', fallenPins: [3] },
-      { playerId: 'b', fallenPins: [5] },
-      { playerId: 'c', fallenPins: [7] },
-      { playerId: 'a', fallenPins: [1] },
-    ]);
+    const out = replayThrows(
+      ['a', 'b', 'c'],
+      [
+        { playerId: 'a', fallenPins: [3] },
+        { playerId: 'b', fallenPins: [5] },
+        { playerId: 'c', fallenPins: [7] },
+        { playerId: 'a', fallenPins: [1] },
+      ]
+    );
     expect(out.progress.get('a')?.score).toBe(4);
     expect(out.progress.get('b')?.score).toBe(5);
     expect(out.progress.get('c')?.score).toBe(7);
@@ -135,26 +154,27 @@ describe('replayThrows — basic flow', () => {
 
   it('throws when a player throws out of turn', () => {
     expect(() =>
-      replayThrows(['a', 'b'], [
-        { playerId: 'b', fallenPins: [3] },
-      ])
+      replayThrows(['a', 'b'], [{ playerId: 'b', fallenPins: [3] }])
     ).toThrow();
   });
 });
 
 describe('replayThrows — victory', () => {
   it('declares the player who hits exactly the target the winner', () => {
-    const out = replayThrows(['a', 'b'], [
-      { playerId: 'a', fallenPins: [12] },
-      { playerId: 'b', fallenPins: [12] },
-      { playerId: 'a', fallenPins: [12] },
-      { playerId: 'b', fallenPins: [12] },
-      { playerId: 'a', fallenPins: [12] },
-      { playerId: 'b', fallenPins: [12] },
-      { playerId: 'a', fallenPins: [12] },
-      { playerId: 'b', fallenPins: [12] },
-      { playerId: 'a', fallenPins: [2] },
-    ]);
+    const out = replayThrows(
+      ['a', 'b'],
+      [
+        { playerId: 'a', fallenPins: [12] },
+        { playerId: 'b', fallenPins: [12] },
+        { playerId: 'a', fallenPins: [12] },
+        { playerId: 'b', fallenPins: [12] },
+        { playerId: 'a', fallenPins: [12] },
+        { playerId: 'b', fallenPins: [12] },
+        { playerId: 'a', fallenPins: [12] },
+        { playerId: 'b', fallenPins: [12] },
+        { playerId: 'a', fallenPins: [2] },
+      ]
+    );
     expect(out.winnerId).toBe('a');
     expect(out.isOver).toBe(true);
     expect(out.progress.get('a')?.score).toBe(50);
@@ -162,34 +182,40 @@ describe('replayThrows — victory', () => {
   });
 
   it('throws after victory are ignored', () => {
-    const out = replayThrows(['a', 'b'], [
-      { playerId: 'a', fallenPins: [12] },
-      { playerId: 'b', fallenPins: [12] },
-      { playerId: 'a', fallenPins: [12] },
-      { playerId: 'b', fallenPins: [12] },
-      { playerId: 'a', fallenPins: [12] },
-      { playerId: 'b', fallenPins: [12] },
-      { playerId: 'a', fallenPins: [12] },
-      { playerId: 'b', fallenPins: [12] },
-      { playerId: 'a', fallenPins: [2] },
-      { playerId: 'b', fallenPins: [12] },
-    ]);
+    const out = replayThrows(
+      ['a', 'b'],
+      [
+        { playerId: 'a', fallenPins: [12] },
+        { playerId: 'b', fallenPins: [12] },
+        { playerId: 'a', fallenPins: [12] },
+        { playerId: 'b', fallenPins: [12] },
+        { playerId: 'a', fallenPins: [12] },
+        { playerId: 'b', fallenPins: [12] },
+        { playerId: 'a', fallenPins: [12] },
+        { playerId: 'b', fallenPins: [12] },
+        { playerId: 'a', fallenPins: [2] },
+        { playerId: 'b', fallenPins: [12] },
+      ]
+    );
     expect(out.winnerId).toBe('a');
     expect(out.progress.get('b')?.score).toBe(48);
   });
 
   it('overshoot brings score back to 25', () => {
-    const out = replayThrows(['a', 'b'], [
-      { playerId: 'a', fallenPins: [12] },
-      { playerId: 'b', fallenPins: [1] },
-      { playerId: 'a', fallenPins: [12] },
-      { playerId: 'b', fallenPins: [1] },
-      { playerId: 'a', fallenPins: [12] },
-      { playerId: 'b', fallenPins: [1] },
-      { playerId: 'a', fallenPins: [12] },
-      { playerId: 'b', fallenPins: [1] },
-      { playerId: 'a', fallenPins: [12] },
-    ]);
+    const out = replayThrows(
+      ['a', 'b'],
+      [
+        { playerId: 'a', fallenPins: [12] },
+        { playerId: 'b', fallenPins: [1] },
+        { playerId: 'a', fallenPins: [12] },
+        { playerId: 'b', fallenPins: [1] },
+        { playerId: 'a', fallenPins: [12] },
+        { playerId: 'b', fallenPins: [1] },
+        { playerId: 'a', fallenPins: [12] },
+        { playerId: 'b', fallenPins: [1] },
+        { playerId: 'a', fallenPins: [12] },
+      ]
+    );
     expect(out.progress.get('a')?.score).toBe(25);
     expect(out.winnerId).toBeNull();
   });
@@ -197,44 +223,53 @@ describe('replayThrows — victory', () => {
 
 describe('replayThrows — elimination', () => {
   it('eliminates a player after 3 consecutive misses', () => {
-    const out = replayThrows(['a', 'b'], [
-      { playerId: 'a', fallenPins: [] },
-      { playerId: 'b', fallenPins: [1] },
-      { playerId: 'a', fallenPins: [] },
-      { playerId: 'b', fallenPins: [1] },
-      { playerId: 'a', fallenPins: [] },
-    ]);
+    const out = replayThrows(
+      ['a', 'b'],
+      [
+        { playerId: 'a', fallenPins: [] },
+        { playerId: 'b', fallenPins: [1] },
+        { playerId: 'a', fallenPins: [] },
+        { playerId: 'b', fallenPins: [1] },
+        { playerId: 'a', fallenPins: [] },
+      ]
+    );
     expect(out.progress.get('a')?.eliminated).toBe(true);
     expect(out.progress.get('a')?.missStreak).toBe(3);
     expect(out.winnerId).toBe('b');
   });
 
   it('a scoring throw resets the miss streak', () => {
-    const out = replayThrows(['a', 'b'], [
-      { playerId: 'a', fallenPins: [] },
-      { playerId: 'b', fallenPins: [1] },
-      { playerId: 'a', fallenPins: [] },
-      { playerId: 'b', fallenPins: [1] },
-      { playerId: 'a', fallenPins: [3] },
-      { playerId: 'b', fallenPins: [1] },
-      { playerId: 'a', fallenPins: [] },
-    ]);
+    const out = replayThrows(
+      ['a', 'b'],
+      [
+        { playerId: 'a', fallenPins: [] },
+        { playerId: 'b', fallenPins: [1] },
+        { playerId: 'a', fallenPins: [] },
+        { playerId: 'b', fallenPins: [1] },
+        { playerId: 'a', fallenPins: [3] },
+        { playerId: 'b', fallenPins: [1] },
+        { playerId: 'a', fallenPins: [] },
+      ]
+    );
     expect(out.progress.get('a')?.eliminated).toBe(false);
     expect(out.progress.get('a')?.missStreak).toBe(1);
   });
 
   it('declares the last non-eliminated player the winner', () => {
-    const out = replayThrows(['a', 'b', 'c'], [
-      { playerId: 'a', fallenPins: [1] },
-      { playerId: 'b', fallenPins: [] },
-      { playerId: 'c', fallenPins: [] },
-      { playerId: 'a', fallenPins: [1] },
-      { playerId: 'b', fallenPins: [] },
-      { playerId: 'c', fallenPins: [] },
-      { playerId: 'a', fallenPins: [1] },
-      { playerId: 'b', fallenPins: [] },
-      { playerId: 'c', fallenPins: [] },
-    ]);
+    const out = replayThrows(
+      ['a', 'b', 'c'],
+      [
+        { playerId: 'a', fallenPins: [1] },
+        { playerId: 'b', fallenPins: [] },
+        { playerId: 'c', fallenPins: [] },
+        { playerId: 'a', fallenPins: [1] },
+        { playerId: 'b', fallenPins: [] },
+        { playerId: 'c', fallenPins: [] },
+        { playerId: 'a', fallenPins: [1] },
+        { playerId: 'b', fallenPins: [] },
+        { playerId: 'c', fallenPins: [] },
+      ]
+    );
     expect(out.progress.get('b')?.eliminated).toBe(true);
     expect(out.progress.get('c')?.eliminated).toBe(true);
     expect(out.winnerId).toBe('a');
@@ -243,40 +278,49 @@ describe('replayThrows — elimination', () => {
 
 describe('replayThrows — turn order with eliminations', () => {
   it('skips eliminated players in the turn order', () => {
-    const out = replayThrows(['a', 'b', 'c'], [
-      { playerId: 'a', fallenPins: [1] },
-      { playerId: 'b', fallenPins: [] },
-      { playerId: 'c', fallenPins: [5] },
-      { playerId: 'a', fallenPins: [1] },
-      { playerId: 'b', fallenPins: [] },
-      { playerId: 'c', fallenPins: [5] },
-      { playerId: 'a', fallenPins: [1] },
-      { playerId: 'b', fallenPins: [] },
-    ]);
+    const out = replayThrows(
+      ['a', 'b', 'c'],
+      [
+        { playerId: 'a', fallenPins: [1] },
+        { playerId: 'b', fallenPins: [] },
+        { playerId: 'c', fallenPins: [5] },
+        { playerId: 'a', fallenPins: [1] },
+        { playerId: 'b', fallenPins: [] },
+        { playerId: 'c', fallenPins: [5] },
+        { playerId: 'a', fallenPins: [1] },
+        { playerId: 'b', fallenPins: [] },
+      ]
+    );
     expect(out.progress.get('b')?.eliminated).toBe(true);
     expect(currentPlayer(['a', 'b', 'c'], out)).toBe('c');
   });
 
   it('tracks longest scoring streak', () => {
-    const out = replayThrows(['a', 'b'], [
-      { playerId: 'a', fallenPins: [3] },
-      { playerId: 'b', fallenPins: [3] },
-      { playerId: 'a', fallenPins: [5] },
-      { playerId: 'b', fallenPins: [3] },
-      { playerId: 'a', fallenPins: [7] },
-      { playerId: 'b', fallenPins: [3] },
-      { playerId: 'a', fallenPins: [] },
-    ]);
+    const out = replayThrows(
+      ['a', 'b'],
+      [
+        { playerId: 'a', fallenPins: [3] },
+        { playerId: 'b', fallenPins: [3] },
+        { playerId: 'a', fallenPins: [5] },
+        { playerId: 'b', fallenPins: [3] },
+        { playerId: 'a', fallenPins: [7] },
+        { playerId: 'b', fallenPins: [3] },
+        { playerId: 'a', fallenPins: [] },
+      ]
+    );
     expect(out.progress.get('a')?.longestStreak).toBe(3);
     expect(out.progress.get('a')?.consecutiveScoringHits).toBe(0);
   });
 
   it('counts pins hit for accuracy stats', () => {
-    const out = replayThrows(['a', 'b'], [
-      { playerId: 'a', fallenPins: [1, 2, 3] },
-      { playerId: 'b', fallenPins: [4] },
-      { playerId: 'a', fallenPins: [] },
-    ]);
+    const out = replayThrows(
+      ['a', 'b'],
+      [
+        { playerId: 'a', fallenPins: [1, 2, 3] },
+        { playerId: 'b', fallenPins: [4] },
+        { playerId: 'a', fallenPins: [] },
+      ]
+    );
     expect(out.progress.get('a')?.pinsHit).toBe(3);
     expect(out.progress.get('a')?.totalThrows).toBe(2);
     expect(out.progress.get('b')?.pinsHit).toBe(1);
@@ -304,5 +348,113 @@ describe('replayThrows — team mode (actorMap)', () => {
     );
     expect(out.progress.get('teamA')?.score).toBe(10);
     expect(out.progress.get('teamB')?.score).toBe(7);
+  });
+});
+
+describe('replayThrows — missSanction', () => {
+  // 3 misses by player A. With 'reset', A's score should drop back to
+  // the start and the miss streak should clear; player A keeps playing.
+  it("'reset' wipes the score and clears the streak instead of eliminating", () => {
+    const settings = {
+      ...DEFAULT_RULE_SETTINGS,
+      missSanction: 'reset' as const,
+    };
+    const out = replayThrows(
+      ['a', 'b'],
+      [
+        // A scores 8, then misses 3 times in a row, hitting the cap.
+        { playerId: 'a', fallenPins: [8] },
+        { playerId: 'b', fallenPins: [3] },
+        { playerId: 'a', fallenPins: [] },
+        { playerId: 'b', fallenPins: [3] },
+        { playerId: 'a', fallenPins: [] },
+        { playerId: 'b', fallenPins: [3] },
+        { playerId: 'a', fallenPins: [] },
+      ],
+      settings
+    );
+    const a = out.progress.get('a');
+    expect(a?.eliminated).toBe(false);
+    expect(a?.score).toBe(0);
+    expect(a?.missStreak).toBe(0);
+  });
+
+  // 'none' keeps the streak counter ticking but never penalises — useful
+  // for casual sessions.
+  it("'none' never eliminates and never wipes the score", () => {
+    const settings = {
+      ...DEFAULT_RULE_SETTINGS,
+      missSanction: 'none' as const,
+    };
+    const out = replayThrows(
+      ['a', 'b'],
+      [
+        { playerId: 'a', fallenPins: [7] },
+        { playerId: 'b', fallenPins: [3] },
+        { playerId: 'a', fallenPins: [] },
+        { playerId: 'b', fallenPins: [3] },
+        { playerId: 'a', fallenPins: [] },
+        { playerId: 'b', fallenPins: [3] },
+        { playerId: 'a', fallenPins: [] },
+      ],
+      settings
+    );
+    const a = out.progress.get('a');
+    expect(a?.eliminated).toBe(false);
+    expect(a?.score).toBe(7);
+    expect(a?.missStreak).toBe(3);
+  });
+
+  it("'elimination' (default) keeps the historical behaviour", () => {
+    const out = replayThrows(
+      ['a', 'b'],
+      [
+        { playerId: 'a', fallenPins: [7] },
+        { playerId: 'b', fallenPins: [3] },
+        { playerId: 'a', fallenPins: [] },
+        { playerId: 'b', fallenPins: [3] },
+        { playerId: 'a', fallenPins: [] },
+        { playerId: 'b', fallenPins: [3] },
+        { playerId: 'a', fallenPins: [] },
+      ],
+      DEFAULT_RULE_SETTINGS
+    );
+    // 3 misses → A eliminated → B becomes last standing and wins.
+    expect(out.progress.get('a')?.eliminated).toBe(true);
+    expect(out.winnerId).toBe('b');
+  });
+});
+
+describe('replayThrows — forfeitedIds', () => {
+  it('skips forfeited actors and ends the match if only one remains', () => {
+    const out = replayThrows(
+      ['a', 'b', 'c'],
+      [{ playerId: 'a', fallenPins: [4] }],
+      DEFAULT_RULE_SETTINGS,
+      undefined,
+      ['b', 'c'] // both b and c forfeit
+    );
+    // a is the only one left → declared winner via last-standing rule.
+    expect(out.progress.get('b')?.eliminated).toBe(true);
+    expect(out.progress.get('c')?.eliminated).toBe(true);
+    expect(out.winnerId).toBe('a');
+  });
+
+  it('a forfeited actor is skipped in the turn rotation', () => {
+    const out = replayThrows(
+      ['a', 'b', 'c'],
+      [
+        { playerId: 'a', fallenPins: [3] },
+        // b is forfeited → rotation should jump to c
+        { playerId: 'c', fallenPins: [4] },
+        { playerId: 'a', fallenPins: [2] },
+      ],
+      DEFAULT_RULE_SETTINGS,
+      undefined,
+      ['b']
+    );
+    expect(out.progress.get('a')?.score).toBe(5);
+    expect(out.progress.get('c')?.score).toBe(4);
+    expect(out.progress.get('b')?.eliminated).toBe(true);
   });
 });

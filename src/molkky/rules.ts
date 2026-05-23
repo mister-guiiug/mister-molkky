@@ -15,11 +15,22 @@ export const DEFAULT_MAX_MISSES = 3;
 
 export type RuleVariant = 'classic' | 'inverse' | 'free';
 
+/**
+ * What happens when a player hits `maxMisses` consecutive misses.
+ * - 'elimination' is the Mölkky standard rule.
+ * - 'reset' lets the player keep playing but wipes their score (great for
+ *   casual / kids' games where elimination is harsh).
+ * - 'none' keeps counting the streak (still shown in the UI) but never
+ *   penalises — useful for free practice sessions.
+ */
+export type MissSanction = 'elimination' | 'reset' | 'none';
+
 export interface RuleSettings {
   readonly targetScore: number;
   readonly overshootPenalty: number;
   readonly maxMisses: number;
   readonly variant?: RuleVariant;
+  readonly missSanction?: MissSanction;
 }
 
 export const DEFAULT_RULE_SETTINGS: RuleSettings = {
@@ -27,6 +38,7 @@ export const DEFAULT_RULE_SETTINGS: RuleSettings = {
   overshootPenalty: DEFAULT_OVERSHOOT_PENALTY,
   maxMisses: DEFAULT_MAX_MISSES,
   variant: 'classic',
+  missSanction: 'elimination',
 };
 
 export interface ThrowRecord {
@@ -171,20 +183,32 @@ function makeInitialProgress(
  * its actor (e.g. a team id). Throws are still recorded against the
  * resolved actor, allowing team mode to share score buckets between
  * multiple players.
+ *
+ * `forfeitedIds` lists actors who tapped "Abandonner" mid-match. They're
+ * pre-flagged as eliminated so turn rotation skips them and the ranking
+ * places them with the other eliminated actors.
  */
 export function replayThrows(
   playerIds: readonly string[],
   throws: readonly ThrowRecord[],
   settings: RuleSettings = DEFAULT_RULE_SETTINGS,
-  actorMap?: ReadonlyMap<string, string>
+  actorMap?: ReadonlyMap<string, string>,
+  forfeitedIds: ReadonlyArray<string> = []
 ): MatchOutcome {
   if (playerIds.length < 2) {
     throw new Error('A Mölkky match needs at least 2 players');
   }
 
   const start = initialScore(settings);
+  const sanction = settings.missSanction ?? 'elimination';
+  const forfeitSet = new Set(forfeitedIds);
+
   const progress = new Map<string, PlayerProgress>();
-  for (const id of playerIds) progress.set(id, makeInitialProgress(id, start));
+  for (const id of playerIds) {
+    const p = makeInitialProgress(id, start);
+    if (forfeitSet.has(id)) p.eliminated = true;
+    progress.set(id, p);
+  }
 
   let winnerId: string | null = null;
   let cursor = 0;
@@ -202,8 +226,7 @@ export function replayThrows(
     }
   };
 
-  const resolveActor = (rawId: string): string =>
-    actorMap?.get(rawId) ?? rawId;
+  const resolveActor = (rawId: string): string => actorMap?.get(rawId) ?? rawId;
 
   for (const t of throws) {
     if (winnerId) break;
@@ -228,7 +251,15 @@ export function replayThrows(
       player.missStreak += 1;
       player.consecutiveScoringHits = 0;
       if (player.missStreak >= settings.maxMisses) {
-        player.eliminated = true;
+        if (sanction === 'elimination') {
+          player.eliminated = true;
+        } else if (sanction === 'reset') {
+          // Wipe the score back to the variant's starting value and
+          // clear the streak so the player gets a fresh window.
+          player.score = start;
+          player.missStreak = 0;
+        }
+        // 'none' → keep the streak ticking but apply no penalty.
       }
     } else {
       player.missStreak = 0;
@@ -286,9 +317,7 @@ export function currentPlayer(
   return alive[outcome.currentPlayerIndex % alive.length]!;
 }
 
-export function isValidThrow(
-  fallenPins: readonly number[]
-): boolean {
+export function isValidThrow(fallenPins: readonly number[]): boolean {
   if (!Array.isArray(fallenPins)) return false;
   const seen = new Set<number>();
   for (const p of fallenPins) {

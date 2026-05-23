@@ -16,6 +16,7 @@ import {
   Check,
   ClipboardList,
   Coffee,
+  DoorOpen,
   History as HistoryGlyph,
   Home,
   Maximize2,
@@ -28,6 +29,7 @@ import {
   RotateCw,
   Settings,
   Share2,
+  Shuffle,
   Trash2,
   Trophy,
   Undo2,
@@ -60,7 +62,10 @@ export const UndoIcon = wrap(Undo2 as IconComponent, 'UndoIcon');
 export const PlusIcon = wrap(Plus as IconComponent, 'PlusIcon');
 export const TrashIcon = wrap(Trash2 as IconComponent, 'TrashIcon');
 export const ArrowLeftIcon = wrap(ArrowLeft as IconComponent, 'ArrowLeftIcon');
-export const ArrowRightIcon = wrap(ArrowRight as IconComponent, 'ArrowRightIcon');
+export const ArrowRightIcon = wrap(
+  ArrowRight as IconComponent,
+  'ArrowRightIcon'
+);
 export const MaximizeIcon = wrap(Maximize2 as IconComponent, 'MaximizeIcon');
 export const MinimizeIcon = wrap(Minimize2 as IconComponent, 'MinimizeIcon');
 export const TrophyIcon = wrap(Trophy as IconComponent, 'TrophyIcon');
@@ -68,7 +73,12 @@ export const ShareIcon = wrap(Share2 as IconComponent, 'ShareIcon');
 export const MenuIcon = wrap(Menu as IconComponent, 'MenuIcon');
 export const RefreshIcon = wrap(RefreshCw as IconComponent, 'RefreshIcon');
 export const RematchIcon = wrap(RotateCw as IconComponent, 'RematchIcon');
-export const ClipboardIcon = wrap(ClipboardList as IconComponent, 'ClipboardIcon');
+export const ClipboardIcon = wrap(
+  ClipboardList as IconComponent,
+  'ClipboardIcon'
+);
 export const LiveIcon = wrap(Radio as IconComponent, 'LiveIcon');
 export const CameraIcon = wrap(Camera as IconComponent, 'CameraIcon');
 export const CoffeeIcon = wrap(Coffee as IconComponent, 'CoffeeIcon');
+export const ShuffleIcon = wrap(Shuffle as IconComponent, 'ShuffleIcon');
+export const ForfeitIcon = wrap(DoorOpen as IconComponent, 'ForfeitIcon');

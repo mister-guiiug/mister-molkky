@@ -62,6 +62,8 @@ export interface Messages {
     addPlayerHere: string;
     addPlayerName: string;
     shuffleOrder: string;
+    turnOrderTitle: string;
+    shuffleNow: string;
     targetScore: string;
     overshootPenalty: string;
     maxMisses: string;
@@ -69,6 +71,13 @@ export interface Messages {
     teamSolo: string;
     teamDuo: string;
     teamTrio: string;
+    missSanction: string;
+    missSanctionElimination: string;
+    missSanctionEliminationHint: string;
+    missSanctionReset: string;
+    missSanctionResetHint: string;
+    missSanctionNone: string;
+    missSanctionNoneHint: string;
     recap: string;
     startMatch: string;
     needMinPlayers: string;
@@ -104,6 +113,13 @@ export interface Messages {
     undo: string;
     abandon: string;
     abandonConfirm: string;
+    forfeitPlayer: string;
+    forfeitPlayerTitle: string;
+    forfeitPlayerHint: string;
+    forfeitConfirm: string;
+    forfeitNoActive: string;
+    forfeit: string;
+    forfeitedBadge: string;
     restart: string;
     elimination: string;
     eliminationMessage: string;
@@ -324,7 +340,8 @@ const fr: Messages = {
       'Jeu de quilles finlandais : visez la « mölkky » (le bâton) pour faire tomber des quilles numérotées. Premier à 50 pile gagne.',
     seeRules: 'Voir les règles',
     templates: 'Mes templates',
-    templatesEmpty: 'Aucun template enregistré. Lance une partie et sauvegarde-la pour la rejouer en 1 tap.',
+    templatesEmpty:
+      'Aucun template enregistré. Lance une partie et sauvegarde-la pour la rejouer en 1 tap.',
     templateUseConfirm: 'Lancer une partie avec ce template ?',
     templateDelete: 'Supprimer ce template ?',
   },
@@ -337,14 +354,25 @@ const fr: Messages = {
     pickPlayersHint: 'Au moins 2, jusqu’à 16. Glissez pour réorganiser.',
     addPlayerHere: 'Ajouter un joueur',
     addPlayerName: 'Prénom du joueur',
-    shuffleOrder: 'Mélanger l’ordre de passage',
+    shuffleOrder: 'Mélanger l’ordre au lancement',
+    turnOrderTitle: 'Ordre de passage',
+    shuffleNow: 'Aléatoire',
     targetScore: 'Score à atteindre',
     overshootPenalty: 'Score en cas de dépassement',
-    maxMisses: 'Ratés consécutifs avant élimination',
+    maxMisses: 'Ratés consécutifs avant sanction',
     teamMode: 'Format',
     teamSolo: 'Individuel',
     teamDuo: 'Duo',
     teamTrio: 'Trio',
+    missSanction: 'Sanction après {n} ratés',
+    missSanctionElimination: 'Élimination',
+    missSanctionEliminationHint:
+      'Règle Mölkky officielle : le joueur est éliminé.',
+    missSanctionReset: 'Remise à zéro',
+    missSanctionResetHint: 'Le score retombe au départ, le joueur continue.',
+    missSanctionNone: 'Aucune sanction',
+    missSanctionNoneHint:
+      'Le compteur de ratés s’affiche mais ne pénalise pas.',
     recap: 'Récapitulatif',
     startMatch: 'Démarrer la partie',
     needMinPlayers: 'Sélectionnez au moins 2 joueurs',
@@ -359,7 +387,8 @@ const fr: Messages = {
     variantFree: 'Libre',
     variantClassicHint: '0 → 50 pile pour gagner, dépassement = 25.',
     variantInverseHint: '50 → 0 pile pour gagner, dépassement = +5.',
-    variantFreeHint: 'Pas de retour à 25 sur dépassement (passe juste au tour suivant).',
+    variantFreeHint:
+      'Pas de retour à 25 sur dépassement (passe juste au tour suivant).',
   },
   match: {
     rematch: 'Rejouer mêmes joueurs',
@@ -379,8 +408,16 @@ const fr: Messages = {
     knockedDownCount: '{n} quilles tombées',
     noPinsKnockedDown: 'Aucune quille tombée',
     undo: 'Annuler',
-    abandon: 'Abandonner',
+    abandon: 'Abandonner la partie',
     abandonConfirm: 'Abandonner la partie en cours ?',
+    forfeitPlayer: 'Faire abandonner un joueur',
+    forfeitPlayerTitle: 'Qui abandonne ?',
+    forfeitPlayerHint:
+      'Le joueur est sorti de la partie ; les autres continuent.',
+    forfeitConfirm: 'Faire abandonner {name} ?',
+    forfeitNoActive: 'Aucun joueur encore en lice.',
+    forfeit: 'Abandonner',
+    forfeitedBadge: 'Abandon',
     restart: 'Recommencer',
     elimination: 'Éliminé',
     eliminationMessage: '{name} est éliminé après 3 ratés.',
@@ -441,7 +478,8 @@ const fr: Messages = {
   },
   achievements: {
     firstFifty: 'Premier pile 50',
-    firstFiftyDesc: 'Gagner une partie en atteignant exactement le score cible.',
+    firstFiftyDesc:
+      'Gagner une partie en atteignant exactement le score cible.',
     threeInARow: 'Triplé',
     threeInARowDesc: '3 victoires consécutives.',
     fastWin: 'Victoire éclair',
@@ -504,7 +542,8 @@ const fr: Messages = {
   },
   live: {
     shareTitle: 'Diffuser en direct',
-    shareIntro: 'Génère un code partageable pour que d’autres devices puissent suivre cette partie en temps réel.',
+    shareIntro:
+      'Génère un code partageable pour que d’autres devices puissent suivre cette partie en temps réel.',
     shareHint: 'Scanne le QR ou saisis le code dans « Rejoindre une partie ».',
     shareText: 'Suis ma partie de Mölkky avec le code {code}',
     startSharing: 'Démarrer la diffusion',
@@ -512,7 +551,8 @@ const fr: Messages = {
     codeLabel: 'Code',
     qrAlt: 'QR code à scanner',
     activeBadge: 'En direct',
-    notConfigured: 'Le mode direct nécessite un backend Supabase configuré. Voir docs/live-supabase.md.',
+    notConfigured:
+      'Le mode direct nécessite un backend Supabase configuré. Voir docs/live-supabase.md.',
     join: 'Rejoindre une partie',
     joinTitle: 'Rejoindre une partie en direct',
     joinHint: 'Entre le code à 6 caractères ou scanne le QR du téléphone hôte.',
@@ -525,8 +565,10 @@ const fr: Messages = {
     spectatorFinished: 'Partie terminée',
     spectatorLeave: 'Quitter',
     settingsTitle: 'Mode direct',
-    settingsConfigured: 'Backend configuré — tu peux diffuser ou rejoindre des parties.',
-    settingsNotConfigured: 'Backend non configuré. Voir docs/live-supabase.md pour activer.',
+    settingsConfigured:
+      'Backend configuré — tu peux diffuser ou rejoindre des parties.',
+    settingsNotConfigured:
+      'Backend non configuré. Voir docs/live-supabase.md pour activer.',
   },
   offline: {
     title: 'Hors-ligne — vos données sont sauvegardées localement.',
@@ -605,7 +647,8 @@ const en: Messages = {
       'Finnish skittles game: throw the "mölkky" stick to knock down numbered pins. First to exactly 50 wins.',
     seeRules: 'See the rules',
     templates: 'My templates',
-    templatesEmpty: 'No saved templates yet. Start a match and save it to replay in one tap.',
+    templatesEmpty:
+      'No saved templates yet. Start a match and save it to replay in one tap.',
     templateUseConfirm: 'Start a match from this template?',
     templateDelete: 'Delete this template?',
   },
@@ -618,14 +661,23 @@ const en: Messages = {
     pickPlayersHint: 'At least 2, up to 16. Drag to reorder.',
     addPlayerHere: 'Add a player',
     addPlayerName: 'Player name',
-    shuffleOrder: 'Shuffle turn order',
+    shuffleOrder: 'Shuffle order when the match starts',
+    turnOrderTitle: 'Turn order',
+    shuffleNow: 'Shuffle',
     targetScore: 'Target score',
     overshootPenalty: 'Score after overshoot',
-    maxMisses: 'Consecutive misses before elimination',
+    maxMisses: 'Consecutive misses before sanction',
     teamMode: 'Format',
     teamSolo: 'Solo',
     teamDuo: 'Pairs',
     teamTrio: 'Trios',
+    missSanction: 'Sanction after {n} misses',
+    missSanctionElimination: 'Elimination',
+    missSanctionEliminationHint: 'Official Mölkky rule: the player is out.',
+    missSanctionReset: 'Reset score',
+    missSanctionResetHint: 'Score drops back to start, player keeps going.',
+    missSanctionNone: 'No sanction',
+    missSanctionNoneHint: 'Miss counter still shown but never penalises.',
     recap: 'Recap',
     startMatch: 'Start match',
     needMinPlayers: 'Pick at least 2 players',
@@ -660,8 +712,15 @@ const en: Messages = {
     knockedDownCount: '{n} pins down',
     noPinsKnockedDown: 'No pins down',
     undo: 'Undo',
-    abandon: 'Abandon',
+    abandon: 'Abandon match',
     abandonConfirm: 'Abandon the current match?',
+    forfeitPlayer: 'Forfeit a player',
+    forfeitPlayerTitle: 'Who forfeits?',
+    forfeitPlayerHint: 'The player drops out; others keep playing.',
+    forfeitConfirm: 'Forfeit {name}?',
+    forfeitNoActive: 'No active players left.',
+    forfeit: 'Forfeit',
+    forfeitedBadge: 'Forfeit',
     restart: 'Restart',
     elimination: 'Eliminated',
     eliminationMessage: '{name} is eliminated after 3 misses.',
@@ -773,8 +832,7 @@ const en: Messages = {
       'Clears the service worker cache and reloads the app to grab the latest deployed version.',
     forceUpdateInProgress: 'Updating…',
     about: 'About',
-    aboutText:
-      'Mister Mölkky — offline app, your data stays on your device.',
+    aboutText: 'Mister Mölkky — offline app, your data stays on your device.',
     version: 'Version',
   },
   install: {
@@ -784,7 +842,8 @@ const en: Messages = {
   },
   live: {
     shareTitle: 'Share live',
-    shareIntro: 'Generate a shareable code so other devices can follow this match in real time.',
+    shareIntro:
+      'Generate a shareable code so other devices can follow this match in real time.',
     shareHint: 'Scan the QR code or enter the code in "Join a match".',
     shareText: 'Follow my Mölkky match with code {code}',
     startSharing: 'Start sharing',
@@ -792,7 +851,8 @@ const en: Messages = {
     codeLabel: 'Code',
     qrAlt: 'QR code to scan',
     activeBadge: 'Live',
-    notConfigured: 'Live mode needs a configured Supabase backend. See docs/live-supabase.md.',
+    notConfigured:
+      'Live mode needs a configured Supabase backend. See docs/live-supabase.md.',
     join: 'Join a match',
     joinTitle: 'Join a live match',
     joinHint: 'Enter the 6-character code or scan the host phone QR.',
@@ -806,7 +866,8 @@ const en: Messages = {
     spectatorLeave: 'Leave',
     settingsTitle: 'Live mode',
     settingsConfigured: 'Backend configured — you can share or join matches.',
-    settingsNotConfigured: 'Backend not configured. See docs/live-supabase.md to enable.',
+    settingsNotConfigured:
+      'Backend not configured. See docs/live-supabase.md to enable.',
   },
   offline: {
     title: 'Offline — your data is saved locally.',
