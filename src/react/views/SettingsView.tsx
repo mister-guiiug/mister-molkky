@@ -15,6 +15,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { isSupabaseConfigured } from '../../supabase';
 import { forceAppUpdate } from '../../register-sw';
 import { AppFooter } from '../components/layout/AppFooter';
+import { useSyncStore } from '../../store/useSyncStore';
 
 declare const __APP_VERSION__: string | undefined;
 
@@ -287,6 +288,8 @@ export function SettingsView() {
         )}
       </Section>
 
+      {isSupabaseConfigured() && <CloudSyncSection />}
+
       <Section label={t('settings.about')}>
         <p
           className="m-0 text-sm leading-relaxed"
@@ -331,6 +334,82 @@ export function SettingsView() {
         </div>
       )}
     </PageContainer>
+  );
+}
+
+/**
+ * "Sync cloud" Settings section. Opt-in toggle + push/pull buttons.
+ * Hidden when Supabase isn't configured (avoids tempting the user
+ * with a feature that can't work without a backend).
+ */
+function CloudSyncSection() {
+  const { t, locale } = useI18n();
+  const enabled = useSyncStore(s => s.enabled);
+  const status = useSyncStore(s => s.status);
+  const lastSyncAt = useSyncStore(s => s.lastSyncAt);
+  const error = useSyncStore(s => s.error);
+  const toggleEnabled = useSyncStore(s => s.toggleEnabled);
+  const pushNow = useSyncStore(s => s.pushNow);
+  const pullNow = useSyncStore(s => s.pullNow);
+
+  return (
+    <Section label={t('settings.cloudSync')}>
+      <div className="flex flex-col gap-3">
+        <Toggle
+          checked={enabled}
+          onChange={toggleEnabled}
+          label={t('settings.cloudSync')}
+          hint={t('settings.cloudSyncHint')}
+        />
+        {enabled && (
+          <>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => void pushNow()}
+                disabled={status === 'syncing'}
+                className="touch-target flex-1 rounded-lg border-2 px-3 text-sm font-bold disabled:opacity-50"
+                style={{
+                  borderColor: 'var(--primary)',
+                  color: 'var(--primary)',
+                }}
+              >
+                {t('settings.cloudPush')}
+              </button>
+              <button
+                type="button"
+                onClick={() => void pullNow()}
+                disabled={status === 'syncing'}
+                className="touch-target flex-1 rounded-lg border-2 px-3 text-sm font-bold disabled:opacity-50"
+                style={{
+                  borderColor: 'var(--accent)',
+                  color: 'var(--accent)',
+                }}
+              >
+                {t('settings.cloudPull')}
+              </button>
+            </div>
+            {status === 'syncing' && (
+              <p className="m-0 text-xs" style={{ color: 'var(--muted)' }}>
+                {t('settings.cloudSyncing')}
+              </p>
+            )}
+            {status === 'ok' && lastSyncAt && (
+              <p className="m-0 text-xs" style={{ color: 'var(--success)' }}>
+                {t('settings.cloudLastSync', {
+                  date: new Date(lastSyncAt).toLocaleString(locale),
+                })}
+              </p>
+            )}
+            {status === 'error' && error && (
+              <p className="m-0 text-xs" style={{ color: 'var(--danger)' }}>
+                {error}
+              </p>
+            )}
+          </>
+        )}
+      </div>
+    </Section>
   );
 }
 
