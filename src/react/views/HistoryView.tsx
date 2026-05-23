@@ -7,7 +7,11 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { PullIndicator } from '../components/PullIndicator';
 import { TrashIcon, TrophyIcon } from '../components/icons';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
-import type { FinishedMatch } from '../../schemas';
+import type { FinishedMatch, RuleVariant } from '../../schemas';
+
+type VariantFilter = 'all' | RuleVariant;
+type SizeFilter = 'all' | '2' | '3-4' | '5+';
+type DurationFilter = 'all' | 'short' | 'medium' | 'long';
 
 function formatDate(ts: number, locale: string): string {
   return new Date(ts).toLocaleString(locale, {
@@ -30,6 +34,10 @@ export function HistoryView() {
   const remove = useMatchStore(s => s.removeFromHistory);
   const clear = useMatchStore(s => s.clearHistory);
   const [search, setSearch] = useState('');
+  const [variant, setVariant] = useState<VariantFilter>('all');
+  const [size, setSize] = useState<SizeFilter>('all');
+  const [duration, setDuration] = useState<DurationFilter>('all');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [selected, setSelected] = useState<FinishedMatch | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<FinishedMatch | null>(
@@ -45,13 +53,46 @@ export function HistoryView() {
   const pull = usePullToRefresh({ onRefresh: onPullRefresh });
   void refreshNonce;
 
+  /**
+   * Apply name search + advanced filters. Pure derivation from the
+   * persisted history list, recomputed only when one of the filters
+   * actually changes.
+   */
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return history;
-    return history.filter(m =>
-      m.config.players.some(p => p.name.toLowerCase().includes(q))
-    );
-  }, [history, search]);
+    return history.filter(m => {
+      if (q && !m.config.players.some(p => p.name.toLowerCase().includes(q))) {
+        return false;
+      }
+      if (variant !== 'all' && (m.config.variant ?? 'classic') !== variant) {
+        return false;
+      }
+      if (size !== 'all') {
+        const n = m.config.players.length;
+        if (size === '2' && n !== 2) return false;
+        if (size === '3-4' && (n < 3 || n > 4)) return false;
+        if (size === '5+' && n < 5) return false;
+      }
+      if (duration !== 'all') {
+        const minutes = (m.finishedAt - m.startedAt) / 60000;
+        if (duration === 'short' && minutes >= 10) return false;
+        if (duration === 'medium' && (minutes < 10 || minutes > 25))
+          return false;
+        if (duration === 'long' && minutes <= 25) return false;
+      }
+      return true;
+    });
+  }, [history, search, variant, size, duration]);
+
+  const activeFilterCount =
+    (variant !== 'all' ? 1 : 0) +
+    (size !== 'all' ? 1 : 0) +
+    (duration !== 'all' ? 1 : 0);
+  const resetFilters = () => {
+    setVariant('all');
+    setSize('all');
+    setDuration('all');
+  };
 
   return (
     <PageContainer>
@@ -86,17 +127,87 @@ export function HistoryView() {
         </div>
       ) : (
         <>
-          <input
-            type="search"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder={t('history.searchPlaceholder')}
-            className="touch-target mb-3 w-full rounded-lg border px-3"
-            style={{
-              background: 'var(--surface-input)',
-              borderColor: 'var(--border)',
-            }}
-          />
+          <div className="mb-3 flex items-center gap-2">
+            <input
+              type="search"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder={t('history.searchPlaceholder')}
+              className="touch-target flex-1 rounded-lg border px-3"
+              style={{
+                background: 'var(--surface-input)',
+                borderColor: 'var(--border)',
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(o => !o)}
+              className="touch-target rounded-lg border px-3 text-xs font-bold"
+              style={{
+                borderColor:
+                  activeFilterCount > 0 ? 'var(--primary)' : 'var(--border)',
+                color: activeFilterCount > 0 ? 'var(--primary)' : 'var(--text)',
+              }}
+              aria-expanded={filtersOpen}
+            >
+              {t('history.filters')}
+              {activeFilterCount > 0 && ` · ${activeFilterCount}`}
+            </button>
+          </div>
+
+          {filtersOpen && (
+            <div
+              className="mb-3 flex flex-col gap-3 rounded-2xl border p-3"
+              style={{
+                borderColor: 'var(--border)',
+                background: 'var(--surface)',
+              }}
+            >
+              <FilterRow
+                label={t('history.filterVariant')}
+                value={variant}
+                options={[
+                  { v: 'all', l: t('history.filterAll') },
+                  { v: 'classic', l: t('setup.variantClassic') },
+                  { v: 'inverse', l: t('setup.variantInverse') },
+                  { v: 'free', l: t('setup.variantFree') },
+                ]}
+                onChange={v => setVariant(v as VariantFilter)}
+              />
+              <FilterRow
+                label={t('history.filterSize')}
+                value={size}
+                options={[
+                  { v: 'all', l: t('history.filterAll') },
+                  { v: '2', l: '2' },
+                  { v: '3-4', l: '3–4' },
+                  { v: '5+', l: '5+' },
+                ]}
+                onChange={v => setSize(v as SizeFilter)}
+              />
+              <FilterRow
+                label={t('history.filterDuration')}
+                value={duration}
+                options={[
+                  { v: 'all', l: t('history.filterAll') },
+                  { v: 'short', l: t('history.filterDurationShort') },
+                  { v: 'medium', l: t('history.filterDurationMedium') },
+                  { v: 'long', l: t('history.filterDurationLong') },
+                ]}
+                onChange={v => setDuration(v as DurationFilter)}
+              />
+              {activeFilterCount > 0 && (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="touch-target self-end rounded-md text-xs font-bold underline"
+                  style={{ color: 'var(--muted)' }}
+                >
+                  {t('history.filterReset')}
+                </button>
+              )}
+            </div>
+          )}
           <ul className="flex flex-col gap-2">
             {filtered.map(m => {
               const winner = m.config.players.find(p => p.id === m.winnerId);
@@ -223,5 +334,55 @@ export function HistoryView() {
         onCancel={() => setConfirmRemove(null)}
       />
     </PageContainer>
+  );
+}
+
+/**
+ * Single horizontal row of small segmented-control buttons for a filter
+ * category. Rendered inside the collapsible advanced-filters panel.
+ */
+function FilterRow({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: ReadonlyArray<{ v: string; l: string }>;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span
+        className="text-[0.65rem] font-bold uppercase"
+        style={{ color: 'var(--muted)' }}
+      >
+        {label}
+      </span>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map(opt => {
+          const active = opt.v === value;
+          return (
+            <button
+              key={opt.v}
+              type="button"
+              onClick={() => onChange(opt.v)}
+              className="touch-target rounded-full border px-3 text-xs font-bold"
+              style={{
+                background: active
+                  ? 'color-mix(in srgb, var(--primary) 18%, var(--surface))'
+                  : 'var(--surface)',
+                borderColor: active ? 'var(--primary)' : 'var(--border)',
+                color: active ? 'var(--primary)' : 'var(--text)',
+              }}
+              aria-pressed={active}
+            >
+              {opt.l}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }

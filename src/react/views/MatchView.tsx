@@ -30,6 +30,7 @@ import { useLiveStore } from '../../store/useLiveStore';
 import { useFeedback } from '../hooks/useFeedback';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useSwipeDown } from '../hooks/useSwipeDown';
 import {
   CheckIcon,
   ClipboardIcon,
@@ -213,6 +214,15 @@ export function MatchView() {
     Boolean(current)
   );
 
+  // Swipe down on the score-header section to open the throws log
+  // (shortcut for "rectifier le dernier lancer"). The hook returns
+  // touch handlers we spread onto the <section>.
+  const swipeDown = useSwipeDown({
+    onSwipeDown: () => {
+      if (current && current.throws.length > 0) setThrowsLogOpen(true);
+    },
+  });
+
   if (!current) {
     return (
       <PageContainer>
@@ -324,7 +334,13 @@ export function MatchView() {
         </button>
       </header>
 
-      <section className="mb-4 flex items-center justify-between gap-3">
+      <section
+        className="mb-4 flex items-center justify-between gap-3"
+        // Swipe down on the score header → open the throws log so the
+        // user can rectify the last throw without going through the
+        // burger menu. Only active while a match is running.
+        {...swipeDown}
+      >
         <div>
           <p
             className="m-0 text-xs uppercase"
