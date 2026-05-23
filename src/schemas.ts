@@ -62,6 +62,11 @@ export const MatchConfigSchema = z.object({
   teams: z.array(TeamSchema).default([]),
   variant: RuleVariantSchema.default('classic'),
   shufflePlayers: z.boolean().default(false),
+  // Per-actor starting-score offset. Map keys are actor IDs (player IDs
+  // in solo, team IDs in team mode); values are added to (classic) or
+  // subtracted from (inverse) the variant's normal starting score so a
+  // stronger player can give a head start. Empty map = no handicap.
+  handicaps: z.record(z.string(), z.number().int()).default({}),
 });
 export type MatchConfig = z.infer<typeof MatchConfigSchema>;
 
@@ -94,6 +99,8 @@ export const FinishedMatchSchema = z.object({
   ranking: z.array(RankingEntrySchema),
   // Throw IDs the player flagged with a star during the match.
   highlightedThrowIds: z.array(z.string().min(1)).default([]),
+  // Predictions made before the match, preserved post-finish.
+  predictions: z.record(z.string(), z.string()).default({}),
 });
 export type FinishedMatch = z.infer<typeof FinishedMatchSchema>;
 
@@ -110,6 +117,10 @@ export const CurrentMatchStateSchema = z.object({
   // Throw IDs flagged with a star during the match — surfaced in the
   // ThrowsLog and the final ranking for replay/sharing.
   highlightedThrowIds: z.array(z.string().min(1)).default([]),
+  // Optional pre-match predictions: keys = predictor player ID, values
+  // = who they think will win. Resolved at finish — bragging rights for
+  // correct picks. Defaults to {} when nobody bothered predicting.
+  predictions: z.record(z.string(), z.string()).default({}),
 });
 export type CurrentMatchState = z.infer<typeof CurrentMatchStateSchema>;
 

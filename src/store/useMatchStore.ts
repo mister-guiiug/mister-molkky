@@ -56,6 +56,12 @@ interface MatchStoreState {
    * unknown.
    */
   toggleHighlight: (throwId: string) => void;
+  /**
+   * Record a pre-match prediction: predictorId says they think
+   * pickedWinnerId will win. Both must be valid player IDs in the
+   * current match. Passing pickedWinnerId === '' clears the prediction.
+   */
+  setPrediction: (predictorId: string, pickedWinnerId: string) => void;
   finishMatch: () => FinishedMatch | null;
   clearFeedback: () => void;
 
@@ -86,9 +92,13 @@ function settingsFromConfig(config: MatchConfig): RuleSettings {
 function actorContext(config: MatchConfig): {
   actorIds: string[];
   actorMap?: Map<string, string>;
+  handicaps: Map<string, number>;
 } {
+  const handicaps = new Map<string, number>(
+    Object.entries(config.handicaps ?? {})
+  );
   if (!config.teams || config.teams.length === 0) {
-    return { actorIds: config.players.map(p => p.id) };
+    return { actorIds: config.players.map(p => p.id), handicaps };
   }
   const actorMap = new Map<string, string>();
   for (const team of config.teams) {
@@ -97,6 +107,7 @@ function actorContext(config: MatchConfig): {
   return {
     actorIds: config.teams.map(t => t.id),
     actorMap,
+    handicaps,
   };
 }
 
@@ -138,6 +149,7 @@ export const useMatchStore = create<MatchStoreState>()(
           startedAt: Date.now(),
           forfeitedActorIds: [],
           highlightedThrowIds: [],
+          predictions: {},
         });
         set({ current, pendingFeedback: null });
       },
@@ -148,7 +160,7 @@ export const useMatchStore = create<MatchStoreState>()(
           return { ok: false, overshoot: false, eliminated: false, won: false };
 
         const settings = settingsFromConfig(state.config);
-        const { actorIds, actorMap } = actorContext(state.config);
+        const { actorIds, actorMap, handicaps } = actorContext(state.config);
         const forfeited = state.forfeitedActorIds;
         const beforeOutcome = replayThrows(
           actorIds,
@@ -158,7 +170,8 @@ export const useMatchStore = create<MatchStoreState>()(
           })),
           settings,
           actorMap,
-          forfeited
+          forfeited,
+          handicaps
         );
         if (beforeOutcome.isOver) {
           return { ok: false, overshoot: false, eliminated: false, won: false };
@@ -211,7 +224,8 @@ export const useMatchStore = create<MatchStoreState>()(
           })),
           settings,
           actorMap,
-          forfeited
+          forfeited,
+          handicaps
         );
 
         let feedback: FeedbackEvent = 'throw';
@@ -258,7 +272,7 @@ export const useMatchStore = create<MatchStoreState>()(
         if (idx < 0) return false;
         const original = state.throws[idx]!;
         const settings = settingsFromConfig(state.config);
-        const { actorIds, actorMap } = actorContext(state.config);
+        const { actorIds, actorMap, handicaps } = actorContext(state.config);
 
         const updatedThrow: Throw = ThrowSchema.parse({
           ...original,
@@ -285,7 +299,8 @@ export const useMatchStore = create<MatchStoreState>()(
             })),
             settings,
             actorMap,
-            state.forfeitedActorIds
+            state.forfeitedActorIds,
+            handicaps
           );
           const acceptedThrows = candidateThrows.slice(0, replay.currentTurn);
           const reconciled = acceptedThrows.map(t => {
@@ -323,11 +338,27 @@ export const useMatchStore = create<MatchStoreState>()(
         set({ current: { ...state, highlightedThrowIds: next } });
       },
 
+      setPrediction: (predictorId, pickedWinnerId) => {
+        const state = get().current;
+        if (!state) return;
+        const knownIds = new Set(state.config.players.map(p => p.id));
+        if (!knownIds.has(predictorId as PlayerId)) return;
+        const next = { ...state.predictions };
+        if (pickedWinnerId === '') {
+          delete next[predictorId];
+        } else if (knownIds.has(pickedWinnerId as PlayerId)) {
+          next[predictorId] = pickedWinnerId;
+        } else {
+          return;
+        }
+        set({ current: { ...state, predictions: next } });
+      },
+
       forfeitActor: actorId => {
         const state = get().current;
         if (!state) return;
         if (state.forfeitedActorIds.includes(actorId)) return;
-        const { actorIds } = actorContext(state.config);
+        const { actorIds, actorMap, handicaps } = actorContext(state.config);
         if (!actorIds.includes(actorId)) return;
 
         const nextForfeited = [...state.forfeitedActorIds, actorId];
@@ -340,7 +371,6 @@ export const useMatchStore = create<MatchStoreState>()(
         // If the forfeit leaves a single active actor, auto-finish so the
         // user lands on the victory screen instead of an empty match.
         const settings = settingsFromConfig(state.config);
-        const { actorMap } = actorContext(state.config);
         const outcome = replayThrows(
           actorIds,
           state.throws.map(t => ({
@@ -349,7 +379,8 @@ export const useMatchStore = create<MatchStoreState>()(
           })),
           settings,
           actorMap,
-          nextForfeited
+          nextForfeited,
+          handicaps
         );
         if (outcome.winnerId) {
           try {
@@ -364,7 +395,7 @@ export const useMatchStore = create<MatchStoreState>()(
         const state = get().current;
         if (!state) return null;
         const settings = settingsFromConfig(state.config);
-        const { actorIds, actorMap } = actorContext(state.config);
+        const { actorIds, actorMap, handicaps } = actorContext(state.config);
         const forfeited = state.forfeitedActorIds;
         const outcome = replayThrows(
           actorIds,
@@ -374,7 +405,8 @@ export const useMatchStore = create<MatchStoreState>()(
           })),
           settings,
           actorMap,
-          forfeited
+          forfeited,
+          handicaps
         );
         if (!outcome.winnerId) return null;
 
@@ -401,7 +433,8 @@ export const useMatchStore = create<MatchStoreState>()(
               .map(x => ({ playerId: x.playerId, fallenPins: x.fallenPins })),
             settings,
             actorMap,
-            forfeited
+            forfeited,
+            handicaps
           );
           for (const [pid, p] of replay.progress) {
             if (p.eliminated && !runningElim.has(pid)) {
@@ -421,6 +454,7 @@ export const useMatchStore = create<MatchStoreState>()(
           winnerId: outcome.winnerId,
           ranking: rankingToSchema(ranking),
           highlightedThrowIds: state.highlightedThrowIds,
+          predictions: state.predictions,
         });
 
         set(s => ({
@@ -493,13 +527,14 @@ export interface CurrentPlayerInfo {
 function computeOutcome(match: CurrentMatchState | null) {
   if (!match) return null;
   const settings = settingsFromConfig(match.config);
-  const { actorIds, actorMap } = actorContext(match.config);
+  const { actorIds, actorMap, handicaps } = actorContext(match.config);
   const outcome = replayThrows(
     actorIds,
     match.throws.map(t => ({ playerId: t.playerId, fallenPins: t.fallenPins })),
     settings,
     actorMap,
-    match.forfeitedActorIds
+    match.forfeitedActorIds,
+    handicaps
   );
   return { playerIds: actorIds, outcome, actorMap };
 }
@@ -577,16 +612,25 @@ export function useScoreHistories(): Map<string, number[]> {
     const histories = new Map<string, number[]>();
     if (!match) return histories;
     const settings = settingsFromConfig(match.config);
-    const { actorIds, actorMap } = actorContext(match.config);
-    const start = initialScore(settings);
-    for (const id of actorIds) histories.set(id, [start]);
+    const { actorIds, actorMap, handicaps } = actorContext(match.config);
+    const baseStart = initialScore(settings);
+    const variant = settings.variant ?? 'classic';
+    // Mirror the handicap math from rules.ts so the sparkline lines up
+    // with the scoreboard.
+    const startFor = (id: string): number => {
+      const h = handicaps.get(id) ?? 0;
+      if (h === 0) return baseStart;
+      if (variant === 'inverse') return Math.max(1, baseStart - h);
+      return Math.min(settings.targetScore - 1, baseStart + h);
+    };
+    for (const id of actorIds) histories.set(id, [startFor(id)]);
 
     const running = new Map<string, number>();
-    for (const id of actorIds) running.set(id, start);
+    for (const id of actorIds) running.set(id, startFor(id));
 
     for (const t of match.throws) {
       const actor = actorMap?.get(t.playerId) ?? t.playerId;
-      const prev = running.get(actor) ?? start;
+      const prev = running.get(actor) ?? baseStart;
       const e = evaluateThrow(prev, t.fallenPins, settings);
       running.set(actor, e.nextScore);
       histories.get(actor)?.push(e.nextScore);

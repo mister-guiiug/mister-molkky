@@ -61,6 +61,10 @@ export interface Messages {
     pickPlayersHint: string;
     addPlayerHere: string;
     addPlayerName: string;
+    addGuestName: string;
+    guestMode: string;
+    guestBadge: string;
+    handicapLabel: string;
     shuffleOrder: string;
     turnOrderTitle: string;
     shuffleNow: string;
@@ -118,6 +122,10 @@ export interface Messages {
     coachMulti: string;
     coachAvoid: string;
     markHighlight: string;
+    predictions: string;
+    predictionsTitle: string;
+    predictionsHint: string;
+    predictionsCorrect: string;
     forfeitPlayer: string;
     forfeitPlayerTitle: string;
     forfeitPlayerHint: string;
@@ -376,6 +384,10 @@ const fr: Messages = {
     pickPlayersHint: 'Au moins 2, jusqu’à 16. Glissez pour réorganiser.',
     addPlayerHere: 'Ajouter un joueur',
     addPlayerName: 'Prénom du joueur',
+    addGuestName: 'Prénom de l’invité',
+    guestMode: 'Joueur invité (juste cette partie, non sauvegardé)',
+    guestBadge: 'invité',
+    handicapLabel: 'Handicap (score de départ avantageux)',
     shuffleOrder: 'Mélanger l’ordre au lancement',
     turnOrderTitle: 'Ordre de passage',
     shuffleNow: 'Aléatoire',
@@ -437,6 +449,11 @@ const fr: Messages = {
     coachMulti: 'Fais tomber {n} quilles pour gagner pile.',
     coachAvoid: 'Évite : {pins}',
     markHighlight: 'Marquer comme moment fort',
+    predictions: 'Pronostics',
+    predictionsTitle: 'Qui va gagner ?',
+    predictionsHint:
+      'Chacun parie sur le gagnant — résultats à la fin de la partie.',
+    predictionsCorrect: 'Pronostic juste : {names}',
     forfeitPlayer: 'Faire abandonner un joueur',
     forfeitPlayerTitle: 'Qui abandonne ?',
     forfeitPlayerHint:
@@ -707,6 +724,10 @@ const en: Messages = {
     pickPlayersHint: 'At least 2, up to 16. Drag to reorder.',
     addPlayerHere: 'Add a player',
     addPlayerName: 'Player name',
+    addGuestName: 'Guest first name',
+    guestMode: 'Guest player (just this match, not saved)',
+    guestBadge: 'guest',
+    handicapLabel: 'Handicap (advantageous starting score)',
     shuffleOrder: 'Shuffle order when the match starts',
     turnOrderTitle: 'Turn order',
     shuffleNow: 'Shuffle',
@@ -765,6 +786,11 @@ const en: Messages = {
     coachMulti: 'Knock down {n} pins for an exact win.',
     coachAvoid: 'Avoid: {pins}',
     markHighlight: 'Mark as highlight',
+    predictions: 'Predictions',
+    predictionsTitle: 'Who will win?',
+    predictionsHint:
+      'Everyone bets on the winner — results revealed at the end of the match.',
+    predictionsCorrect: 'Correct prediction: {names}',
     forfeitPlayer: 'Forfeit a player',
     forfeitPlayerTitle: 'Who forfeits?',
     forfeitPlayerHint: 'The player drops out; others keep playing.',

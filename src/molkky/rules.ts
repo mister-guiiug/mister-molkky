@@ -193,19 +193,38 @@ export function replayThrows(
   throws: readonly ThrowRecord[],
   settings: RuleSettings = DEFAULT_RULE_SETTINGS,
   actorMap?: ReadonlyMap<string, string>,
-  forfeitedIds: ReadonlyArray<string> = []
+  forfeitedIds: ReadonlyArray<string> = [],
+  /**
+   * Per-actor starting-score offset. For classic / free we ADD the
+   * handicap to the default 0 start (so handicap > 0 means a head
+   * start). For inverse we SUBTRACT from the target start (so a
+   * positive handicap = closer to 0 = head start, mirroring classic
+   * intent). 0 or missing entry → no handicap.
+   */
+  handicaps: ReadonlyMap<string, number> = new Map()
 ): MatchOutcome {
   if (playerIds.length < 2) {
     throw new Error('A Mölkky match needs at least 2 players');
   }
 
-  const start = initialScore(settings);
+  const baseStart = initialScore(settings);
+  const variant = settings.variant ?? 'classic';
   const sanction = settings.missSanction ?? 'elimination';
   const forfeitSet = new Set(forfeitedIds);
 
+  const startFor = (id: string): number => {
+    const h = handicaps.get(id) ?? 0;
+    if (h === 0) return baseStart;
+    if (variant === 'inverse') {
+      // Clamp so the player doesn't start already at the winning score.
+      return Math.max(1, baseStart - h);
+    }
+    return Math.min(settings.targetScore - 1, baseStart + h);
+  };
+
   const progress = new Map<string, PlayerProgress>();
   for (const id of playerIds) {
-    const p = makeInitialProgress(id, start);
+    const p = makeInitialProgress(id, startFor(id));
     if (forfeitSet.has(id)) p.eliminated = true;
     progress.set(id, p);
   }
@@ -254,9 +273,9 @@ export function replayThrows(
         if (sanction === 'elimination') {
           player.eliminated = true;
         } else if (sanction === 'reset') {
-          // Wipe the score back to the variant's starting value and
-          // clear the streak so the player gets a fresh window.
-          player.score = start;
+          // Wipe the score back to the actor's *personal* starting
+          // value (handicap-aware) and clear the streak.
+          player.score = startFor(actor);
           player.missStreak = 0;
         }
         // 'none' → keep the streak ticking but apply no penalty.

@@ -6,6 +6,7 @@ import { useMatchStore } from '../../store/useMatchStore';
 import { useTemplatesStore } from '../../store/useTemplatesStore';
 import {
   MatchConfigSchema,
+  PlayerIdSchema,
   type MatchTemplate,
   type MissSanction,
   type Player,
@@ -49,6 +50,13 @@ export function MatchSetupWizard({
       initialTemplate?.playerIds?.filter(id => roster.some(p => p.id === id)) ??
       []
   );
+  // Players added only for this match — NOT persisted to the global
+  // roster. Tracked here so orderedPlayers can resolve their ids.
+  const [guests, setGuests] = useState<Player[]>([]);
+  const [guestMode, setGuestMode] = useState(false);
+  // Per-player handicap. Stored by player ID, applied at match start.
+  // 0 or missing entry = no handicap.
+  const [handicaps, setHandicaps] = useState<Record<string, number>>({});
   const [quickName, setQuickName] = useState('');
   const [targetScore, setTargetScore] = useState<TargetScore>(
     initialTemplate?.targetScore ?? 50
@@ -69,11 +77,12 @@ export function MatchSetupWizard({
   const [templateSaved, setTemplateSaved] = useState(false);
 
   const orderedPlayers = useMemo<Player[]>(() => {
-    const map = new Map(roster.map(p => [p.id, p]));
+    const map = new Map<string, Player>(roster.map(p => [p.id, p]));
+    for (const g of guests) map.set(g.id, g);
     return selectedIds
-      .map(id => map.get(id as Player['id']))
+      .map(id => map.get(id))
       .filter((p): p is Player => Boolean(p));
-  }, [selectedIds, roster]);
+  }, [selectedIds, roster, guests]);
 
   const togglePlayer = (id: string) => {
     setSelectedIds(prev =>
@@ -118,10 +127,36 @@ export function MatchSetupWizard({
   const handleQuickAdd = () => {
     const name = quickName.trim();
     if (!name) return;
-    const color = pickNextColor(roster);
-    const p = addPlayer({ name, color });
-    setSelectedIds(prev => [...prev, p.id]);
+    const color = pickNextColor([...roster, ...guests]);
+    if (guestMode) {
+      // Build a transient player object — NOT persisted to usePlayersStore,
+      // so the global roster stays clean. `createdAt: 0` is the marker we
+      // use elsewhere to tell guests apart from saved players.
+      const guest: Player = {
+        id: PlayerIdSchema.parse(`guest-${newId()}`),
+        name,
+        color,
+        createdAt: 0,
+      };
+      setGuests(prev => [...prev, guest]);
+      setSelectedIds(prev => [...prev, guest.id]);
+    } else {
+      const p = addPlayer({ name, color });
+      setSelectedIds(prev => [...prev, p.id]);
+    }
     setQuickName('');
+  };
+
+  const setHandicap = (id: string, value: number) => {
+    setHandicaps(prev => {
+      const next = { ...prev };
+      if (value === 0) {
+        delete next[id];
+      } else {
+        next[id] = value;
+      }
+      return next;
+    });
   };
 
   const canStart = selectedIds.length >= 2;
@@ -149,6 +184,16 @@ export function MatchSetupWizard({
     if (teamMode !== 'solo' && teams.length < 2) {
       return;
     }
+    // Only keep handicap entries for actors actually in the match — drop
+    // stale entries for players the user removed before starting.
+    const actorIdsForHandicap = new Set<string>(
+      teamMode === 'solo' ? orderedPlayers.map(p => p.id) : teams.map(t => t.id)
+    );
+    const trimmedHandicaps: Record<string, number> = {};
+    for (const [k, v] of Object.entries(handicaps)) {
+      if (actorIdsForHandicap.has(k)) trimmedHandicaps[k] = v;
+    }
+
     const config = MatchConfigSchema.parse({
       players: orderedPlayers,
       targetScore,
@@ -159,6 +204,7 @@ export function MatchSetupWizard({
       teams,
       variant,
       shufflePlayers: shuffle,
+      handicaps: trimmedHandicaps,
     });
     startMatch(config);
     onClose();
@@ -208,7 +254,9 @@ export function MatchSetupWizard({
               type="text"
               value={quickName}
               onChange={e => setQuickName(e.target.value)}
-              placeholder={t('setup.addPlayerName')}
+              placeholder={
+                guestMode ? t('setup.addGuestName') : t('setup.addPlayerName')
+              }
               maxLength={30}
               onKeyDown={e => {
                 if (e.key === 'Enter') {
@@ -219,7 +267,7 @@ export function MatchSetupWizard({
               className="touch-target flex-1 rounded-lg border px-3 text-base"
               style={{
                 background: 'var(--surface-input)',
-                borderColor: 'var(--border)',
+                borderColor: guestMode ? 'var(--accent)' : 'var(--border)',
                 color: 'var(--text)',
               }}
             />
@@ -228,12 +276,30 @@ export function MatchSetupWizard({
               onClick={handleQuickAdd}
               disabled={!quickName.trim()}
               className="touch-target rounded-lg px-4 font-semibold text-white disabled:opacity-50"
-              style={{ background: 'var(--primary)' }}
+              style={{
+                background: guestMode ? 'var(--accent)' : 'var(--primary)',
+              }}
               aria-label={t('setup.addPlayerHere')}
             >
               <PlusIcon size={20} />
             </button>
           </div>
+          {/*
+            Guest mode toggle. When on, the quick-add input creates a
+            one-shot player just for this match — they never land in the
+            global roster, perfect for "le copain de Paul qui passait là".
+          */}
+          <label className="flex cursor-pointer items-center gap-2 text-xs">
+            <input
+              type="checkbox"
+              checked={guestMode}
+              onChange={e => setGuestMode(e.target.checked)}
+              className="h-4 w-4"
+            />
+            <span style={{ color: 'var(--muted)' }}>
+              {t('setup.guestMode')}
+            </span>
+          </label>
 
           {roster.length > 0 && (
             <div className="flex items-center justify-between gap-2">
@@ -339,7 +405,51 @@ export function MatchSetupWizard({
                     />
                     <span className="flex-1 truncate text-sm font-semibold">
                       {p.name}
+                      {p.createdAt === 0 && (
+                        <span
+                          className="ml-1.5 rounded-full border px-1.5 py-0.5 text-[0.55rem] font-bold uppercase tracking-wider"
+                          style={{
+                            borderColor: 'var(--accent)',
+                            color: 'var(--accent)',
+                          }}
+                          title={t('setup.guestBadge')}
+                        >
+                          {t('setup.guestBadge')}
+                        </span>
+                      )}
                     </span>
+                    {/*
+                      Handicap pill. Tap to step through 0 / +5 / +10 / +15
+                      / -5 — keeps the UI compact (no inline number input
+                      that fights the soft keyboard on mobile).
+                    */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const cycle = [0, 5, 10, 15, -5];
+                        const current = handicaps[p.id] ?? 0;
+                        const idx = cycle.indexOf(current);
+                        const next = cycle[(idx + 1) % cycle.length] ?? 0;
+                        setHandicap(p.id, next);
+                      }}
+                      className="touch-target rounded-md border px-1.5 py-0.5 text-xs font-bold tabular-nums"
+                      style={{
+                        borderColor:
+                          (handicaps[p.id] ?? 0) !== 0
+                            ? 'var(--accent)'
+                            : 'var(--border)',
+                        color:
+                          (handicaps[p.id] ?? 0) !== 0
+                            ? 'var(--accent)'
+                            : 'var(--muted)',
+                      }}
+                      aria-label={t('setup.handicapLabel')}
+                      title={t('setup.handicapLabel')}
+                    >
+                      {handicaps[p.id]
+                        ? `${handicaps[p.id]! > 0 ? '+' : ''}${handicaps[p.id]!}`
+                        : 'H'}
+                    </button>
                     <button
                       type="button"
                       onClick={() => movePlayer(p.id, -1)}
