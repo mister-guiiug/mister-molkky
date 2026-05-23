@@ -17,9 +17,11 @@ import {
   ClipboardList,
   Coffee,
   DoorOpen,
+  Flame,
   History as HistoryGlyph,
   Home,
   Maximize2,
+  Medal,
   Menu,
   Minimize2,
   Play,
@@ -30,13 +32,17 @@ import {
   Settings,
   Share2,
   Shuffle,
+  Target,
   Trash2,
+  TrendingUp,
   Trophy,
   Undo2,
   Users,
   X,
+  Zap,
   type LucideProps,
 } from 'lucide-react';
+import type { AchievementIconName } from '../../molkky/achievements';
 
 type IconComponent = ComponentType<LucideProps>;
 
@@ -82,3 +88,29 @@ export const CameraIcon = wrap(Camera as IconComponent, 'CameraIcon');
 export const CoffeeIcon = wrap(Coffee as IconComponent, 'CoffeeIcon');
 export const ShuffleIcon = wrap(Shuffle as IconComponent, 'ShuffleIcon');
 export const ForfeitIcon = wrap(DoorOpen as IconComponent, 'ForfeitIcon');
+export const TargetIcon = wrap(Target as IconComponent, 'TargetIcon');
+export const FlameIcon = wrap(Flame as IconComponent, 'FlameIcon');
+export const ZapIcon = wrap(Zap as IconComponent, 'ZapIcon');
+export const MedalIcon = wrap(Medal as IconComponent, 'MedalIcon');
+export const TrendingUpIcon = wrap(
+  TrendingUp as IconComponent,
+  'TrendingUpIcon'
+);
+
+/**
+ * Lookup map from an achievement's symbolic icon name (kept React-free
+ * in the rules module) to the concrete Lucide component to render. Add
+ * a new entry here whenever `AchievementIconName` grows.
+ */
+const ACHIEVEMENT_ICONS: Record<AchievementIconName, IconComponent> = {
+  target: TargetIcon,
+  flame: FlameIcon,
+  zap: ZapIcon,
+  trophy: TrophyIcon,
+  medal: MedalIcon,
+  'trending-up': TrendingUpIcon,
+};
+
+export function getAchievementIcon(name: AchievementIconName): IconComponent {
+  return ACHIEVEMENT_ICONS[name];
+}

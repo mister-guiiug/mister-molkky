@@ -13,6 +13,7 @@ import {
 import { detectAchievements } from '../../molkky/achievements';
 import { PageContainer } from '../components/layout/PageContainer';
 import { ALL_PIN_NUMBERS } from '../../molkky/pins-layout';
+import { getAchievementIcon } from '../components/icons';
 
 function pct(value: number): string {
   return `${Math.round(value * 100)}%`;
@@ -54,8 +55,7 @@ export function StatsView() {
     [roster, stats]
   );
 
-  const effectiveId =
-    selectedId ?? playersWithStats[0]?.player.id ?? null;
+  const effectiveId = selectedId ?? playersWithStats[0]?.player.id ?? null;
   const selected = playersWithStats.find(x => x.player.id === effectiveId);
 
   if (playersWithStats.length === 0) {
@@ -109,16 +109,43 @@ export function StatsView() {
       {selected && selected.stats && (
         <>
           <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <Cell label={t('stats.matchesPlayed')} value={selected.stats.matchesPlayed} />
-            <Cell label={t('stats.matchesWon')} value={selected.stats.matchesWon} />
-            <Cell label={t('stats.winRate')} value={pct(winRate(selected.stats))} />
+            <Cell
+              label={t('stats.matchesPlayed')}
+              value={selected.stats.matchesPlayed}
+            />
+            <Cell
+              label={t('stats.matchesWon')}
+              value={selected.stats.matchesWon}
+            />
+            <Cell
+              label={t('stats.winRate')}
+              value={pct(winRate(selected.stats))}
+            />
             <Cell label={t('stats.podiums')} value={selected.stats.podiums} />
-            <Cell label={t('stats.bestStreak')} value={selected.stats.bestStreak} />
-            <Cell label={t('stats.accuracy')} value={round1(accuracy(selected.stats))} />
-            <Cell label={t('stats.avgScore')} value={round1(averageScorePerMatch(selected.stats))} />
-            <Cell label={t('stats.avgScorePerThrow')} value={round1(averageScorePerThrow(selected.stats))} />
-            <Cell label={t('stats.exactFifties')} value={selected.stats.exactFifties} />
-            <Cell label={t('stats.overshoots')} value={selected.stats.overshoots} />
+            <Cell
+              label={t('stats.bestStreak')}
+              value={selected.stats.bestStreak}
+            />
+            <Cell
+              label={t('stats.accuracy')}
+              value={round1(accuracy(selected.stats))}
+            />
+            <Cell
+              label={t('stats.avgScore')}
+              value={round1(averageScorePerMatch(selected.stats))}
+            />
+            <Cell
+              label={t('stats.avgScorePerThrow')}
+              value={round1(averageScorePerThrow(selected.stats))}
+            />
+            <Cell
+              label={t('stats.exactFifties')}
+              value={selected.stats.exactFifties}
+            />
+            <Cell
+              label={t('stats.overshoots')}
+              value={selected.stats.overshoots}
+            />
             <Cell
               label={t('stats.topPin')}
               value={selected.stats.topPin ?? t('stats.none')}
@@ -127,9 +154,15 @@ export function StatsView() {
 
           <section
             className="mt-4 rounded-2xl border p-4"
-            style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+            style={{
+              borderColor: 'var(--border)',
+              background: 'var(--surface)',
+            }}
           >
-            <h3 className="mb-3 text-sm font-bold uppercase" style={{ color: 'var(--muted)' }}>
+            <h3
+              className="mb-3 text-sm font-bold uppercase"
+              style={{ color: 'var(--muted)' }}
+            >
               {t('stats.pinFrequency')}
             </h3>
             <ul className="grid grid-cols-6 gap-2">
@@ -151,7 +184,9 @@ export function StatsView() {
                     aria-label={`Quille ${pin}: ${freq}`}
                   >
                     <span>{pin}</span>
-                    <span className="text-[0.6rem] opacity-70 tabular-nums">{freq}</span>
+                    <span className="text-[0.6rem] opacity-70 tabular-nums">
+                      {freq}
+                    </span>
                   </li>
                 );
               })}
@@ -181,7 +216,10 @@ function AchievementsSection({ playerId }: { playerId: string }) {
       className="mt-4 rounded-2xl border p-4"
       style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
     >
-      <h3 className="mb-3 text-sm font-bold uppercase" style={{ color: 'var(--muted)' }}>
+      <h3
+        className="mb-3 text-sm font-bold uppercase"
+        style={{ color: 'var(--muted)' }}
+      >
         {t('stats.achievements')}
       </h3>
       {unlocked.length === 0 ? (
@@ -190,24 +228,35 @@ function AchievementsSection({ playerId }: { playerId: string }) {
         </p>
       ) : (
         <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {unlocked.map(a => (
-            <li
-              key={a.def.id}
-              className="rounded-lg border p-2"
-              style={{
-                borderColor: 'var(--accent)',
-                background: 'color-mix(in srgb, var(--accent) 8%, var(--surface))',
-              }}
-            >
-              <div className="flex items-center gap-1 text-base font-bold">
-                <span aria-hidden>{a.def.icon}</span>
-                <span className="truncate">{t(a.def.labelKey)}</span>
-              </div>
-              <p className="m-0 text-[0.7rem]" style={{ color: 'var(--muted)' }}>
-                {t(a.def.descKey)}
-              </p>
-            </li>
-          ))}
+          {unlocked.map(a => {
+            const Icon = getAchievementIcon(a.def.iconName);
+            return (
+              <li
+                key={a.def.id}
+                className="rounded-lg border p-2"
+                style={{
+                  borderColor: 'var(--accent)',
+                  background:
+                    'color-mix(in srgb, var(--accent) 8%, var(--surface))',
+                }}
+              >
+                <div className="flex items-center gap-1.5 text-base font-bold">
+                  <Icon
+                    size={18}
+                    aria-hidden
+                    style={{ color: 'var(--accent)' }}
+                  />
+                  <span className="truncate">{t(a.def.labelKey)}</span>
+                </div>
+                <p
+                  className="m-0 text-[0.7rem]"
+                  style={{ color: 'var(--muted)' }}
+                >
+                  {t(a.def.descKey)}
+                </p>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>
@@ -259,7 +308,10 @@ function HeadToHeadSection({
       className="mt-4 rounded-2xl border p-4"
       style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
     >
-      <h3 className="mb-3 text-sm font-bold uppercase" style={{ color: 'var(--muted)' }}>
+      <h3
+        className="mb-3 text-sm font-bold uppercase"
+        style={{ color: 'var(--muted)' }}
+      >
         {t('stats.headToHead')}
       </h3>
       <div className="mb-3 flex flex-wrap gap-2">
@@ -294,18 +346,36 @@ function HeadToHeadSection({
       ) : (
         h2h && (
           <div className="space-y-2">
-            <p className="m-0 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+            <p
+              className="m-0 text-xs font-semibold"
+              style={{ color: 'var(--muted)' }}
+            >
               {t('stats.headToHeadMatches', { n: h2h.sharedMatches })}
             </p>
             <table className="w-full text-sm">
               <tbody>
-                <H2HRow label={t('stats.matchesWon')} a={h2h.winsA} b={h2h.winsB} />
-                <H2HRow label={t('stats.avgScore')} a={Math.round(h2h.avgScoreA)} b={Math.round(h2h.avgScoreB)} />
-                <H2HRow label={t('stats.accuracy')} a={(h2h.accuracyA).toFixed(2)} b={(h2h.accuracyB).toFixed(2)} />
+                <H2HRow
+                  label={t('stats.matchesWon')}
+                  a={h2h.winsA}
+                  b={h2h.winsB}
+                />
+                <H2HRow
+                  label={t('stats.avgScore')}
+                  a={Math.round(h2h.avgScoreA)}
+                  b={Math.round(h2h.avgScoreB)}
+                />
+                <H2HRow
+                  label={t('stats.accuracy')}
+                  a={h2h.accuracyA.toFixed(2)}
+                  b={h2h.accuracyB.toFixed(2)}
+                />
               </tbody>
               <tfoot>
                 <tr>
-                  <td className="pt-2 text-[0.7rem]" style={{ color: 'var(--muted)' }}>
+                  <td
+                    className="pt-2 text-[0.7rem]"
+                    style={{ color: 'var(--muted)' }}
+                  >
                     {sourcePlayer?.name} ←→ {opponent.name}
                   </td>
                 </tr>
@@ -318,11 +388,22 @@ function HeadToHeadSection({
   );
 }
 
-function H2HRow({ label, a, b }: { label: string; a: number | string; b: number | string }) {
+function H2HRow({
+  label,
+  a,
+  b,
+}: {
+  label: string;
+  a: number | string;
+  b: number | string;
+}) {
   return (
     <tr className="border-t" style={{ borderColor: 'var(--border)' }}>
       <td className="py-1.5 pr-2 text-right font-black tabular-nums">{a}</td>
-      <td className="py-1.5 text-center text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+      <td
+        className="py-1.5 text-center text-xs font-semibold"
+        style={{ color: 'var(--muted)' }}
+      >
         {label}
       </td>
       <td className="py-1.5 pl-2 text-left font-black tabular-nums">{b}</td>
@@ -336,7 +417,10 @@ function Cell({ label, value }: { label: string; value: string | number }) {
       className="rounded-xl border p-3"
       style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
     >
-      <dt className="text-[0.65rem] font-bold uppercase" style={{ color: 'var(--muted)' }}>
+      <dt
+        className="text-[0.65rem] font-bold uppercase"
+        style={{ color: 'var(--muted)' }}
+      >
         {label}
       </dt>
       <dd className="m-0 text-xl font-black">{value}</dd>
