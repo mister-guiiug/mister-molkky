@@ -13,20 +13,36 @@ export function PwaInstallPrompt() {
   const [event, setEvent] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
-    if (localStorage.getItem(DISMISSED_KEY) === '1') return;
+    // localStorage can be absent (some webviews, very old browsers) or
+    // throw (Safari private mode pre-iOS 17). Treat any error as "not
+    // dismissed yet" so the prompt still works on a fresh install.
+    let dismissed = false;
+    try {
+      dismissed = localStorage.getItem(DISMISSED_KEY) === '1';
+    } catch {
+      /* ignore */
+    }
+    if (dismissed) return;
     const handler = (e: Event) => {
       e.preventDefault();
       setEvent(e as BeforeInstallPromptEvent);
     };
     window.addEventListener('beforeinstallprompt', handler as EventListener);
     return () =>
-      window.removeEventListener('beforeinstallprompt', handler as EventListener);
+      window.removeEventListener(
+        'beforeinstallprompt',
+        handler as EventListener
+      );
   }, []);
 
   if (!event) return null;
 
   const dismiss = () => {
-    localStorage.setItem(DISMISSED_KEY, '1');
+    try {
+      localStorage.setItem(DISMISSED_KEY, '1');
+    } catch {
+      /* ignore */
+    }
     setEvent(null);
   };
 

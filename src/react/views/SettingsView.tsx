@@ -81,7 +81,9 @@ export function SettingsView() {
 
   return (
     <PageContainer>
-      <h1 className="m-0 mt-4 mb-4 text-2xl font-black">{t('settings.title')}</h1>
+      <h1 className="m-0 mt-4 mb-4 text-2xl font-black">
+        {t('settings.title')}
+      </h1>
 
       <Section label={t('settings.theme')}>
         <div className="flex gap-2">
@@ -216,21 +218,24 @@ export function SettingsView() {
           <button
             type="button"
             disabled={updating}
-            onClick={async () => {
+            onClick={() => {
+              // Flip the overlay flag FIRST and synchronously, so the
+              // user sees instant feedback even if the SW cleanup is
+              // slow. `forceAppUpdate` schedules its own navigation
+              // and reload safety net — we don't need to await it.
               setUpdating(true);
-              try {
-                await forceAppUpdate();
-              } finally {
-                // forceAppUpdate triggers a reload, so we rarely reach this;
-                // reset the flag defensively if reload is blocked.
-                setUpdating(false);
-              }
+              void forceAppUpdate();
             }}
             className="touch-target flex items-center justify-center gap-2 rounded-lg border px-4 text-sm font-bold disabled:opacity-50"
             style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
           >
-            <RefreshIcon size={18} className={updating ? 'animate-spin' : undefined} />
-            {updating ? t('settings.forceUpdateInProgress') : t('settings.forceUpdate')}
+            <RefreshIcon
+              size={18}
+              className={updating ? 'animate-spin' : undefined}
+            />
+            {updating
+              ? t('settings.forceUpdateInProgress')
+              : t('settings.forceUpdate')}
           </button>
           <p className="m-0 text-xs" style={{ color: 'var(--muted)' }}>
             {t('settings.forceUpdateHint')}
@@ -265,11 +270,15 @@ export function SettingsView() {
       </Section>
 
       <Section label={t('settings.about')}>
-        <p className="m-0 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+        <p
+          className="m-0 text-sm leading-relaxed"
+          style={{ color: 'var(--muted)' }}
+        >
           {t('settings.aboutText')}
         </p>
         <p className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>
-          {t('settings.version')}: {typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.1.0'}
+          {t('settings.version')}:{' '}
+          {typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.1.0'}
         </p>
       </Section>
 
@@ -282,11 +291,38 @@ export function SettingsView() {
         onConfirm={onEraseAll}
         onCancel={() => setConfirmErase(false)}
       />
+
+      {updating && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3"
+          style={{
+            background: 'color-mix(in srgb, var(--bg) 92%, transparent)',
+            backdropFilter: 'blur(2px)',
+          }}
+        >
+          <RefreshIcon
+            size={40}
+            className="animate-spin"
+            style={{ color: 'var(--primary)' }}
+          />
+          <p className="m-0 text-sm font-semibold">
+            {t('settings.forceUpdateInProgress')}
+          </p>
+        </div>
+      )}
     </PageContainer>
   );
 }
 
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
+function Section({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="mb-4">
       <h2
