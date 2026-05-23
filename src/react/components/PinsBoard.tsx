@@ -21,10 +21,12 @@ const VIEW_H = 320;
 // Padding inside the board so the edge pins (5, 6 horizontally; 1, 2 at
 // the bottom) stay clear of the rounded corners + overflow-hidden clip.
 // PAD_BOTTOM is generous so the "↑ Touchez ↑" hint sits cleanly below
-// the bottom row of pins instead of being covered by them.
-const PAD_X = 50;
-const PAD_TOP = 36;
-const PAD_BOTTOM = 76;
+// the bottom row of pins instead of being covered by them. PAD_X is
+// kept tight so the widest row (5, 11, 12, 6) actually spans most of
+// the board width — otherwise the layout looks cramped in the middle.
+const PAD_X = 36;
+const PAD_TOP = 30;
+const PAD_BOTTOM = 72;
 
 function projectX(x: number): number {
   const usable = VIEW_W - PAD_X * 2;
