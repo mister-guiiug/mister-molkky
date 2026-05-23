@@ -46,58 +46,79 @@ export function registerServiceWorker(): void {
 }
 
 /**
- * Try to apply a waiting service worker update (the "nice path" — same as
- * tapping the SW update banner). Returns true if a waiting worker was
- * activated. Caller should fall back to forceAppUpdate() if it returns
- * false, which means there is no pending update and the user is just
- * asking "give me the very latest version, NOW".
+ * Race a promise against a timeout. We use this when wiping SW + caches
+ * because on some iOS PWA installs those calls can hang forever, and
+ * the user just wants to see the page reload.
  */
-async function tryActivateWaitingWorker(): Promise<boolean> {
-  if (!updateSWFn) return false;
-  try {
-    await updateSWFn(true);
-    return true;
-  } catch {
-    return false;
-  }
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | undefined> {
+  return Promise.race([
+    promise,
+    new Promise<undefined>(resolve => setTimeout(() => resolve(undefined), ms)),
+  ]);
 }
 
 /**
  * Nuclear refresh: unregister every service worker, wipe every Cache
- * Storage entry, then reload with a cache-busting query string. This
- * defeats the SW intercepting the navigation request and re-serving
- * the stale HTML — which was why the previous version of this helper
- * silently no-op'd when no waiting worker was present.
+ * Storage entry, then reload with a cache-busting query string.
+ *
+ * We DON'T try the soft "activate waiting worker" path first because in
+ * practice there is rarely a waiting SW when the user manually taps
+ * "Force update" — and vite-plugin-pwa's `updateSW(true)` silently
+ * no-ops in that case on some builds, leaving the user staring at a
+ * button that does nothing (the reported symptom on mobile).
  *
  * IndexedDB and localStorage are intentionally left alone so the user
  * keeps their players, history, settings and templates.
+ *
+ * A 2 s safety timeout wraps the SW + cache work: if any browser API
+ * hangs (seen on iOS Safari PWA), we force the reload anyway so the
+ * UX never freezes on a clickable-but-dead button.
  */
 export async function forceAppUpdate(): Promise<void> {
-  if (await tryActivateWaitingWorker()) return;
-
-  try {
-    if ('serviceWorker' in navigator) {
+  const unregisterAllSW = async () => {
+    if (!('serviceWorker' in navigator)) return;
+    try {
       const registrations = await navigator.serviceWorker.getRegistrations();
       await Promise.all(
         registrations.map(reg => reg.unregister().catch(() => false))
       );
+    } catch {
+      /* ignore — proceed to cache wipe */
     }
-  } catch {
-    /* ignore — proceed to cache wipe */
-  }
+  };
 
-  try {
-    if (typeof caches !== 'undefined') {
+  const wipeAllCaches = async () => {
+    if (typeof caches === 'undefined') return;
+    try {
       const keys = await caches.keys();
-      await Promise.all(keys.map(key => caches.delete(key).catch(() => false)));
+      await Promise.all(keys.map(k => caches.delete(k).catch(() => false)));
+    } catch {
+      /* ignore — proceed to reload */
     }
-  } catch {
-    /* ignore — proceed to reload */
-  }
+  };
 
-  // Cache-busting query string makes sure the browser pulls a fresh
-  // index.html from the network (relevant for the GH Pages CDN edge cache).
+  await withTimeout(
+    Promise.all([unregisterAllSW(), wipeAllCaches()]),
+    2000
+  );
+
+  // Cache-busting query string defeats the GH Pages CDN edge cache AND
+  // any HTTP cache layer that survives SW unregister on iOS.
   const url = new URL(window.location.href);
   url.searchParams.set('_t', Date.now().toString(36));
-  window.location.replace(url.toString());
+
+  // Some iOS PWA installs ignore replace() but honour assigning to href.
+  // Fire both — whichever the runtime applies first wins.
+  try {
+    window.location.href = url.toString();
+  } catch {
+    /* ignore */
+  }
+  setTimeout(() => {
+    try {
+      window.location.replace(url.toString());
+    } catch {
+      window.location.reload();
+    }
+  }, 100);
 }
