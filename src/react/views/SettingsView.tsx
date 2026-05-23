@@ -12,6 +12,7 @@ import { ExportBundleSchema, type Locale } from '../../schemas';
 import { PageContainer } from '../components/layout/PageContainer';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { isSupabaseConfigured } from '../../supabase';
+import { forceAppUpdate } from '../../register-sw';
 
 declare const __APP_VERSION__: string | undefined;
 
@@ -27,6 +28,7 @@ export function SettingsView() {
   );
   const [confirmErase, setConfirmErase] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [updating, setUpdating] = useState(false);
 
   const setTheme = (v: ThemePreference) => {
     setThemePref(v);
@@ -204,6 +206,32 @@ export function SettingsView() {
               {feedback}
             </p>
           )}
+        </div>
+      </Section>
+
+      <Section label={t('settings.forceUpdate')}>
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            disabled={updating}
+            onClick={async () => {
+              setUpdating(true);
+              try {
+                await forceAppUpdate();
+              } finally {
+                // forceAppUpdate triggers a reload, so we rarely reach this;
+                // reset the flag defensively if reload is blocked.
+                setUpdating(false);
+              }
+            }}
+            className="touch-target rounded-lg border px-4 text-sm font-bold disabled:opacity-50"
+            style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+          >
+            🔄 {updating ? t('settings.forceUpdateInProgress') : t('settings.forceUpdate')}
+          </button>
+          <p className="m-0 text-xs" style={{ color: 'var(--muted)' }}>
+            {t('settings.forceUpdateHint')}
+          </p>
         </div>
       </Section>
 
