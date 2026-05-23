@@ -581,8 +581,11 @@ export function MatchView() {
           */}
           {(() => {
             const lastThrow = current.throws[current.throws.length - 1];
+            // `?? []` so a legacy match without highlightedThrowIds (saved
+            // before that feature shipped) doesn't blow up on .includes().
+            const highlights = current.highlightedThrowIds ?? [];
             const isStarred = Boolean(
-              lastThrow && current.highlightedThrowIds.includes(lastThrow.id)
+              lastThrow && highlights.includes(lastThrow.id)
             );
             return (
               <button
@@ -910,12 +913,17 @@ export function MatchView() {
  * VictoryScreen to give bragging rights to the lucky punters.
  */
 function resolveCorrectPredictors(match: {
-  predictions: Record<string, string>;
+  predictions?: Record<string, string> | null;
   winnerId: string;
   config: { players: { id: string; name: string }[] };
 }): string[] {
+  // Legacy matches (saved before the predictions feature) have no
+  // `predictions` field; `Object.entries(undefined)` would throw and
+  // crash the whole MatchView. Default to empty to keep render safe
+  // even if the rehydrate migration somehow missed an entry.
+  const predictions = match.predictions ?? {};
   const out: string[] = [];
-  for (const [predictorId, pickedId] of Object.entries(match.predictions)) {
+  for (const [predictorId, pickedId] of Object.entries(predictions)) {
     if (pickedId !== match.winnerId) continue;
     const predictor = match.config.players.find(p => p.id === predictorId);
     if (predictor) out.push(predictor.name);
