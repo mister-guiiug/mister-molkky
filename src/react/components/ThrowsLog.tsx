@@ -3,7 +3,7 @@ import { useI18n } from '../../i18n/useI18n';
 import { useMatchStore } from '../../store/useMatchStore';
 import { ALL_PIN_NUMBERS } from '../../molkky/pins-layout';
 import { Modal } from './Modal';
-import { CheckIcon } from './icons';
+import { CheckIcon, StarIcon } from './icons';
 
 interface ThrowsLogProps {
   open: boolean;
@@ -14,10 +14,12 @@ export function ThrowsLog({ open, onClose }: ThrowsLogProps) {
   const { t } = useI18n();
   const current = useMatchStore(s => s.current);
   const editThrow = useMatchStore(s => s.editThrow);
+  const toggleHighlight = useMatchStore(s => s.toggleHighlight);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editPins, setEditPins] = useState<Set<number>>(new Set());
 
   const throws = current?.throws ?? [];
+  const highlightedSet = new Set(current?.highlightedThrowIds ?? []);
   const playersById = new Map(
     (current?.config.players ?? []).map(p => [p.id, p])
   );
@@ -85,26 +87,53 @@ export function ThrowsLog({ open, onClose }: ThrowsLogProps) {
                   <span className="flex-1 truncate text-sm font-semibold">
                     {p?.name ?? '?'}
                   </span>
-                  <span className="text-sm tabular-nums" style={{ color: 'var(--muted)' }}>
+                  <span
+                    className="text-sm tabular-nums"
+                    style={{ color: 'var(--muted)' }}
+                  >
                     {pinsLabel}
                   </span>
                   <span className="w-10 text-right text-base font-black tabular-nums">
                     +{tr.computedScore}
                   </span>
                   {!isEditing && (
-                    <button
-                      type="button"
-                      onClick={() => startEdit(tr.id, [...tr.fallenPins])}
-                      className="touch-target rounded px-2 text-xs font-bold"
-                      style={{ color: 'var(--primary)' }}
-                    >
-                      {t('common.edit')}
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => toggleHighlight(tr.id)}
+                        className="touch-target rounded px-1"
+                        aria-label={t('match.markHighlight')}
+                        aria-pressed={highlightedSet.has(tr.id)}
+                        style={{
+                          color: highlightedSet.has(tr.id)
+                            ? 'var(--accent)'
+                            : 'var(--muted)',
+                        }}
+                      >
+                        <StarIcon
+                          size={16}
+                          fill={
+                            highlightedSet.has(tr.id) ? 'currentColor' : 'none'
+                          }
+                        />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => startEdit(tr.id, [...tr.fallenPins])}
+                        className="touch-target rounded px-2 text-xs font-bold"
+                        style={{ color: 'var(--primary)' }}
+                      >
+                        {t('common.edit')}
+                      </button>
+                    </>
                   )}
                 </div>
                 {isEditing && (
                   <div className="mt-2 flex flex-col gap-2">
-                    <p className="m-0 text-xs" style={{ color: 'var(--muted)' }}>
+                    <p
+                      className="m-0 text-xs"
+                      style={{ color: 'var(--muted)' }}
+                    >
                       {t('match.editThrowHint')}
                     </p>
                     <div className="grid grid-cols-6 gap-1">
@@ -123,7 +152,9 @@ export function ThrowsLog({ open, onClose }: ThrowsLogProps) {
                               borderColor: selected
                                 ? 'var(--primary)'
                                 : 'var(--border)',
-                              color: selected ? 'var(--primary)' : 'var(--text)',
+                              color: selected
+                                ? 'var(--primary)'
+                                : 'var(--text)',
                             }}
                           >
                             {pin}

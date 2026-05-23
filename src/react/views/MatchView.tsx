@@ -35,12 +35,15 @@ import {
   CheckIcon,
   ClipboardIcon,
   ForfeitIcon,
+  LightbulbIcon,
   LiveIcon,
   MenuIcon,
   RematchIcon,
+  StarIcon,
   TrophyIcon,
   UndoIcon,
 } from '../components/icons';
+import { suggestThrow } from '../../molkky/rules';
 
 const COLORBLIND_SYMBOLS = [
   '★',
@@ -82,6 +85,8 @@ export function MatchView() {
   const scoreHistories = useScoreHistories();
   const colorblind = useSettingsStore(s => s.colorblind);
   const outdoor = useSettingsStore(s => s.outdoor);
+  const coachEnabled = useSettingsStore(s => s.coach);
+  const toggleHighlight = useMatchStore(s => s.toggleHighlight);
   // Memoise the player list so the inline `?? []` fallback doesn't hand
   // useAvatarUrls a fresh array reference on every render — see hook
   // comment for why that would freeze the screen.
@@ -383,6 +388,63 @@ export function MatchView() {
         </div>
       </section>
 
+      {coachEnabled &&
+        currentInfo &&
+        (() => {
+          const suggestion = suggestThrow(currentInfo.score, {
+            targetScore: current.config.targetScore,
+            overshootPenalty: current.config.overshootPenalty,
+            maxMisses: current.config.maxMisses,
+            variant: current.config.variant ?? 'classic',
+          });
+          // Don't render anything if the coach has nothing useful to say —
+          // e.g. score is 0 and target is 50, every single pin is fine, no
+          // "best single" exists. Showing an empty hint would be noisy.
+          if (!suggestion.bestSinglePin && !suggestion.bestMultiCount) {
+            return null;
+          }
+          return (
+            <div
+              className="mb-3 flex items-start gap-2 rounded-lg border-l-4 px-3 py-2 text-sm"
+              style={{
+                borderColor: 'var(--accent)',
+                background:
+                  'color-mix(in srgb, var(--accent) 8%, var(--surface))',
+              }}
+              role="status"
+              aria-live="polite"
+            >
+              <LightbulbIcon
+                size={18}
+                style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }}
+                aria-hidden
+              />
+              <div className="flex flex-col gap-0.5">
+                <p className="m-0 font-bold">{t('match.coachLabel')}</p>
+                <p className="m-0" style={{ color: 'var(--muted)' }}>
+                  {suggestion.bestSinglePin !== null
+                    ? t('match.coachSingle', {
+                        n: suggestion.bestSinglePin,
+                      })
+                    : suggestion.bestMultiCount !== null
+                      ? t('match.coachMulti', { n: suggestion.bestMultiCount })
+                      : ''}
+                  {suggestion.avoidSingles.length > 0 && (
+                    <>
+                      {' · '}
+                      <span style={{ color: 'var(--danger)' }}>
+                        {t('match.coachAvoid', {
+                          pins: suggestion.avoidSingles.join(', '),
+                        })}
+                      </span>
+                    </>
+                  )}
+                </p>
+              </div>
+            </div>
+          );
+        })()}
+
       <PinsBoard
         fallen={fallen}
         onToggle={togglePin}
@@ -428,6 +490,44 @@ export function MatchView() {
           >
             <UndoIcon size={18} /> {t('match.undo')}
           </button>
+          {/*
+            Star button: stamps the last throw as a "highlight" so the
+            user can find it in the throws log + ranking later. The
+            button visually fills in once the most recent throw is
+            starred, making the toggle state obvious without an extra
+            label.
+          */}
+          {(() => {
+            const lastThrow = current.throws[current.throws.length - 1];
+            const isStarred = Boolean(
+              lastThrow && current.highlightedThrowIds.includes(lastThrow.id)
+            );
+            return (
+              <button
+                type="button"
+                onClick={() => {
+                  if (lastThrow) toggleHighlight(lastThrow.id);
+                }}
+                disabled={!lastThrow}
+                title={t('match.markHighlight')}
+                aria-label={t('match.markHighlight')}
+                aria-pressed={isStarred}
+                className="touch-target flex items-center justify-center gap-1 rounded-xl border py-3 px-4 font-bold disabled:opacity-50"
+                style={{
+                  borderColor: isStarred ? 'var(--accent)' : 'var(--border)',
+                  color: isStarred ? 'var(--accent)' : 'var(--muted)',
+                  background: isStarred
+                    ? 'color-mix(in srgb, var(--accent) 14%, var(--surface))'
+                    : 'transparent',
+                }}
+              >
+                <StarIcon
+                  size={20}
+                  fill={isStarred ? 'currentColor' : 'none'}
+                />
+              </button>
+            );
+          })()}
         </div>
       </section>
 

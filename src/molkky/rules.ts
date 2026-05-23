@@ -317,6 +317,65 @@ export function currentPlayer(
   return alive[outcome.currentPlayerIndex % alive.length]!;
 }
 
+/**
+ * Strategy hint returned by the in-match Coach. Pure derivation from the
+ * current score + rule settings — no state, no React.
+ */
+export interface CoachSuggestion {
+  /** Single pin number (1..12) that brings the actor exactly to the target. */
+  readonly bestSinglePin: number | null;
+  /** Number of pins (2..12) whose multi-hit lands exactly on the target. */
+  readonly bestMultiCount: number | null;
+  /** Single pin numbers that would trigger an overshoot if hit alone. */
+  readonly avoidSingles: readonly number[];
+}
+
+/**
+ * Compute the optimal throw for the given current score under the active
+ * rule settings. Used by the in-match coach widget.
+ *
+ * - Classic / free: player adds to score, target = settings.targetScore.
+ * - Inverse: player subtracts from score, target = 0.
+ *
+ * If neither a single-pin nor a multi-pin hit can reach the target in
+ * one throw, both `bestSinglePin` and `bestMultiCount` return null and
+ * the caller should fall back to "pick anything safe".
+ */
+export function suggestThrow(
+  currentScore: number,
+  settings: RuleSettings = DEFAULT_RULE_SETTINGS
+): CoachSuggestion {
+  const variant = settings.variant ?? 'classic';
+
+  if (variant === 'inverse') {
+    const single =
+      currentScore >= 1 && currentScore <= 12 ? currentScore : null;
+    const multi = currentScore >= 2 && currentScore <= 12 ? currentScore : null;
+    const avoid: number[] = [];
+    for (let p = 1; p <= 12; p += 1) {
+      if (p > currentScore) avoid.push(p);
+    }
+    return {
+      bestSinglePin: single,
+      bestMultiCount: multi,
+      avoidSingles: avoid,
+    };
+  }
+
+  const need = settings.targetScore - currentScore;
+  const single = need >= 1 && need <= 12 ? need : null;
+  const multi = need >= 2 && need <= 12 ? need : null;
+  const avoid: number[] = [];
+  for (let p = 1; p <= 12; p += 1) {
+    if (currentScore + p > settings.targetScore) avoid.push(p);
+  }
+  return {
+    bestSinglePin: single,
+    bestMultiCount: multi,
+    avoidSingles: avoid,
+  };
+}
+
 export function isValidThrow(fallenPins: readonly number[]): boolean {
   if (!Array.isArray(fallenPins)) return false;
   const seen = new Set<number>();

@@ -179,6 +179,24 @@ export function SettingsView() {
         />
       </Section>
 
+      <Section label={t('settings.coach')}>
+        <Toggle
+          checked={settings.coach}
+          onChange={settings.toggleCoach}
+          label={t('settings.coach')}
+          hint={t('settings.coachHint')}
+        />
+      </Section>
+
+      <Section label={t('settings.voiceAnnouncer')}>
+        <Toggle
+          checked={settings.voiceAnnouncer}
+          onChange={settings.toggleVoiceAnnouncer}
+          label={t('settings.voiceAnnouncer')}
+          hint={t('settings.voiceAnnouncerHint')}
+        />
+      </Section>
+
       <Section label={t('settings.export')}>
         <div className="flex flex-col gap-2">
           <button

@@ -92,6 +92,8 @@ export const FinishedMatchSchema = z.object({
   finishedAt: z.number().int(),
   winnerId: PlayerIdSchema,
   ranking: z.array(RankingEntrySchema),
+  // Throw IDs the player flagged with a star during the match.
+  highlightedThrowIds: z.array(z.string().min(1)).default([]),
 });
 export type FinishedMatch = z.infer<typeof FinishedMatchSchema>;
 
@@ -105,6 +107,9 @@ export const CurrentMatchStateSchema = z.object({
   // rotation. Defaulted to [] so persisted matches from before the
   // forfeit feature still parse cleanly.
   forfeitedActorIds: z.array(z.string().min(1)).default([]),
+  // Throw IDs flagged with a star during the match — surfaced in the
+  // ThrowsLog and the final ranking for replay/sharing.
+  highlightedThrowIds: z.array(z.string().min(1)).default([]),
 });
 export type CurrentMatchState = z.infer<typeof CurrentMatchStateSchema>;
 
@@ -140,6 +145,13 @@ export const SettingsSchema = z.object({
   wakeLock: z.boolean().default(true),
   outdoor: z.boolean().default(false),
   colorblind: z.boolean().default(false),
+  // In-match coach hint: shows the optimal pin/combo for the current
+  // score above the PinsBoard. Defaults on — pedagogical, easy to ignore.
+  coach: z.boolean().default(true),
+  // Voice announcer (Web Speech API) — calls turn changes + scores.
+  // Defaults off because TTS in PWAs is heavy and people may find it
+  // intrusive; users opt in from Settings.
+  voiceAnnouncer: z.boolean().default(false),
   hasSeenWelcome: z.boolean().default(false),
   hasSeenMatchOnboarding: z.boolean().default(false),
 });
