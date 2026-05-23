@@ -29,12 +29,25 @@ export type TargetScore = z.infer<typeof TargetScoreSchema>;
 export const TeamModeSchema = z.enum(['solo', 'duo', 'trio']);
 export type TeamMode = z.infer<typeof TeamModeSchema>;
 
+export const TeamSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1).max(30),
+  color: HexColorSchema,
+  playerIds: z.array(PlayerIdSchema).min(1),
+});
+export type Team = z.infer<typeof TeamSchema>;
+
+export const RuleVariantSchema = z.enum(['classic', 'inverse', 'free']);
+export type RuleVariant = z.infer<typeof RuleVariantSchema>;
+
 export const MatchConfigSchema = z.object({
   players: z.array(PlayerSchema).min(2).max(16),
   targetScore: TargetScoreSchema.default(50),
   overshootPenalty: z.number().int().min(0).max(50).default(25),
   maxMisses: z.number().int().min(1).max(5).default(3),
   teamMode: TeamModeSchema.default('solo'),
+  teams: z.array(TeamSchema).default([]),
+  variant: RuleVariantSchema.default('classic'),
   shufflePlayers: z.boolean().default(false),
 });
 export type MatchConfig = z.infer<typeof MatchConfigSchema>;

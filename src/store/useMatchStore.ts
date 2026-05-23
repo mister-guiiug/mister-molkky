@@ -20,6 +20,7 @@ import {
   DEFAULT_RULE_SETTINGS,
   currentPlayer as ruleCurrentPlayer,
   evaluateThrow,
+  initialScore,
   replayThrows,
   type RuleSettings,
 } from '../molkky/rules';
@@ -55,6 +56,29 @@ function settingsFromConfig(config: MatchConfig): RuleSettings {
     targetScore: config.targetScore,
     overshootPenalty: config.overshootPenalty,
     maxMisses: config.maxMisses,
+    variant: config.variant ?? 'classic',
+  };
+}
+
+/**
+ * Resolve actor identifiers + player→team map when team mode is active.
+ * In solo mode we just use player IDs; in team mode we use team IDs and
+ * map each player to their team.
+ */
+function actorContext(config: MatchConfig): {
+  actorIds: string[];
+  actorMap?: Map<string, string>;
+} {
+  if (!config.teams || config.teams.length === 0) {
+    return { actorIds: config.players.map(p => p.id) };
+  }
+  const actorMap = new Map<string, string>();
+  for (const team of config.teams) {
+    for (const pid of team.playerIds) actorMap.set(pid, team.id);
+  }
+  return {
+    actorIds: config.teams.map(t => t.id),
+    actorMap,
   };
 }
 
@@ -103,30 +127,44 @@ export const useMatchStore = create<MatchStoreState>()(
         if (!state) return { ok: false, overshoot: false, eliminated: false, won: false };
 
         const settings = settingsFromConfig(state.config);
-        const playerIds = state.config.players.map(p => p.id);
+        const { actorIds, actorMap } = actorContext(state.config);
         const beforeOutcome = replayThrows(
-          playerIds,
+          actorIds,
           state.throws.map(t => ({ playerId: t.playerId, fallenPins: t.fallenPins })),
-          settings
+          settings,
+          actorMap
         );
         if (beforeOutcome.isOver) {
           return { ok: false, overshoot: false, eliminated: false, won: false };
         }
-        const expected = ruleCurrentPlayer(playerIds, beforeOutcome);
-        if (!expected) {
+        const expectedActor = ruleCurrentPlayer(actorIds, beforeOutcome);
+        if (!expectedActor) {
           return { ok: false, overshoot: false, eliminated: false, won: false };
         }
-        const progress = beforeOutcome.progress.get(expected);
-        const currentScore = progress?.score ?? 0;
+        const progress = beforeOutcome.progress.get(expectedActor);
+        const currentScore = progress?.score ?? initialScore(settings);
         const evaluation = evaluateThrow(currentScore, fallenPins, settings);
 
         const isMiss = evaluation.score === 0;
         const willBeEliminated =
           isMiss && (progress?.missStreak ?? 0) + 1 >= settings.maxMisses;
 
+        // Pick the actual player who throws — in solo mode the actor IS
+        // the player; in team mode we rotate through the team members
+        // based on how many throws the team has already taken.
+        const throwingPlayerId = (() => {
+          if (!actorMap) return expectedActor;
+          const team = state.config.teams.find(tt => tt.id === expectedActor);
+          if (!team) return expectedActor;
+          const teamThrows = state.throws.filter(
+            t => actorMap.get(t.playerId) === expectedActor
+          ).length;
+          return team.playerIds[teamThrows % team.playerIds.length] ?? expectedActor;
+        })();
+
         const newThrow: Throw = ThrowSchema.parse({
           id: newId(),
-          playerId: expected as PlayerId,
+          playerId: throwingPlayerId as PlayerId,
           timestamp: Date.now(),
           fallenPins,
           computedScore: evaluation.score,
@@ -138,9 +176,10 @@ export const useMatchStore = create<MatchStoreState>()(
         const nextState: CurrentMatchState = { ...state, throws: nextThrows };
 
         const afterOutcome = replayThrows(
-          playerIds,
+          actorIds,
           nextThrows.map(t => ({ playerId: t.playerId, fallenPins: t.fallenPins })),
-          settings
+          settings,
+          actorMap
         );
 
         let feedback: FeedbackEvent = 'throw';
@@ -180,7 +219,7 @@ export const useMatchStore = create<MatchStoreState>()(
         if (idx < 0) return false;
         const original = state.throws[idx]!;
         const settings = settingsFromConfig(state.config);
-        const playerIds = state.config.players.map(p => p.id);
+        const { actorIds, actorMap } = actorContext(state.config);
 
         const updatedThrow: Throw = ThrowSchema.parse({
           ...original,
@@ -200,19 +239,21 @@ export const useMatchStore = create<MatchStoreState>()(
 
         try {
           const replay = replayThrows(
-            playerIds,
+            actorIds,
             candidateThrows.map(t => ({
               playerId: t.playerId,
               fallenPins: t.fallenPins,
             })),
-            settings
+            settings,
+            actorMap
           );
           const acceptedThrows = candidateThrows.slice(0, replay.currentTurn);
           const reconciled = acceptedThrows.map(t => {
-            const player = replay.progress.get(t.playerId);
+            const actor = actorMap?.get(t.playerId) ?? t.playerId;
+            const progress = replay.progress.get(actor);
             return {
               ...t,
-              resultedInElimination: player?.eliminated ?? false,
+              resultedInElimination: progress?.eliminated ?? false,
               resultedInOvershoot: false,
             };
           });
@@ -235,11 +276,12 @@ export const useMatchStore = create<MatchStoreState>()(
         const state = get().current;
         if (!state) return null;
         const settings = settingsFromConfig(state.config);
-        const playerIds = state.config.players.map(p => p.id);
+        const { actorIds, actorMap } = actorContext(state.config);
         const outcome = replayThrows(
-          playerIds,
+          actorIds,
           state.throws.map(t => ({ playerId: t.playerId, fallenPins: t.fallenPins })),
-          settings
+          settings,
+          actorMap
         );
         if (!outcome.winnerId) return null;
 
@@ -248,11 +290,12 @@ export const useMatchStore = create<MatchStoreState>()(
         for (const t of state.throws) {
           const before = runningElim.size;
           const replay = replayThrows(
-            playerIds,
+            actorIds,
             state.throws
               .slice(0, state.throws.indexOf(t) + 1)
               .map(x => ({ playerId: x.playerId, fallenPins: x.fallenPins })),
-            settings
+            settings,
+            actorMap
           );
           for (const [pid, p] of replay.progress) {
             if (p.eliminated && !runningElim.has(pid)) {
@@ -262,7 +305,7 @@ export const useMatchStore = create<MatchStoreState>()(
           }
           if (runningElim.size === before) continue;
         }
-        const ranking = buildRanking(playerIds, outcome, eliminationOrder);
+        const ranking = buildRanking(actorIds, outcome, eliminationOrder);
 
         const finished: FinishedMatch = FinishedMatchSchema.parse({
           id: state.id,
@@ -329,6 +372,8 @@ export interface CurrentPlayerInfo {
   player: Player;
   score: number;
   missStreak: number;
+  /** When in team mode, the actual member currently throwing (≠ team rep). */
+  throwingMember?: Player;
 }
 
 /**
@@ -341,13 +386,14 @@ export interface CurrentPlayerInfo {
 function computeOutcome(match: CurrentMatchState | null) {
   if (!match) return null;
   const settings = settingsFromConfig(match.config);
-  const playerIds = match.config.players.map(p => p.id);
+  const { actorIds, actorMap } = actorContext(match.config);
   const outcome = replayThrows(
-    playerIds,
+    actorIds,
     match.throws.map(t => ({ playerId: t.playerId, fallenPins: t.fallenPins })),
-    settings
+    settings,
+    actorMap
   );
-  return { playerIds, outcome };
+  return { playerIds: actorIds, outcome, actorMap };
 }
 
 export function useCurrentPlayerInfo(): CurrentPlayerInfo | null {
@@ -357,9 +403,33 @@ export function useCurrentPlayerInfo(): CurrentPlayerInfo | null {
     if (!result || !match) return null;
     const id = ruleCurrentPlayer(result.playerIds, result.outcome);
     if (!id) return null;
+    const progress = result.outcome.progress.get(id);
+
+    if (result.actorMap) {
+      const team = match.config.teams.find(tt => tt.id === id);
+      if (!team) return null;
+      const teamThrowsSoFar = match.throws.filter(
+        t => result.actorMap!.get(t.playerId) === id
+      ).length;
+      const nextPlayerId =
+        team.playerIds[teamThrowsSoFar % team.playerIds.length];
+      const throwingMember = match.config.players.find(p => p.id === nextPlayerId);
+      const teamAsPlayer: Player = {
+        id: team.id as Player['id'],
+        name: team.name,
+        color: team.color,
+        createdAt: 0,
+      };
+      return {
+        player: teamAsPlayer,
+        throwingMember,
+        score: progress?.score ?? 0,
+        missStreak: progress?.missStreak ?? 0,
+      };
+    }
+
     const player = match.config.players.find(p => p.id === id);
     if (!player) return null;
-    const progress = result.outcome.progress.get(id);
     return {
       player,
       score: progress?.score ?? 0,

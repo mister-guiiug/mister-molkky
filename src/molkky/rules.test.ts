@@ -55,6 +55,30 @@ describe('evaluateThrow', () => {
     expect(e.nextScore).toBe(50);
   });
 
+  it('inverse variant: throw subtracts from score', () => {
+    const e = evaluateThrow(50, [7], { ...DEFAULT_RULE_SETTINGS, variant: 'inverse' });
+    expect(e.nextScore).toBe(43);
+    expect(e.wonThisThrow).toBe(false);
+  });
+
+  it('inverse variant: exact 0 wins', () => {
+    const e = evaluateThrow(7, [7], { ...DEFAULT_RULE_SETTINGS, variant: 'inverse' });
+    expect(e.nextScore).toBe(0);
+    expect(e.wonThisThrow).toBe(true);
+  });
+
+  it('inverse variant: overshoot adds 5 capped at target', () => {
+    const e = evaluateThrow(3, [12], { ...DEFAULT_RULE_SETTINGS, variant: 'inverse' });
+    expect(e.overshoot).toBe(true);
+    expect(e.nextScore).toBe(8);
+  });
+
+  it('free variant: overshoot does not reset to 25', () => {
+    const e = evaluateThrow(45, [12], { ...DEFAULT_RULE_SETTINGS, variant: 'free' });
+    expect(e.overshoot).toBe(true);
+    expect(e.nextScore).toBe(45);
+  });
+
   it('respects custom target & penalty', () => {
     const e = evaluateThrow(20, [7], { ...DEFAULT_RULE_SETTINGS, targetScore: 25, overshootPenalty: 10 });
     expect(e.overshoot).toBe(true);
@@ -256,5 +280,29 @@ describe('replayThrows — turn order with eliminations', () => {
     expect(out.progress.get('a')?.pinsHit).toBe(3);
     expect(out.progress.get('a')?.totalThrows).toBe(2);
     expect(out.progress.get('b')?.pinsHit).toBe(1);
+  });
+});
+
+describe('replayThrows — team mode (actorMap)', () => {
+  it('attributes throws to the team and shares score', () => {
+    const teamMap = new Map<string, string>([
+      ['alice', 'teamA'],
+      ['bob', 'teamA'],
+      ['carol', 'teamB'],
+      ['dave', 'teamB'],
+    ]);
+    const out = replayThrows(
+      ['teamA', 'teamB'],
+      [
+        { playerId: 'alice', fallenPins: [7] },
+        { playerId: 'carol', fallenPins: [5] },
+        { playerId: 'bob', fallenPins: [3] },
+        { playerId: 'dave', fallenPins: [2] },
+      ],
+      undefined,
+      teamMap
+    );
+    expect(out.progress.get('teamA')?.score).toBe(10);
+    expect(out.progress.get('teamB')?.score).toBe(7);
   });
 });

@@ -13,16 +13,20 @@ export const DEFAULT_TARGET_SCORE = 50;
 export const DEFAULT_OVERSHOOT_PENALTY = 25;
 export const DEFAULT_MAX_MISSES = 3;
 
+export type RuleVariant = 'classic' | 'inverse' | 'free';
+
 export interface RuleSettings {
   readonly targetScore: number;
   readonly overshootPenalty: number;
   readonly maxMisses: number;
+  readonly variant?: RuleVariant;
 }
 
 export const DEFAULT_RULE_SETTINGS: RuleSettings = {
   targetScore: DEFAULT_TARGET_SCORE,
   overshootPenalty: DEFAULT_OVERSHOOT_PENALTY,
   maxMisses: DEFAULT_MAX_MISSES,
+  variant: 'classic',
 };
 
 export interface ThrowRecord {
@@ -75,14 +79,56 @@ export function scoreForThrow(fallenPins: readonly number[]): number {
   return fallenPins.length;
 }
 
+/**
+ * Starting score for a given variant. Inverse mode starts each actor at
+ * targetScore and counts down to 0.
+ */
+export function initialScore(settings: RuleSettings): number {
+  return settings.variant === 'inverse' ? settings.targetScore : 0;
+}
+
 export function evaluateThrow(
   currentScore: number,
   fallenPins: readonly number[],
   settings: RuleSettings = DEFAULT_RULE_SETTINGS
 ): ThrowEvaluation {
   const score = scoreForThrow(fallenPins);
+  const variant = settings.variant ?? 'classic';
+
+  if (variant === 'inverse') {
+    const projected = currentScore - score;
+    if (projected < 0 && score > 0) {
+      return {
+        score,
+        nextScore: Math.min(
+          settings.targetScore,
+          currentScore + Math.min(5, settings.overshootPenalty)
+        ),
+        overshoot: true,
+        wonThisThrow: false,
+        eliminatedThisThrow: false,
+      };
+    }
+    return {
+      score,
+      nextScore: projected,
+      overshoot: false,
+      wonThisThrow: projected === 0,
+      eliminatedThisThrow: false,
+    };
+  }
+
   const projected = currentScore + score;
   if (projected > settings.targetScore && score > 0) {
+    if (variant === 'free') {
+      return {
+        score,
+        nextScore: currentScore,
+        overshoot: true,
+        wonThisThrow: false,
+        eliminatedThisThrow: false,
+      };
+    }
     return {
       score,
       nextScore: settings.overshootPenalty,
@@ -100,10 +146,13 @@ export function evaluateThrow(
   };
 }
 
-function makeInitialProgress(playerId: string): PlayerProgress {
+function makeInitialProgress(
+  playerId: string,
+  startScore: number
+): PlayerProgress {
   return {
     playerId,
-    score: 0,
+    score: startScore,
     missStreak: 0,
     eliminated: false,
     hasWon: false,
@@ -115,20 +164,27 @@ function makeInitialProgress(playerId: string): PlayerProgress {
 }
 
 /**
- * Replay a list of throws against a list of players (in turn order) and
+ * Replay a list of throws against a list of actors (in turn order) and
  * return the resulting state. Throws after a match win are ignored.
+ *
+ * `actorMap` is optional; when provided, the throw's playerId is mapped to
+ * its actor (e.g. a team id). Throws are still recorded against the
+ * resolved actor, allowing team mode to share score buckets between
+ * multiple players.
  */
 export function replayThrows(
   playerIds: readonly string[],
   throws: readonly ThrowRecord[],
-  settings: RuleSettings = DEFAULT_RULE_SETTINGS
+  settings: RuleSettings = DEFAULT_RULE_SETTINGS,
+  actorMap?: ReadonlyMap<string, string>
 ): MatchOutcome {
   if (playerIds.length < 2) {
     throw new Error('A Mölkky match needs at least 2 players');
   }
 
+  const start = initialScore(settings);
   const progress = new Map<string, PlayerProgress>();
-  for (const id of playerIds) progress.set(id, makeInitialProgress(id));
+  for (const id of playerIds) progress.set(id, makeInitialProgress(id, start));
 
   let winnerId: string | null = null;
   let cursor = 0;
@@ -146,19 +202,23 @@ export function replayThrows(
     }
   };
 
+  const resolveActor = (rawId: string): string =>
+    actorMap?.get(rawId) ?? rawId;
+
   for (const t of throws) {
     if (winnerId) break;
     advanceCursorPastEliminated();
     if (!playerIds.some(isActive)) break;
 
-    const expectedPlayer = playerIds[cursor]!;
-    if (t.playerId !== expectedPlayer) {
+    const expectedActor = playerIds[cursor]!;
+    const actor = resolveActor(t.playerId);
+    if (actor !== expectedActor) {
       throw new Error(
-        `Throw out of order: expected ${expectedPlayer}, got ${t.playerId}`
+        `Throw out of order: expected ${expectedActor}, got ${actor}`
       );
     }
 
-    const player = progress.get(t.playerId)!;
+    const player = progress.get(actor)!;
     const evaluation = evaluateThrow(player.score, t.fallenPins, settings);
     player.totalThrows += 1;
     player.pinsHit += t.fallenPins.length;

@@ -190,6 +190,14 @@ export function MatchView() {
             style={{ color: currentInfo?.player.color ?? 'var(--text)' }}
           >
             {currentInfo?.player.name ?? '—'}
+            {currentInfo?.throwingMember && (
+              <span
+                className="ml-2 text-sm font-semibold"
+                style={{ color: 'var(--muted)' }}
+              >
+                · {currentInfo.throwingMember.name}
+              </span>
+            )}
           </p>
         </div>
         <FullscreenToggle />
@@ -293,23 +301,47 @@ export function MatchView() {
         aria-label={t('match.score')}
       >
         <ul className="flex gap-2 pb-2">
-          {players.map(p => {
-            const s = scores.get(p.id);
-            return (
-              <li key={p.id}>
-                <PlayerCard
-                  player={p}
-                  score={s?.score ?? 0}
-                  missStreak={s?.missStreak ?? 0}
-                  maxMisses={maxMisses}
-                  active={p.id === currentPid}
-                  eliminated={s?.eliminated}
-                  hasWon={s?.hasWon}
-                  compact
-                />
-              </li>
-            );
-          })}
+          {current.config.teams && current.config.teams.length > 0
+            ? current.config.teams.map(team => {
+                const s = scores.get(team.id);
+                const teamPlayer = {
+                  id: team.id as typeof team.playerIds[number],
+                  name: team.name,
+                  color: team.color,
+                  createdAt: 0,
+                };
+                return (
+                  <li key={team.id}>
+                    <PlayerCard
+                      player={teamPlayer}
+                      score={s?.score ?? 0}
+                      missStreak={s?.missStreak ?? 0}
+                      maxMisses={maxMisses}
+                      active={team.id === currentPid}
+                      eliminated={s?.eliminated}
+                      hasWon={s?.hasWon}
+                      compact
+                    />
+                  </li>
+                );
+              })
+            : players.map(p => {
+                const s = scores.get(p.id);
+                return (
+                  <li key={p.id}>
+                    <PlayerCard
+                      player={p}
+                      score={s?.score ?? 0}
+                      missStreak={s?.missStreak ?? 0}
+                      maxMisses={maxMisses}
+                      active={p.id === currentPid}
+                      eliminated={s?.eliminated}
+                      hasWon={s?.hasWon}
+                      compact
+                    />
+                  </li>
+                );
+              })}
         </ul>
       </section>
 
