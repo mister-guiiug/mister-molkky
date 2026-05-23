@@ -1,0 +1,132 @@
+import {
+  defineConfig,
+  type Connect,
+  type PluginOption,
+  type ViteDevServer,
+} from 'vite';
+import type { ServerResponse } from 'node:http';
+import { VitePWA } from 'vite-plugin-pwa';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import { visualizer } from 'rollup-plugin-visualizer';
+
+const analyze = process.env.ANALYZE === '1';
+
+export default defineConfig(({ command }) => {
+  const envBase = process.env.VITE_BASE_PATH;
+  const basePath = envBase ?? (command === 'build' ? '/mister-molkky/' : '/');
+
+  return {
+    base: basePath,
+    build: {
+      sourcemap: true,
+      chunkSizeWarningLimit: 800,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return;
+            const norm = id.replace(/\\/g, '/');
+            if (
+              norm.includes('/vite-plugin-pwa/') ||
+              norm.includes('/workbox-')
+            ) {
+              return 'pwa';
+            }
+            if (
+              norm.includes('/react-dom/') ||
+              norm.includes('/node_modules/react/') ||
+              norm.includes('/scheduler/')
+            ) {
+              return 'react-vendor';
+            }
+            if (norm.includes('/react-router/')) return 'router';
+            if (norm.includes('/zustand/')) return 'zustand';
+            if (norm.includes('/@rive-app/')) return 'rive';
+            if (
+              norm.includes('/tailwindcss/') ||
+              norm.includes('/@tailwindcss/')
+            ) {
+              return 'tailwind';
+            }
+            return 'vendor';
+          },
+        },
+      },
+    },
+    plugins: [
+      react(),
+      tailwindcss(),
+      {
+        name: 'mister-molkky-trailing-slash',
+        configureServer(server: ViteDevServer) {
+          server.middlewares.use(
+            (
+              req: Connect.IncomingMessage,
+              res: ServerResponse,
+              next: Connect.NextFunction
+            ) => {
+              const raw = req.originalUrl ?? '';
+              const pathOnly = raw.split('?')[0] ?? '';
+              if (pathOnly === '/mister-molkky') {
+                const qs = raw.includes('?') ? `?${raw.split('?')[1]}` : '';
+                res.statusCode = 302;
+                res.setHeader('Location', `/mister-molkky/${qs}`);
+                res.end();
+                return;
+              }
+              next();
+            }
+          );
+        },
+      },
+      VitePWA({
+        registerType: 'prompt',
+        includeAssets: [
+          'icons/icon-192.png',
+          'icons/icon-512.png',
+          'icons/apple-touch-icon.png',
+          'robots.txt',
+        ],
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,svg,png,woff2,webmanifest}'],
+        },
+        manifest: {
+          id: basePath,
+          name: 'Mister Mölkky',
+          short_name: 'Mölkky',
+          description:
+            'Compteur de points et statistiques pour le jeu de Mölkky',
+          theme_color: '#4a7c2a',
+          background_color: '#f5f5f0',
+          display: 'standalone',
+          orientation: 'portrait-primary',
+          start_url: basePath,
+          scope: basePath,
+          lang: 'fr',
+          categories: ['games', 'sports', 'utilities'],
+          icons: [
+            {
+              src: 'icons/icon-192.png',
+              sizes: '192x192',
+              type: 'image/png',
+              purpose: 'any maskable',
+            },
+            {
+              src: 'icons/icon-512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'any maskable',
+            },
+          ],
+        },
+      }),
+      analyze &&
+        (visualizer({
+          open: true,
+          filename: 'dist/stats.html',
+          gzipSize: true,
+          brotliSize: true,
+        }) as PluginOption),
+    ].filter(Boolean),
+  };
+});

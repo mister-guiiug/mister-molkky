@@ -1,0 +1,18 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 64 64"
+  role="img"
+  aria-label="Mister Mölkky"
+>
+  <defs>
+    <linearGradient id="fav-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4a7c2a" />
+      <stop offset="100%" stop-color="#6da943" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#fav-bg)" />
+  <g fill="#fef3c7" stroke="#5c3a14" stroke-width="1">
+    <path d="M 22 30 L 24 22 L 28 22 L 30 30 L 30 50 L 22 50 Z" />
+    <path d="M 34 30 L 36 22 L 40 22 L 42 30 L 42 50 L 34 50 Z" />
+  </g>
+</svg>

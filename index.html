@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    />
+    <script>
+      (function () {
+        try {
+          var k = 'mm_theme';
+          var v = localStorage.getItem(k);
+          var eff;
+          if (v === 'light' || v === 'dark') eff = v;
+          else
+            eff = window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light';
+          document.documentElement.setAttribute('data-theme', eff);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="icons/icon-192.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="512x512"
+      href="icons/icon-512.png"
+    />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta id="meta-theme-color" name="theme-color" content="#4a7c2a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Mister Mölkky" />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="icons/apple-touch-icon.png"
+    />
+    <meta
+      name="description"
+      content="Compteur de points et statistiques pour le jeu de Mölkky : 100 % offline, animations Rive, historique des parties."
+    />
+    <title>Mister Mölkky</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
