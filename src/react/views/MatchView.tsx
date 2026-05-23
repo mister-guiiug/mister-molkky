@@ -24,6 +24,7 @@ import { ThrowsLog } from '../components/ThrowsLog';
 import { Sparkline } from '../components/Sparkline';
 import { MatchOnboardingHint } from '../components/OnboardingHint';
 import { LiveShareSheet } from '../components/LiveShareSheet';
+import { ForfeitPlayerSheet } from '../components/ForfeitPlayerSheet';
 import { useLiveStore } from '../../store/useLiveStore';
 import { useFeedback } from '../hooks/useFeedback';
 import { useWakeLock } from '../hooks/useWakeLock';
@@ -31,6 +32,7 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import {
   CheckIcon,
   ClipboardIcon,
+  ForfeitIcon,
   LiveIcon,
   MenuIcon,
   RematchIcon,
@@ -39,8 +41,22 @@ import {
 } from '../components/icons';
 
 const COLORBLIND_SYMBOLS = [
-  '★', '▲', '●', '◆', '■', '✦', '♥', '♣',
-  '♦', '♠', '◐', '◑', '◒', '◓', '☼', '✖',
+  '★',
+  '▲',
+  '●',
+  '◆',
+  '■',
+  '✦',
+  '♥',
+  '♣',
+  '♦',
+  '♠',
+  '◐',
+  '◑',
+  '◒',
+  '◓',
+  '☼',
+  '✖',
 ];
 
 // Stable empty array reference for useAvatarUrls when there is no
@@ -76,7 +92,9 @@ export function MatchView() {
   const symbolForActor = (id: string) => {
     if (!colorblind) return undefined;
     const idx = current?.config.players.findIndex(p => p.id === id) ?? -1;
-    return idx >= 0 ? COLORBLIND_SYMBOLS[idx % COLORBLIND_SYMBOLS.length] : undefined;
+    return idx >= 0
+      ? COLORBLIND_SYMBOLS[idx % COLORBLIND_SYMBOLS.length]
+      : undefined;
   };
 
   const [fallen, setFallen] = useState<Set<number>>(new Set());
@@ -88,6 +106,7 @@ export function MatchView() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [throwsLogOpen, setThrowsLogOpen] = useState(false);
   const [liveShareOpen, setLiveShareOpen] = useState(false);
+  const [forfeitSheetOpen, setForfeitSheetOpen] = useState(false);
   const liveRole = useLiveStore(s => s.role);
   const liveCode = useLiveStore(s => s.code);
   const pushLiveThrows = useLiveStore(s => s.pushThrows);
@@ -117,7 +136,11 @@ export function MatchView() {
   const lastFinished = useMemo(() => history[0], [history]);
 
   useEffect(() => {
-    if (!current && lastFinished && lastFinished.id !== lastVictoryRef.current) {
+    if (
+      !current &&
+      lastFinished &&
+      lastFinished.id !== lastVictoryRef.current
+    ) {
       lastVictoryRef.current = lastFinished.id;
       setShowVictory(true);
     }
@@ -219,11 +242,14 @@ export function MatchView() {
               navigate(ROUTES.history);
             }}
             winnerName={
-              lastFinished.config.players.find(p => p.id === lastFinished.winnerId)
-                ?.name ?? '?'
+              lastFinished.config.players.find(
+                p => p.id === lastFinished.winnerId
+              )?.name ?? '?'
             }
             ranking={lastFinished.ranking.map(r => {
-              const p = lastFinished.config.players.find(x => x.id === r.playerId);
+              const p = lastFinished.config.players.find(
+                x => x.id === r.playerId
+              );
               return { name: p?.name ?? '?', color: p?.color ?? '#999', ...r };
             })}
           />
@@ -242,11 +268,15 @@ export function MatchView() {
 
   return (
     <PageContainer>
-      <header className="sticky top-0 z-20 -mx-4 mb-4 flex items-center gap-2 px-4 py-2 backdrop-blur-md sm:-mx-6 sm:px-6"
+      <header
+        className="sticky top-0 z-20 -mx-4 mb-4 flex items-center gap-2 px-4 py-2 backdrop-blur-md sm:-mx-6 sm:px-6"
         style={{ background: 'color-mix(in srgb, var(--bg) 88%, transparent)' }}
       >
         <div className="flex-1 truncate">
-          <p className="m-0 text-xs uppercase" style={{ color: 'var(--muted)' }}>
+          <p
+            className="m-0 text-xs uppercase"
+            style={{ color: 'var(--muted)' }}
+          >
             {t('match.turnOf')}
           </p>
           <p
@@ -290,7 +320,10 @@ export function MatchView() {
 
       <section className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <p className="m-0 text-xs uppercase" style={{ color: 'var(--muted)' }}>
+          <p
+            className="m-0 text-xs uppercase"
+            style={{ color: 'var(--muted)' }}
+          >
             {t('match.score')}
           </p>
           <ScoreTicker
@@ -311,12 +344,15 @@ export function MatchView() {
           style={{
             borderColor:
               previewScore > 0
-                ? currentInfo?.player.color ?? 'var(--primary)'
+                ? (currentInfo?.player.color ?? 'var(--primary)')
                 : 'var(--border)',
             background: 'var(--surface)',
           }}
         >
-          <p className="m-0 text-xs uppercase" style={{ color: 'var(--muted)' }}>
+          <p
+            className="m-0 text-xs uppercase"
+            style={{ color: 'var(--muted)' }}
+          >
             Ce tir
           </p>
           <p className="m-0 text-3xl font-black tabular-nums">
@@ -373,10 +409,7 @@ export function MatchView() {
         </div>
       </section>
 
-      <section
-        className="mt-5 overflow-x-auto"
-        aria-label={t('match.score')}
-      >
+      <section className="mt-5 overflow-x-auto" aria-label={t('match.score')}>
         {/*
           py-3 + px-2 keep the active card's scale-[1.04] transform inside
           the section's content box — overflow-x-auto forces overflow-y to
@@ -388,14 +421,17 @@ export function MatchView() {
             ? current.config.teams.map(team => {
                 const s = scores.get(team.id);
                 const teamPlayer = {
-                  id: team.id as typeof team.playerIds[number],
+                  id: team.id as (typeof team.playerIds)[number],
                   name: team.name,
                   color: team.color,
                   createdAt: 0,
                 };
                 const history = scoreHistories.get(team.id) ?? [];
                 return (
-                  <li key={team.id} className="flex flex-col items-stretch gap-1">
+                  <li
+                    key={team.id}
+                    className="flex flex-col items-stretch gap-1"
+                  >
                     <PlayerCard
                       player={teamPlayer}
                       score={s?.score ?? 0}
@@ -489,7 +525,8 @@ export function MatchView() {
               }}
               className="touch-target flex w-full items-center gap-2 rounded-lg border px-3 font-semibold"
               style={{
-                borderColor: liveRole === 'host' ? 'var(--danger)' : 'var(--primary)',
+                borderColor:
+                  liveRole === 'host' ? 'var(--danger)' : 'var(--primary)',
                 color: liveRole === 'host' ? 'var(--danger)' : 'var(--primary)',
               }}
             >
@@ -497,6 +534,19 @@ export function MatchView() {
               {liveRole === 'host'
                 ? `${t('live.activeBadge')} (${liveCode})`
                 : t('live.shareTitle')}
+            </button>
+          </li>
+          <li>
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                setForfeitSheetOpen(true);
+              }}
+              className="touch-target flex w-full items-center gap-2 rounded-lg border px-3 font-semibold"
+              style={{ borderColor: 'var(--border)' }}
+            >
+              <ForfeitIcon size={18} /> {t('match.forfeitPlayer')}
             </button>
           </li>
           <li>
@@ -527,10 +577,7 @@ export function MatchView() {
         destructive
       />
 
-      <ThrowsLog
-        open={throwsLogOpen}
-        onClose={() => setThrowsLogOpen(false)}
-      />
+      <ThrowsLog open={throwsLogOpen} onClose={() => setThrowsLogOpen(false)} />
 
       <EliminationToast
         playerName={eliminationToast}
@@ -542,6 +589,11 @@ export function MatchView() {
       <LiveShareSheet
         open={liveShareOpen}
         onClose={() => setLiveShareOpen(false)}
+      />
+
+      <ForfeitPlayerSheet
+        open={forfeitSheetOpen}
+        onClose={() => setForfeitSheetOpen(false)}
       />
 
       {showVictory && lastFinished && (
@@ -562,11 +614,14 @@ export function MatchView() {
               navigate(ROUTES.history);
             }}
             winnerName={
-              lastFinished.config.players.find(p => p.id === lastFinished.winnerId)
-                ?.name ?? '?'
+              lastFinished.config.players.find(
+                p => p.id === lastFinished.winnerId
+              )?.name ?? '?'
             }
             ranking={lastFinished.ranking.map(r => {
-              const p = lastFinished.config.players.find(x => x.id === r.playerId);
+              const p = lastFinished.config.players.find(
+                x => x.id === r.playerId
+              );
               return { name: p?.name ?? '?', color: p?.color ?? '#999', ...r };
             })}
           />
@@ -578,7 +633,13 @@ export function MatchView() {
 
 interface VictoryScreenProps {
   winnerName: string;
-  ranking: { name: string; color: string; finalScore: number; eliminated: boolean; rank: number }[];
+  ranking: {
+    name: string;
+    color: string;
+    finalScore: number;
+    eliminated: boolean;
+    rank: number;
+  }[];
   onClose: () => void;
   onPlayAgain: () => void;
   onRematch: () => void;
@@ -616,7 +677,10 @@ function VictoryScreen({
                   : 'var(--surface)',
             }}
           >
-            <span className="w-6 text-center text-sm font-bold" style={{ color: 'var(--muted)' }}>
+            <span
+              className="w-6 text-center text-sm font-bold"
+              style={{ color: 'var(--muted)' }}
+            >
               {r.rank}
             </span>
             <span

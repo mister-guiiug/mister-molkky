@@ -40,11 +40,24 @@ export type Team = z.infer<typeof TeamSchema>;
 export const RuleVariantSchema = z.enum(['classic', 'inverse', 'free']);
 export type RuleVariant = z.infer<typeof RuleVariantSchema>;
 
+/**
+ * How the rules react when a player reaches `maxMisses` consecutive misses:
+ * - 'elimination' (Mölkky standard): the player is out for the rest of the match
+ * - 'reset':                         the player's score drops back to the start
+ *                                    (0 in classic / target in inverse) and the
+ *                                    miss streak clears — they keep playing
+ * - 'none':                          the streak counter still increments visually
+ *                                    but never triggers anything (casual mode)
+ */
+export const MissSanctionSchema = z.enum(['elimination', 'reset', 'none']);
+export type MissSanction = z.infer<typeof MissSanctionSchema>;
+
 export const MatchConfigSchema = z.object({
   players: z.array(PlayerSchema).min(2).max(16),
   targetScore: TargetScoreSchema.default(50),
   overshootPenalty: z.number().int().min(0).max(50).default(25),
   maxMisses: z.number().int().min(1).max(5).default(3),
+  missSanction: MissSanctionSchema.default('elimination'),
   teamMode: TeamModeSchema.default('solo'),
   teams: z.array(TeamSchema).default([]),
   variant: RuleVariantSchema.default('classic'),
@@ -87,6 +100,11 @@ export const CurrentMatchStateSchema = z.object({
   config: MatchConfigSchema,
   throws: z.array(ThrowSchema),
   startedAt: z.number().int(),
+  // Actors (player IDs in solo mode, team IDs in team mode) who tapped
+  // "Abandonner" mid-match. Treated as eliminated for ranking + turn
+  // rotation. Defaulted to [] so persisted matches from before the
+  // forfeit feature still parse cleanly.
+  forfeitedActorIds: z.array(z.string().min(1)).default([]),
 });
 export type CurrentMatchState = z.infer<typeof CurrentMatchStateSchema>;
 
@@ -96,6 +114,7 @@ export const MatchTemplateSchema = z.object({
   targetScore: TargetScoreSchema,
   overshootPenalty: z.number().int().min(0).max(50),
   maxMisses: z.number().int().min(1).max(5),
+  missSanction: MissSanctionSchema.default('elimination'),
   teamMode: TeamModeSchema.default('solo'),
   playerIds: z.array(PlayerIdSchema).default([]),
   createdAt: z.number().int(),
@@ -141,7 +160,5 @@ export function newId(): string {
   ) {
     return globalThis.crypto.randomUUID();
   }
-  return (
-    Date.now().toString(36) + Math.random().toString(36).slice(2, 10)
-  );
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
 }

@@ -7,6 +7,7 @@ import { useTemplatesStore } from '../../store/useTemplatesStore';
 import {
   MatchConfigSchema,
   type MatchTemplate,
+  type MissSanction,
   type Player,
   type PlayerId,
   type RuleVariant,
@@ -16,7 +17,13 @@ import {
 } from '../../schemas';
 import { newId } from '../../schemas';
 import { ROUTES } from '../../routes';
-import { PlusIcon, CheckIcon, ArrowLeftIcon, ArrowRightIcon } from './icons';
+import {
+  PlusIcon,
+  CheckIcon,
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  ShuffleIcon,
+} from './icons';
 
 type Step = 'players' | 'rules' | 'recap';
 
@@ -25,7 +32,10 @@ interface MatchSetupWizardProps {
   initialTemplate?: MatchTemplate;
 }
 
-export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardProps) {
+export function MatchSetupWizard({
+  onClose,
+  initialTemplate,
+}: MatchSetupWizardProps) {
   const { t } = useI18n();
   const navigate = useNavigate();
   const roster = usePlayersStore(s => s.players);
@@ -35,7 +45,9 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
 
   const [step, setStep] = useState<Step>('players');
   const [selectedIds, setSelectedIds] = useState<string[]>(
-    () => initialTemplate?.playerIds?.filter(id => roster.some(p => p.id === id)) ?? []
+    () =>
+      initialTemplate?.playerIds?.filter(id => roster.some(p => p.id === id)) ??
+      []
   );
   const [quickName, setQuickName] = useState('');
   const [targetScore, setTargetScore] = useState<TargetScore>(
@@ -45,6 +57,9 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
     initialTemplate?.overshootPenalty ?? 25
   );
   const [maxMisses, setMaxMisses] = useState(initialTemplate?.maxMisses ?? 3);
+  const [missSanction, setMissSanction] = useState<MissSanction>(
+    initialTemplate?.missSanction ?? 'elimination'
+  );
   const [teamMode, setTeamMode] = useState<TeamMode>(
     initialTemplate?.teamMode ?? 'solo'
   );
@@ -74,6 +89,28 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
       if (newIdx < 0 || newIdx >= prev.length) return prev;
       const next = [...prev];
       [next[idx], next[newIdx]] = [next[newIdx]!, next[idx]!];
+      return next;
+    });
+  };
+
+  /**
+   * Fisher–Yates shuffle of the picked players. Done on `selectedIds`
+   * (not on the underlying roster) so we keep the user's selection set
+   * intact and only re-order it.
+   */
+  const shuffleSelected = () => {
+    setSelectedIds(prev => {
+      if (prev.length < 2) return prev;
+      const next = [...prev];
+      for (let i = next.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [next[i], next[j]] = [next[j]!, next[i]!];
+      }
+      // Guarantee an actual change so the user sees the order flip even
+      // on a 2-player swap that happens to land on the same arrangement.
+      if (prev.length === 2 && next[0] === prev[0]) {
+        return [next[1]!, next[0]!];
+      }
       return next;
     });
   };
@@ -117,6 +154,7 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
       targetScore,
       overshootPenalty,
       maxMisses,
+      missSanction,
       teamMode,
       teams,
       variant,
@@ -199,10 +237,7 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
 
           {roster.length > 0 && (
             <div className="flex items-center justify-between gap-2">
-              <span
-                className="text-xs"
-                style={{ color: 'var(--muted)' }}
-              >
+              <span className="text-xs" style={{ color: 'var(--muted)' }}>
                 {roster.length} {t('nav.players').toLowerCase()}
               </span>
               <button
@@ -258,10 +293,32 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
           </div>
 
           {selectedIds.length > 0 && (
-            <div className="rounded-lg border p-3" style={{ borderColor: 'var(--border)' }}>
-              <p className="mb-2 text-xs font-bold uppercase" style={{ color: 'var(--muted)' }}>
-                Ordre de passage ({selectedIds.length})
-              </p>
+            <div
+              className="rounded-lg border p-3"
+              style={{ borderColor: 'var(--border)' }}
+            >
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <p
+                  className="m-0 text-xs font-bold uppercase"
+                  style={{ color: 'var(--muted)' }}
+                >
+                  {t('setup.turnOrderTitle')} ({selectedIds.length})
+                </p>
+                <button
+                  type="button"
+                  onClick={shuffleSelected}
+                  disabled={selectedIds.length < 2}
+                  className="touch-target flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-bold disabled:opacity-40"
+                  style={{
+                    borderColor: 'var(--primary)',
+                    color: 'var(--primary)',
+                  }}
+                  aria-label={t('setup.shuffleNow')}
+                >
+                  <ShuffleIcon size={14} />
+                  {t('setup.shuffleNow')}
+                </button>
+              </div>
               <ol className="flex flex-col gap-1">
                 {orderedPlayers.map((p, i) => (
                   <li
@@ -269,7 +326,10 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
                     className="flex items-center gap-2 rounded-md px-2 py-1.5"
                     style={{ background: 'var(--surface-highlight)' }}
                   >
-                    <span className="w-5 text-right text-xs font-bold" style={{ color: 'var(--muted)' }}>
+                    <span
+                      className="w-5 text-right text-xs font-bold"
+                      style={{ color: 'var(--muted)' }}
+                    >
                       {i + 1}.
                     </span>
                     <span
@@ -277,7 +337,9 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
                       style={{ background: p.color }}
                       aria-hidden
                     />
-                    <span className="flex-1 truncate text-sm font-semibold">{p.name}</span>
+                    <span className="flex-1 truncate text-sm font-semibold">
+                      {p.name}
+                    </span>
                     <button
                       type="button"
                       onClick={() => movePlayer(p.id, -1)}
@@ -285,7 +347,10 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
                       className="touch-target rounded p-1 disabled:opacity-30"
                       aria-label="Monter"
                     >
-                      <ArrowLeftIcon size={16} style={{ transform: 'rotate(90deg)' }} />
+                      <ArrowLeftIcon
+                        size={16}
+                        style={{ transform: 'rotate(90deg)' }}
+                      />
                     </button>
                     <button
                       type="button"
@@ -294,7 +359,10 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
                       className="touch-target rounded p-1 disabled:opacity-30"
                       aria-label="Descendre"
                     >
-                      <ArrowRightIcon size={16} style={{ transform: 'rotate(90deg)' }} />
+                      <ArrowRightIcon
+                        size={16}
+                        style={{ transform: 'rotate(90deg)' }}
+                      />
                     </button>
                   </li>
                 ))}
@@ -313,7 +381,10 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
       {step === 'rules' && (
         <div className="flex flex-col gap-4">
           <fieldset>
-            <legend className="mb-2 text-sm font-bold uppercase" style={{ color: 'var(--muted)' }}>
+            <legend
+              className="mb-2 text-sm font-bold uppercase"
+              style={{ color: 'var(--muted)' }}
+            >
               {t('setup.targetScore')}
             </legend>
             <div className="flex gap-2">
@@ -340,7 +411,10 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
           </fieldset>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-bold uppercase" style={{ color: 'var(--muted)' }}>
+            <span
+              className="text-sm font-bold uppercase"
+              style={{ color: 'var(--muted)' }}
+            >
               {t('setup.overshootPenalty')}
             </span>
             <input
@@ -362,7 +436,10 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-bold uppercase" style={{ color: 'var(--muted)' }}>
+            <span
+              className="text-sm font-bold uppercase"
+              style={{ color: 'var(--muted)' }}
+            >
               {t('setup.maxMisses')}
             </span>
             <input
@@ -371,7 +448,9 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
               max={5}
               value={maxMisses}
               onChange={e =>
-                setMaxMisses(Math.max(1, Math.min(5, Number(e.target.value) || 3)))
+                setMaxMisses(
+                  Math.max(1, Math.min(5, Number(e.target.value) || 3))
+                )
               }
               className="touch-target rounded-lg border px-3"
               style={{
@@ -382,7 +461,67 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
           </label>
 
           <fieldset>
-            <legend className="mb-2 text-sm font-bold uppercase" style={{ color: 'var(--muted)' }}>
+            <legend
+              className="mb-2 text-sm font-bold uppercase"
+              style={{ color: 'var(--muted)' }}
+            >
+              {t('setup.missSanction', { n: String(maxMisses) })}
+            </legend>
+            <div className="flex flex-col gap-2">
+              {(
+                [
+                  {
+                    value: 'elimination',
+                    label: 'missSanctionElimination',
+                    hint: 'missSanctionEliminationHint',
+                  },
+                  {
+                    value: 'reset',
+                    label: 'missSanctionReset',
+                    hint: 'missSanctionResetHint',
+                  },
+                  {
+                    value: 'none',
+                    label: 'missSanctionNone',
+                    hint: 'missSanctionNoneHint',
+                  },
+                ] as const
+              ).map(opt => {
+                const selected = missSanction === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setMissSanction(opt.value)}
+                    className="touch-target flex flex-col items-start rounded-lg border px-3 py-2 text-left"
+                    style={{
+                      background: selected
+                        ? 'color-mix(in srgb, var(--primary) 16%, var(--surface))'
+                        : 'var(--surface)',
+                      borderColor: selected
+                        ? 'var(--primary)'
+                        : 'var(--border)',
+                      color: selected ? 'var(--primary)' : 'var(--text)',
+                    }}
+                    aria-pressed={selected}
+                  >
+                    <span className="text-sm font-bold">
+                      {t(`setup.${opt.label}`)}
+                    </span>
+                    <span className="text-xs" style={{ color: 'var(--muted)' }}>
+                      {t(`setup.${opt.hint}`)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend
+              className="mb-2 text-sm font-bold uppercase"
+              style={{ color: 'var(--muted)' }}
+            >
               {t('setup.teamMode')}
             </legend>
             <div className="flex gap-2">
@@ -415,7 +554,10 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
           </fieldset>
 
           <fieldset>
-            <legend className="mb-2 text-sm font-bold uppercase" style={{ color: 'var(--muted)' }}>
+            <legend
+              className="mb-2 text-sm font-bold uppercase"
+              style={{ color: 'var(--muted)' }}
+            >
               {t('setup.variant')}
             </legend>
             <div className="flex gap-2">
@@ -456,14 +598,19 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
             </p>
           </fieldset>
 
-          <label className="flex items-center gap-3 rounded-lg border p-3" style={{ borderColor: 'var(--border)' }}>
+          <label
+            className="flex items-center gap-3 rounded-lg border p-3"
+            style={{ borderColor: 'var(--border)' }}
+          >
             <input
               type="checkbox"
               checked={shuffle}
               onChange={e => setShuffle(e.target.checked)}
               className="h-5 w-5"
             />
-            <span className="text-sm font-semibold">{t('setup.shuffleOrder')}</span>
+            <span className="text-sm font-semibold">
+              {t('setup.shuffleOrder')}
+            </span>
           </label>
         </div>
       )}
@@ -472,29 +619,73 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
         <div className="flex flex-col gap-3">
           <h3 className="text-lg font-bold">{t('setup.recap')}</h3>
           <dl className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg p-3" style={{ background: 'var(--surface-highlight)' }}>
-              <dt className="text-xs font-bold uppercase" style={{ color: 'var(--muted)' }}>
+            <div
+              className="rounded-lg p-3"
+              style={{ background: 'var(--surface-highlight)' }}
+            >
+              <dt
+                className="text-xs font-bold uppercase"
+                style={{ color: 'var(--muted)' }}
+              >
                 {t('nav.players')}
               </dt>
               <dd className="text-2xl font-black">{orderedPlayers.length}</dd>
             </div>
-            <div className="rounded-lg p-3" style={{ background: 'var(--surface-highlight)' }}>
-              <dt className="text-xs font-bold uppercase" style={{ color: 'var(--muted)' }}>
+            <div
+              className="rounded-lg p-3"
+              style={{ background: 'var(--surface-highlight)' }}
+            >
+              <dt
+                className="text-xs font-bold uppercase"
+                style={{ color: 'var(--muted)' }}
+              >
                 {t('setup.targetScore')}
               </dt>
               <dd className="text-2xl font-black">{targetScore}</dd>
             </div>
-            <div className="rounded-lg p-3" style={{ background: 'var(--surface-highlight)' }}>
-              <dt className="text-xs font-bold uppercase" style={{ color: 'var(--muted)' }}>
+            <div
+              className="rounded-lg p-3"
+              style={{ background: 'var(--surface-highlight)' }}
+            >
+              <dt
+                className="text-xs font-bold uppercase"
+                style={{ color: 'var(--muted)' }}
+              >
                 {t('setup.overshootPenalty')}
               </dt>
               <dd className="text-2xl font-black">{overshootPenalty}</dd>
             </div>
-            <div className="rounded-lg p-3" style={{ background: 'var(--surface-highlight)' }}>
-              <dt className="text-xs font-bold uppercase" style={{ color: 'var(--muted)' }}>
+            <div
+              className="rounded-lg p-3"
+              style={{ background: 'var(--surface-highlight)' }}
+            >
+              <dt
+                className="text-xs font-bold uppercase"
+                style={{ color: 'var(--muted)' }}
+              >
                 {t('setup.maxMisses')}
               </dt>
               <dd className="text-2xl font-black">{maxMisses}</dd>
+            </div>
+            <div
+              className="col-span-2 rounded-lg p-3"
+              style={{ background: 'var(--surface-highlight)' }}
+            >
+              <dt
+                className="text-xs font-bold uppercase"
+                style={{ color: 'var(--muted)' }}
+              >
+                {t('setup.missSanction', { n: String(maxMisses) })}
+              </dt>
+              <dd className="text-base font-bold">
+                {t(
+                  missSanction === 'elimination'
+                    ? 'setup.missSanctionElimination'
+                    : missSanction === 'reset'
+                      ? 'setup.missSanctionReset'
+                      : 'setup.missSanctionNone'
+                )}
+              </dd>
             </div>
           </dl>
           <ol className="flex flex-col gap-1.5">
@@ -504,10 +695,16 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
                 className="flex items-center gap-2 rounded-lg border px-3 py-2"
                 style={{ borderColor: 'var(--border)' }}
               >
-                <span className="w-5 text-right text-xs font-bold" style={{ color: 'var(--muted)' }}>
+                <span
+                  className="w-5 text-right text-xs font-bold"
+                  style={{ color: 'var(--muted)' }}
+                >
                   {i + 1}.
                 </span>
-                <span className="h-3 w-3 rounded-full" style={{ background: p.color }} />
+                <span
+                  className="h-3 w-3 rounded-full"
+                  style={{ background: p.color }}
+                />
                 <span className="font-semibold">{p.name}</span>
               </li>
             ))}
@@ -518,7 +715,10 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
             style={{ borderColor: 'var(--border)' }}
           >
             {templateSaved ? (
-              <p className="m-0 flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--success)' }}>
+              <p
+                className="m-0 flex items-center gap-2 text-sm font-semibold"
+                style={{ color: 'var(--success)' }}
+              >
                 <CheckIcon size={16} /> {t('setup.templateSaved')}
               </p>
             ) : (
@@ -544,6 +744,7 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
                       targetScore,
                       overshootPenalty,
                       maxMisses,
+                      missSanction,
                       teamMode: 'solo',
                       playerIds: orderedPlayers.map(p => p.id as PlayerId),
                     });
@@ -551,7 +752,10 @@ export function MatchSetupWizard({ onClose, initialTemplate }: MatchSetupWizardP
                   }}
                   disabled={!templateName.trim()}
                   className="touch-target rounded-lg border px-3 text-sm font-bold disabled:opacity-50"
-                  style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                  style={{
+                    borderColor: 'var(--primary)',
+                    color: 'var(--primary)',
+                  }}
                 >
                   {t('setup.saveAsTemplate')}
                 </button>

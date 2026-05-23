@@ -5,6 +5,7 @@ import {
   MatchTemplateSchema,
   newId,
   type MatchTemplate,
+  type MissSanction,
   type PlayerId,
   type TargetScore,
   type TeamMode,
@@ -17,6 +18,9 @@ interface TemplatesState {
     targetScore: TargetScore;
     overshootPenalty: number;
     maxMisses: number;
+    // Optional so older callers compile; the schema applies the
+    // 'elimination' default if it's omitted.
+    missSanction?: MissSanction;
     teamMode: TeamMode;
     playerIds: PlayerId[];
   }) => MatchTemplate;

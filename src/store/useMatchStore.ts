@@ -43,12 +43,23 @@ interface MatchStoreState {
   undoLastThrow: () => boolean;
   editThrow: (throwId: string, fallenPins: number[]) => boolean;
   abandonMatch: () => void;
+  /**
+   * Mark a single actor (player ID in solo, team ID in team mode) as having
+   * forfeited the match. They're treated as eliminated for ranking + turn
+   * rotation. If only one active actor remains, the match auto-finishes
+   * with that actor as the winner.
+   */
+  forfeitActor: (actorId: string) => void;
   finishMatch: () => FinishedMatch | null;
   clearFeedback: () => void;
 
   removeFromHistory: (id: string) => void;
   clearHistory: () => void;
-  importBundle: (raw: unknown) => { ok: boolean; error?: string; applied?: number };
+  importBundle: (raw: unknown) => {
+    ok: boolean;
+    error?: string;
+    applied?: number;
+  };
 }
 
 function settingsFromConfig(config: MatchConfig): RuleSettings {
@@ -57,6 +68,7 @@ function settingsFromConfig(config: MatchConfig): RuleSettings {
     overshootPenalty: config.overshootPenalty,
     maxMisses: config.maxMisses,
     variant: config.variant ?? 'classic',
+    missSanction: config.missSanction ?? 'elimination',
   };
 }
 
@@ -118,21 +130,28 @@ export const useMatchStore = create<MatchStoreState>()(
           config: finalConfig,
           throws: [],
           startedAt: Date.now(),
+          forfeitedActorIds: [],
         });
         set({ current, pendingFeedback: null });
       },
 
       recordThrow: fallenPins => {
         const state = get().current;
-        if (!state) return { ok: false, overshoot: false, eliminated: false, won: false };
+        if (!state)
+          return { ok: false, overshoot: false, eliminated: false, won: false };
 
         const settings = settingsFromConfig(state.config);
         const { actorIds, actorMap } = actorContext(state.config);
+        const forfeited = state.forfeitedActorIds;
         const beforeOutcome = replayThrows(
           actorIds,
-          state.throws.map(t => ({ playerId: t.playerId, fallenPins: t.fallenPins })),
+          state.throws.map(t => ({
+            playerId: t.playerId,
+            fallenPins: t.fallenPins,
+          })),
           settings,
-          actorMap
+          actorMap,
+          forfeited
         );
         if (beforeOutcome.isOver) {
           return { ok: false, overshoot: false, eliminated: false, won: false };
@@ -159,7 +178,9 @@ export const useMatchStore = create<MatchStoreState>()(
           const teamThrows = state.throws.filter(
             t => actorMap.get(t.playerId) === expectedActor
           ).length;
-          return team.playerIds[teamThrows % team.playerIds.length] ?? expectedActor;
+          return (
+            team.playerIds[teamThrows % team.playerIds.length] ?? expectedActor
+          );
         })();
 
         const newThrow: Throw = ThrowSchema.parse({
@@ -177,9 +198,13 @@ export const useMatchStore = create<MatchStoreState>()(
 
         const afterOutcome = replayThrows(
           actorIds,
-          nextThrows.map(t => ({ playerId: t.playerId, fallenPins: t.fallenPins })),
+          nextThrows.map(t => ({
+            playerId: t.playerId,
+            fallenPins: t.fallenPins,
+          })),
           settings,
-          actorMap
+          actorMap,
+          forfeited
         );
 
         let feedback: FeedbackEvent = 'throw';
@@ -195,7 +220,7 @@ export const useMatchStore = create<MatchStoreState>()(
           } catch (err) {
             // Surface the error in the console so a bad ranking
             // computation doesn't silently freeze the victory flow.
-            // eslint-disable-next-line no-console
+
             console.error('[match] finishMatch failed:', err);
           }
         }
@@ -252,7 +277,8 @@ export const useMatchStore = create<MatchStoreState>()(
               fallenPins: t.fallenPins,
             })),
             settings,
-            actorMap
+            actorMap,
+            state.forfeitedActorIds
           );
           const acceptedThrows = candidateThrows.slice(0, replay.currentTurn);
           const reconciled = acceptedThrows.map(t => {
@@ -279,16 +305,58 @@ export const useMatchStore = create<MatchStoreState>()(
 
       abandonMatch: () => set({ current: null, pendingFeedback: null }),
 
+      forfeitActor: actorId => {
+        const state = get().current;
+        if (!state) return;
+        if (state.forfeitedActorIds.includes(actorId)) return;
+        const { actorIds } = actorContext(state.config);
+        if (!actorIds.includes(actorId)) return;
+
+        const nextForfeited = [...state.forfeitedActorIds, actorId];
+        const nextState: CurrentMatchState = {
+          ...state,
+          forfeitedActorIds: nextForfeited,
+        };
+        set({ current: nextState, pendingFeedback: null });
+
+        // If the forfeit leaves a single active actor, auto-finish so the
+        // user lands on the victory screen instead of an empty match.
+        const settings = settingsFromConfig(state.config);
+        const { actorMap } = actorContext(state.config);
+        const outcome = replayThrows(
+          actorIds,
+          state.throws.map(t => ({
+            playerId: t.playerId,
+            fallenPins: t.fallenPins,
+          })),
+          settings,
+          actorMap,
+          nextForfeited
+        );
+        if (outcome.winnerId) {
+          try {
+            get().finishMatch();
+          } catch (err) {
+            console.error('[match] finishMatch after forfeit failed:', err);
+          }
+        }
+      },
+
       finishMatch: () => {
         const state = get().current;
         if (!state) return null;
         const settings = settingsFromConfig(state.config);
         const { actorIds, actorMap } = actorContext(state.config);
+        const forfeited = state.forfeitedActorIds;
         const outcome = replayThrows(
           actorIds,
-          state.throws.map(t => ({ playerId: t.playerId, fallenPins: t.fallenPins })),
+          state.throws.map(t => ({
+            playerId: t.playerId,
+            fallenPins: t.fallenPins,
+          })),
           settings,
-          actorMap
+          actorMap,
+          forfeited
         );
         if (!outcome.winnerId) return null;
 
@@ -298,6 +366,15 @@ export const useMatchStore = create<MatchStoreState>()(
         // rather than O(n³) — matters once a match goes long.
         const eliminationOrder: string[] = [];
         const runningElim = new Set<string>();
+        // Forfeited actors are eliminated from the moment they tap; seed
+        // them at the front of the elimination order so ranking places
+        // them with the other dropouts.
+        for (const fid of forfeited) {
+          if (!runningElim.has(fid)) {
+            runningElim.add(fid);
+            eliminationOrder.push(fid);
+          }
+        }
         for (let i = 0; i < state.throws.length; i += 1) {
           const replay = replayThrows(
             actorIds,
@@ -305,7 +382,8 @@ export const useMatchStore = create<MatchStoreState>()(
               .slice(0, i + 1)
               .map(x => ({ playerId: x.playerId, fallenPins: x.fallenPins })),
             settings,
-            actorMap
+            actorMap,
+            forfeited
           );
           for (const [pid, p] of replay.progress) {
             if (p.eliminated && !runningElim.has(pid)) {
@@ -348,7 +426,8 @@ export const useMatchStore = create<MatchStoreState>()(
             const r = FinishedMatchSchema.safeParse(m);
             if (r.success) parsed.push(r.data);
           }
-          if (parsed.length === 0) return { ok: false, error: 'Aucun match valide' };
+          if (parsed.length === 0)
+            return { ok: false, error: 'Aucun match valide' };
           set(s => ({
             history: [...parsed, ...s.history].slice(0, 200),
           }));
@@ -400,7 +479,8 @@ function computeOutcome(match: CurrentMatchState | null) {
     actorIds,
     match.throws.map(t => ({ playerId: t.playerId, fallenPins: t.fallenPins })),
     settings,
-    actorMap
+    actorMap,
+    match.forfeitedActorIds
   );
   return { playerIds: actorIds, outcome, actorMap };
 }
@@ -422,7 +502,9 @@ export function useCurrentPlayerInfo(): CurrentPlayerInfo | null {
       ).length;
       const nextPlayerId =
         team.playerIds[teamThrowsSoFar % team.playerIds.length];
-      const throwingMember = match.config.players.find(p => p.id === nextPlayerId);
+      const throwingMember = match.config.players.find(
+        p => p.id === nextPlayerId
+      );
       const teamAsPlayer: Player = {
         id: team.id as Player['id'],
         name: team.name,
