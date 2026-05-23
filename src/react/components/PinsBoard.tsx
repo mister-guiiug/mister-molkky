@@ -70,31 +70,30 @@ export function PinsBoard({
     }
   };
 
-  // The board is wrapped in an overflow-auto container so it can be panned
-  // by drag (mouse) or swipe (touch) when the viewport is narrower than
-  // the minimum usable size — keeps each pin tappable (~50 px) even on
-  // a small phone with the keyboard open.
+  // The board is wrapped in an overflow-x-auto container so it can be
+  // panned by drag (mouse) or swipe (touch) when the viewport is narrower
+  // than the minimum usable size — keeps each pin tappable (~50 px) even
+  // on a small phone with the keyboard open. We size the SVG directly
+  // (width:100%, min-width, height:auto) instead of nesting in an extra
+  // aspect-ratio div, because that nesting prevented the SVG from
+  // resolving its rendered dimensions correctly on some browsers (only
+  // the top-left pin was visible).
   const minBoardWidth = outdoor ? 380 : 320;
-  const minBoardHeight = (minBoardWidth * VIEW_H) / VIEW_W;
   return (
     <div
-      className={`mx-auto w-full ${outdoor ? 'max-w-xl' : 'max-w-md'} overflow-auto overscroll-contain rounded-2xl ${shaking ? 'mm-shake' : ''}`}
-      style={{
-        WebkitOverflowScrolling: 'touch',
-      }}
+      className={`mx-auto w-full ${outdoor ? 'max-w-xl' : 'max-w-md'} overflow-x-auto overscroll-contain rounded-2xl ${shaking ? 'mm-shake' : ''}`}
+      style={{ WebkitOverflowScrolling: 'touch' }}
     >
-      <div
-        className="relative mx-auto"
-        style={{
-          minWidth: `${minBoardWidth}px`,
-          minHeight: `${minBoardHeight}px`,
-          aspectRatio: `${VIEW_W} / ${VIEW_H}`,
-          filter: outdoor ? 'contrast(1.15)' : undefined,
-        }}
-      >
       <svg
         viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-        className="block h-full w-full"
+        preserveAspectRatio="xMidYMid meet"
+        className="block"
+        style={{
+          width: '100%',
+          minWidth: `${minBoardWidth}px`,
+          height: 'auto',
+          filter: outdoor ? 'contrast(1.15)' : undefined,
+        }}
         role="group"
         aria-label={t('match.selectFallenPins')}
       >
@@ -203,7 +202,6 @@ export function PinsBoard({
           );
         })}
       </svg>
-      </div>
     </div>
   );
 }

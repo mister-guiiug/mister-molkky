@@ -1,10 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useI18n } from '../../i18n/useI18n';
 import { useMatchStore } from '../../store/useMatchStore';
 import { PageContainer } from '../components/layout/PageContainer';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { PullIndicator } from '../components/PullIndicator';
 import { TrashIcon, TrophyIcon } from '../components/icons';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import type { FinishedMatch } from '../../schemas';
 
 function formatDate(ts: number, locale: string): string {
@@ -31,6 +33,15 @@ export function HistoryView() {
   const [selected, setSelected] = useState<FinishedMatch | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<FinishedMatch | null>(null);
+  const [refreshNonce, setRefreshNonce] = useState(0);
+  const onPullRefresh = useCallback(async () => {
+    // Local data is already current — bump a nonce so the user sees the
+    // indicator complete and we get a redraw for free.
+    await new Promise(r => setTimeout(r, 250));
+    setRefreshNonce(n => n + 1);
+  }, []);
+  const pull = usePullToRefresh({ onRefresh: onPullRefresh });
+  void refreshNonce;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -42,6 +53,12 @@ export function HistoryView() {
 
   return (
     <PageContainer>
+      <PullIndicator
+        pulling={pull.pulling}
+        progress={pull.progress}
+        refreshing={pull.refreshing}
+        label={t('common.loading')}
+      />
       <header className="mb-4 flex items-center justify-between gap-3 pt-4">
         <h1 className="m-0 text-2xl font-black">{t('history.title')}</h1>
         {history.length > 0 && (

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useI18n } from '../../i18n/useI18n';
 import { useLiveStore } from '../../store/useLiveStore';
@@ -12,6 +12,8 @@ import { ROUTES } from '../../routes';
 import { PageContainer } from '../components/layout/PageContainer';
 import { PlayerCard } from '../components/PlayerCard';
 import { Sparkline } from '../components/Sparkline';
+import { PullIndicator } from '../components/PullIndicator';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 
 export function SpectatorView() {
   const { t } = useI18n();
@@ -35,6 +37,20 @@ export function SpectatorView() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code]);
+
+  const onPullRefresh = useCallback(async () => {
+    if (!code) return;
+    stopViewer();
+    try {
+      await startViewer(code);
+    } catch {
+      /* error already surfaced via useLiveStore.error */
+    }
+  }, [code, startViewer, stopViewer]);
+  const pull = usePullToRefresh({
+    onRefresh: onPullRefresh,
+    enabled: Boolean(code) && supabaseReady,
+  });
 
   const computed = useMemo(() => {
     if (!remote) return null;
@@ -126,6 +142,12 @@ export function SpectatorView() {
 
   return (
     <PageContainer>
+      <PullIndicator
+        pulling={pull.pulling}
+        progress={pull.progress}
+        refreshing={pull.refreshing}
+        label={t('live.spectatorLive')}
+      />
       <header className="mt-4 mb-4 flex items-center justify-between gap-2">
         <div>
           <p className="m-0 text-xs uppercase" style={{ color: 'var(--muted)' }}>
