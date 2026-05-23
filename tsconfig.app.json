@@ -1,7 +1,34 @@
 {
-  "extends": "@mister-guiiug/dev-wpa-config/tsconfig-app-react",
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo"
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+
+    // === Inlined from @mister-guiiug/dev-wpa-config/tsconfig-app ===
+    // The published package on GitHub Packages was shipping these
+    // tsconfigs intermittently — CI sometimes failed to resolve the
+    // "./tsconfig-app-react" subpath even though npm install succeeded.
+    // Flattening them locally removes that dependency entirely.
+    "target": "ES2025",
+    "useDefineForClassFields": true,
+    "lib": ["ES2025", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+    "resolveJsonModule": true,
+
+    // === Inlined from @mister-guiiug/dev-wpa-config/tsconfig-app-react ===
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "types": ["vite/client", "vite-plugin-pwa/client"]
   },
   "include": ["src"]
 }

@@ -1,7 +1,17 @@
 import { defineConfig } from 'vitest/config';
 import { resolve } from 'node:path';
 import react from '@vitejs/plugin-react';
-import { baseTestOptions } from '@mister-guiiug/dev-wpa-config/vitest-base';
+
+// Inlined from @mister-guiiug/dev-wpa-config/vitest-base — the published
+// package's subpath exports weren't reliably resolvable on CI, so we
+// keep the base options here to avoid that build-blocking dep.
+const baseTestOptions = {
+  environment: 'jsdom' as const,
+  globals: true,
+  setupFiles: ['./src/test/setup.ts'],
+  include: ['src/**/*.{test,spec}.{ts,tsx}'],
+  passWithNoTests: true,
+};
 
 export default defineConfig({
   plugins: [react()],
