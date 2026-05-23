@@ -91,6 +91,13 @@ export function PinsBoard({
         style={{
           width: '100%',
           minWidth: `${minBoardWidth}px`,
+          // Some browsers (notably some Safari builds) refuse to derive the
+          // SVG height from the viewBox when only the width is constrained.
+          // The rendered SVG ends up at a tiny default height and every pin
+          // gets pushed into the top-left corner of the visible area.
+          // Forcing aspect-ratio in CSS guarantees a deterministic height
+          // in every engine.
+          aspectRatio: `${VIEW_W} / ${VIEW_H}`,
           height: 'auto',
           filter: outdoor ? 'contrast(1.15)' : undefined,
         }}
