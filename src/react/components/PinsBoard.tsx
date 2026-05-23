@@ -13,7 +13,8 @@ interface PinsBoardProps {
   outdoor?: boolean;
 }
 
-const PIN_RADIUS = 26;
+// Board virtual dimensions kept from the original SVG so the projection
+// matches existing tests.
 const VIEW_W = 360;
 const VIEW_H = 320;
 
@@ -31,6 +32,16 @@ function projectY(y: number): number {
   return VIEW_H - padding - ((y - LAYOUT_BOUNDS.minY) / span) * usable;
 }
 
+/**
+ * 12-pin Mölkky board.
+ *
+ * Switched from a single SVG with viewBox to HTML elements positioned
+ * via percentages because the viewBox approach was unreliable on iOS
+ * Safari: preserveAspectRatio + CSS aspect-ratio sometimes left the SVG
+ * content collapsed in the top-left corner. With percentage positioning
+ * the browser only has to honour the container's aspect-ratio
+ * (well-supported) and the pins inherit responsive sizing automatically.
+ */
 export function PinsBoard({
   fallen,
   onToggle,
@@ -70,145 +81,86 @@ export function PinsBoard({
     }
   };
 
-  // The board is wrapped in an overflow-x-auto container so it can be
-  // panned by drag (mouse) or swipe (touch) when the viewport is narrower
-  // than the minimum usable size — keeps each pin tappable (~50 px) even
-  // on a small phone with the keyboard open. We size the SVG directly
-  // (width:100%, min-width, height:auto) instead of nesting in an extra
-  // aspect-ratio div, because that nesting prevented the SVG from
-  // resolving its rendered dimensions correctly on some browsers (only
-  // the top-left pin was visible).
-  const minBoardWidth = outdoor ? 380 : 320;
+  // Pin size as a percentage of the container width. The original SVG used
+  // r=26 inside a 360-wide viewBox → ~14.4 % per pin; we bump it to 15 %
+  // so the touch target stays comfortable on small viewports (380 px →
+  // 57 px button), 17 % in outdoor mode for low-light readability.
+  const pinSizePct = outdoor ? 17 : 15;
+
   return (
     <div
-      className={`mx-auto w-full ${outdoor ? 'max-w-xl' : 'max-w-md'} overflow-x-auto overscroll-contain rounded-2xl ${shaking ? 'mm-shake' : ''}`}
-      style={{ WebkitOverflowScrolling: 'touch' }}
+      role="group"
+      aria-label={t('match.selectFallenPins')}
+      data-testid="pins-board"
+      className={`relative mx-auto w-full ${outdoor ? 'max-w-xl' : 'max-w-md'} overflow-hidden rounded-2xl border ${shaking ? 'mm-shake' : ''}`}
+      style={{
+        aspectRatio: `${VIEW_W} / ${VIEW_H}`,
+        background:
+          'radial-gradient(circle at 50% 40%, var(--surface-highlight) 0%, var(--bg) 100%)',
+        borderColor: 'var(--border)',
+        filter: outdoor ? 'contrast(1.15)' : undefined,
+        touchAction: 'manipulation',
+      }}
     >
-      <svg
-        viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-        preserveAspectRatio="xMidYMid meet"
-        className="block"
-        style={{
-          width: '100%',
-          minWidth: `${minBoardWidth}px`,
-          // Some browsers (notably some Safari builds) refuse to derive the
-          // SVG height from the viewBox when only the width is constrained.
-          // The rendered SVG ends up at a tiny default height and every pin
-          // gets pushed into the top-left corner of the visible area.
-          // Forcing aspect-ratio in CSS guarantees a deterministic height
-          // in every engine.
-          aspectRatio: `${VIEW_W} / ${VIEW_H}`,
-          height: 'auto',
-          filter: outdoor ? 'contrast(1.15)' : undefined,
-        }}
-        role="group"
-        aria-label={t('match.selectFallenPins')}
+      <span
+        className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xs font-semibold"
+        style={{ bottom: '0.5rem', color: 'var(--muted)' }}
       >
-        <defs>
-          <radialGradient id="board-grass" cx="50%" cy="40%" r="65%">
-            <stop offset="0%" stopColor="var(--surface-highlight)" />
-            <stop offset="100%" stopColor="var(--bg)" />
-          </radialGradient>
-          <linearGradient id="pin-wood" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--wood-light)" />
-            <stop offset="100%" stopColor="var(--wood-deep)" />
-          </linearGradient>
-          <linearGradient id="pin-down" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--muted)" stopOpacity="0.4" />
-            <stop offset="100%" stopColor="var(--muted)" stopOpacity="0.7" />
-          </linearGradient>
-        </defs>
+        ↑ {t('match.tap')} ↑
+      </span>
 
-        <rect
-          x="6"
-          y="6"
-          width={VIEW_W - 12}
-          height={VIEW_H - 12}
-          rx="22"
-          fill="url(#board-grass)"
-          stroke="var(--border)"
-        />
-
-        <text
-          x={VIEW_W / 2}
-          y={VIEW_H - 10}
-          textAnchor="middle"
-          fontSize="11"
-          fontWeight="600"
-          fill="var(--muted)"
-        >
-          ↑ {t('match.tap')} ↑
-        </text>
-
-        {INITIAL_LAYOUT.map(({ pin, x, y }) => {
-          const cx = projectX(x);
-          const cy = projectY(y);
-          const isDown = fallen.has(pin);
-          const ringColor = isDown ? 'var(--muted)' : playerColor;
-          return (
-            <g
-              key={pin}
-              transform={`translate(${cx} ${cy})`}
-              role="button"
-              tabIndex={disabled ? -1 : 0}
-              aria-pressed={isDown}
-              aria-label={t('a11y.pinAt', {
-                n: pin,
-                state: isDown ? t('match.pinDown') : t('match.pinStanding'),
-              })}
-              onPointerDown={() => handlePointerDown(pin)}
-              onPointerUp={() => handlePointerUpOrLeave(pin, true)}
-              onPointerLeave={() => handlePointerUpOrLeave(pin, false)}
-              onPointerCancel={() => handlePointerUpOrLeave(pin, false)}
-              onClick={e => {
-                if (longPressTimers.current.has(pin)) return;
-                e.preventDefault();
-                if (!disabled) {
-                  playSound(fallen.has(pin) ? 'pin-untap' : 'pin-tap');
-                  onToggle(pin);
-                }
-              }}
-              onKeyDown={e => {
-                if (disabled) return;
-                if (e.key === ' ' || e.key === 'Enter') {
-                  e.preventDefault();
-                  playSound(fallen.has(pin) ? 'pin-untap' : 'pin-tap');
-                  onToggle(pin);
-                }
-              }}
-              style={{
-                cursor: disabled ? 'default' : 'pointer',
-                outline: 'none',
-              }}
-              className={isDown ? 'mm-pin-fall' : 'mm-pin-stand'}
-            >
-              <circle
-                r={PIN_RADIUS + 4}
-                fill="transparent"
-                stroke={ringColor}
-                strokeWidth="2"
-                strokeOpacity={isDown ? 0.35 : 0.8}
-              />
-              <circle
-                r={PIN_RADIUS}
-                fill={isDown ? 'url(#pin-down)' : 'url(#pin-wood)'}
-                stroke="var(--wood-shadow)"
-                strokeWidth="1.5"
-                strokeOpacity={isDown ? 0.4 : 0.9}
-              />
-              <text
-                textAnchor="middle"
-                dominantBaseline="central"
-                fontSize="18"
-                fontWeight="900"
-                fill={isDown ? 'var(--muted)' : 'var(--wood-shadow)'}
-              >
-                {pin}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
+      {INITIAL_LAYOUT.map(({ pin, x, y }) => {
+        const cx = (projectX(x) / VIEW_W) * 100;
+        const cy = (projectY(y) / VIEW_H) * 100;
+        const isDown = fallen.has(pin);
+        const ringColor = isDown ? 'var(--muted)' : playerColor;
+        return (
+          <button
+            key={pin}
+            type="button"
+            aria-pressed={isDown}
+            aria-label={t('a11y.pinAt', {
+              n: pin,
+              state: isDown ? t('match.pinDown') : t('match.pinStanding'),
+            })}
+            disabled={disabled}
+            onPointerDown={() => handlePointerDown(pin)}
+            onPointerUp={() => handlePointerUpOrLeave(pin, true)}
+            onPointerLeave={() => handlePointerUpOrLeave(pin, false)}
+            onPointerCancel={() => handlePointerUpOrLeave(pin, false)}
+            onClick={e => {
+              if (longPressTimers.current.has(pin)) return;
+              e.preventDefault();
+              if (!disabled) {
+                playSound(fallen.has(pin) ? 'pin-untap' : 'pin-tap');
+                onToggle(pin);
+              }
+            }}
+            className={`absolute flex items-center justify-center rounded-full text-lg font-black tabular-nums transition-transform ${isDown ? 'mm-pin-fall' : 'mm-pin-stand'}`}
+            style={{
+              left: `${cx}%`,
+              top: `${cy}%`,
+              width: `${pinSizePct}%`,
+              aspectRatio: '1 / 1',
+              transform: 'translate(-50%, -50%)',
+              background: isDown
+                ? 'color-mix(in srgb, var(--muted) 30%, transparent)'
+                : 'linear-gradient(to bottom, var(--wood-light), var(--wood-deep))',
+              border: `2px solid ${ringColor}`,
+              outline: 'none',
+              outlineOffset: 2,
+              boxShadow: isDown
+                ? 'none'
+                : `0 0 0 4px color-mix(in srgb, ${ringColor} 14%, transparent)`,
+              color: isDown ? 'var(--muted)' : 'var(--wood-shadow)',
+              opacity: disabled ? 0.6 : 1,
+              cursor: disabled ? 'default' : 'pointer',
+            }}
+          >
+            {pin}
+          </button>
+        );
+      })}
     </div>
   );
 }
