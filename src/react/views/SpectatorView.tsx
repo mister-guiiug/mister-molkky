@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useI18n } from '../../i18n/useI18n';
 import { useLiveStore } from '../../store/useLiveStore';
@@ -14,6 +14,10 @@ import { PlayerCard } from '../components/PlayerCard';
 import { Sparkline } from '../components/Sparkline';
 import { PullIndicator } from '../components/PullIndicator';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import {
+  notifyLiveEvent,
+  requestNotificationPermission,
+} from '../../live/notifications';
 
 export function SpectatorView() {
   const { t } = useI18n();
@@ -32,11 +36,59 @@ export function SpectatorView() {
     if (role !== 'viewer' || useLiveStore.getState().code !== code) {
       void startViewer(code).catch(() => undefined);
     }
+    // Best-effort: ask for notification permission once. The store-level
+    // auto-reconnect handles dropped connections; this hook adds the
+    // user-facing "ping" when something happens while the tab is hidden.
+    void requestNotificationPermission();
     return () => {
       stopViewer();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code]);
+
+  // Browser notifications on remote updates. Track the last-seen throw
+  // count and winner id so we only fire on *transitions*, not on every
+  // render. Tags scoped to the match code so old notifications get
+  // replaced rather than stacking.
+  const lastThrowCountRef = useRef<number>(0);
+  const notifiedFinishRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!remote) return;
+    const prevCount = lastThrowCountRef.current;
+    const nextCount = remote.throws.length;
+    lastThrowCountRef.current = nextCount;
+    // Initial render: don't fire a notif just because we mounted.
+    if (prevCount === 0) return;
+    if (nextCount > prevCount) {
+      const last = remote.throws[nextCount - 1];
+      if (last) {
+        const isElim = last.resultedInElimination;
+        const score = last.computedScore;
+        notifyLiveEvent({
+          title: t('live.notifThrowTitle'),
+          body: isElim
+            ? t('live.notifElimination')
+            : t('live.notifThrow', { n: score }),
+          tag: `live-${remote.code}`,
+        });
+      }
+    }
+    if (remote.winner_id && notifiedFinishRef.current !== remote.winner_id) {
+      notifiedFinishRef.current = remote.winner_id;
+      const winnerName =
+        remote.config.players.find(p => p.id === remote.winner_id)?.name ??
+        remote.config.teams?.find(team => team.id === remote.winner_id)?.name ??
+        '?';
+      notifyLiveEvent({
+        title: t('live.notifVictoryTitle'),
+        body: t('match.victoryMessage', { name: winnerName }),
+        tag: `live-${remote.code}`,
+        // Victory is rare and high-value — show it even if the tab is
+        // active so the host sees the "ding".
+        forceShow: true,
+      });
+    }
+  }, [remote, t]);
 
   const onPullRefresh = useCallback(async () => {
     if (!code) return;
@@ -75,7 +127,10 @@ export function SpectatorView() {
       variant: config.variant ?? 'classic',
     };
     const start = initialScore(settings);
-    const scores = new Map<string, { score: number; missStreak: number; eliminated: boolean }>();
+    const scores = new Map<
+      string,
+      { score: number; missStreak: number; eliminated: boolean }
+    >();
     const histories = new Map<string, number[]>();
     for (const a of actors) {
       scores.set(a.id, { score: start, missStreak: 0, eliminated: false });
@@ -117,6 +172,16 @@ export function SpectatorView() {
     );
   }
 
+  if (status === 'reconnecting' && !remote) {
+    return (
+      <PageContainer>
+        <p className="mt-6 text-sm" style={{ color: 'var(--warning)' }}>
+          {t('live.reconnecting')}
+        </p>
+      </PageContainer>
+    );
+  }
+
   if (error || !remote || !computed) {
     return (
       <PageContainer>
@@ -148,9 +213,27 @@ export function SpectatorView() {
         refreshing={pull.refreshing}
         label={t('live.spectatorLive')}
       />
+      {status === 'reconnecting' && (
+        <p
+          className="mt-4 mb-2 rounded-lg border px-3 py-2 text-xs font-bold"
+          style={{
+            borderColor: 'var(--warning)',
+            color: 'var(--warning)',
+            background:
+              'color-mix(in srgb, var(--warning) 10%, var(--surface))',
+          }}
+          role="status"
+          aria-live="polite"
+        >
+          ● {t('live.reconnecting')}
+        </p>
+      )}
       <header className="mt-4 mb-4 flex items-center justify-between gap-2">
         <div>
-          <p className="m-0 text-xs uppercase" style={{ color: 'var(--muted)' }}>
+          <p
+            className="m-0 text-xs uppercase"
+            style={{ color: 'var(--muted)' }}
+          >
             {t('live.spectatorTitle')}
           </p>
           <p

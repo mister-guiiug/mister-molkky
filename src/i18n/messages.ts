@@ -311,6 +311,11 @@ export interface Messages {
     settingsTitle: string;
     settingsConfigured: string;
     settingsNotConfigured: string;
+    reconnecting: string;
+    notifThrowTitle: string;
+    notifThrow: string;
+    notifElimination: string;
+    notifVictoryTitle: string;
   };
   offline: {
     title: string;
@@ -671,6 +676,11 @@ const fr: Messages = {
       'Backend configuré — tu peux diffuser ou rejoindre des parties.',
     settingsNotConfigured:
       'Backend non configuré. Voir docs/live-supabase.md pour activer.',
+    reconnecting: 'Reconnexion à la partie…',
+    notifThrowTitle: 'Mister Mölkky — direct',
+    notifThrow: 'Nouveau lancer : +{n}',
+    notifElimination: 'Joueur éliminé !',
+    notifVictoryTitle: 'Victoire ! 🏆',
   },
   offline: {
     title: 'Hors-ligne — vos données sont sauvegardées localement.',
@@ -1023,6 +1033,11 @@ const en: Messages = {
     settingsConfigured: 'Backend configured — you can share or join matches.',
     settingsNotConfigured:
       'Backend not configured. See docs/live-supabase.md to enable.',
+    reconnecting: 'Reconnecting to the match…',
+    notifThrowTitle: 'Mister Mölkky — live',
+    notifThrow: 'New throw: +{n}',
+    notifElimination: 'Player eliminated!',
+    notifVictoryTitle: 'Victory! 🏆',
   },
   offline: {
     title: 'Offline — your data is saved locally.',
