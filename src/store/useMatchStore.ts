@@ -456,4 +456,33 @@ export function useScores(): Map<string, ScoreSnapshot> {
   }, [match]);
 }
 
+/**
+ * Per-actor running score after each of their throws — feeds the live
+ * sparkline in MatchView. Computed in a single linear pass over throws so
+ * it stays cheap even with long matches.
+ */
+export function useScoreHistories(): Map<string, number[]> {
+  const match = useMatchStore(s => s.current);
+  return useMemo(() => {
+    const histories = new Map<string, number[]>();
+    if (!match) return histories;
+    const settings = settingsFromConfig(match.config);
+    const { actorIds, actorMap } = actorContext(match.config);
+    const start = initialScore(settings);
+    for (const id of actorIds) histories.set(id, [start]);
+
+    const running = new Map<string, number>();
+    for (const id of actorIds) running.set(id, start);
+
+    for (const t of match.throws) {
+      const actor = actorMap?.get(t.playerId) ?? t.playerId;
+      const prev = running.get(actor) ?? start;
+      const e = evaluateThrow(prev, t.fallenPins, settings);
+      running.set(actor, e.nextScore);
+      histories.get(actor)?.push(e.nextScore);
+    }
+    return histories;
+  }, [match]);
+}
+
 export { DEFAULT_RULE_SETTINGS };

@@ -145,3 +145,60 @@ export function averageScorePerThrow(stats: PlayerStats): number {
   if (stats.totalThrows === 0) return 0;
   return stats.totalScore / stats.totalThrows;
 }
+
+export interface HeadToHead {
+  sharedMatches: number;
+  winsA: number;
+  winsB: number;
+  avgScoreA: number;
+  avgScoreB: number;
+  accuracyA: number;
+  accuracyB: number;
+}
+
+/**
+ * Compute pairwise stats restricted to matches where BOTH players took
+ * part. Useful for "who beats whom" battle cards.
+ */
+export function headToHead(
+  matches: readonly MatchStatsInput[],
+  playerA: string,
+  playerB: string
+): HeadToHead {
+  let sharedMatches = 0;
+  let winsA = 0;
+  let winsB = 0;
+  let scoreA = 0;
+  let scoreB = 0;
+  let throwsA = 0;
+  let throwsB = 0;
+  let pinsHitA = 0;
+  let pinsHitB = 0;
+
+  for (const match of matches) {
+    if (!match.playerIds.includes(playerA)) continue;
+    if (!match.playerIds.includes(playerB)) continue;
+    sharedMatches += 1;
+    if (match.winnerId === playerA) winsA += 1;
+    if (match.winnerId === playerB) winsB += 1;
+
+    const settings = match.settings ?? DEFAULT_RULE_SETTINGS;
+    const out = replayThrows(match.playerIds, match.throws, settings);
+    scoreA += out.progress.get(playerA)?.score ?? 0;
+    scoreB += out.progress.get(playerB)?.score ?? 0;
+    throwsA += out.progress.get(playerA)?.totalThrows ?? 0;
+    throwsB += out.progress.get(playerB)?.totalThrows ?? 0;
+    pinsHitA += out.progress.get(playerA)?.pinsHit ?? 0;
+    pinsHitB += out.progress.get(playerB)?.pinsHit ?? 0;
+  }
+
+  return {
+    sharedMatches,
+    winsA,
+    winsB,
+    avgScoreA: sharedMatches === 0 ? 0 : scoreA / sharedMatches,
+    avgScoreB: sharedMatches === 0 ? 0 : scoreB / sharedMatches,
+    accuracyA: throwsA === 0 ? 0 : pinsHitA / throwsA,
+    accuracyB: throwsB === 0 ? 0 : pinsHitB / throwsB,
+  };
+}

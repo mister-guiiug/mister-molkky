@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../../i18n/useI18n';
 import {
   useCurrentPlayerInfo,
+  useScoreHistories,
   useScores,
   useMatchStore,
 } from '../../store/useMatchStore';
@@ -18,6 +19,7 @@ import { VictoryConfetti } from '../components/VictoryConfetti';
 import { FullscreenToggle } from '../components/FullscreenToggle';
 import { Modal } from '../components/Modal';
 import { ThrowsLog } from '../components/ThrowsLog';
+import { Sparkline } from '../components/Sparkline';
 import { useFeedback } from '../hooks/useFeedback';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
@@ -37,6 +39,7 @@ export function MatchView() {
 
   const currentInfo = useCurrentPlayerInfo();
   const scores = useScores();
+  const scoreHistories = useScoreHistories();
 
   const [fallen, setFallen] = useState<Set<number>>(new Set());
   const [confirmAbandon, setConfirmAbandon] = useState(false);
@@ -310,8 +313,9 @@ export function MatchView() {
                   color: team.color,
                   createdAt: 0,
                 };
+                const history = scoreHistories.get(team.id) ?? [];
                 return (
-                  <li key={team.id}>
+                  <li key={team.id} className="flex flex-col items-stretch gap-1">
                     <PlayerCard
                       player={teamPlayer}
                       score={s?.score ?? 0}
@@ -322,13 +326,21 @@ export function MatchView() {
                       hasWon={s?.hasWon}
                       compact
                     />
+                    <Sparkline
+                      values={history}
+                      color={team.color}
+                      width={80}
+                      height={18}
+                      max={targetScore}
+                    />
                   </li>
                 );
               })
             : players.map(p => {
                 const s = scores.get(p.id);
+                const history = scoreHistories.get(p.id) ?? [];
                 return (
-                  <li key={p.id}>
+                  <li key={p.id} className="flex flex-col items-stretch gap-1">
                     <PlayerCard
                       player={p}
                       score={s?.score ?? 0}
@@ -338,6 +350,13 @@ export function MatchView() {
                       eliminated={s?.eliminated}
                       hasWon={s?.hasWon}
                       compact
+                    />
+                    <Sparkline
+                      values={history}
+                      color={p.color}
+                      width={80}
+                      height={18}
+                      max={targetScore}
                     />
                   </li>
                 );
