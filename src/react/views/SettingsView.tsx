@@ -11,6 +11,7 @@ import {
 import { ExportBundleSchema, type Locale } from '../../schemas';
 import { PageContainer } from '../components/layout/PageContainer';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { isSupabaseConfigured } from '../../supabase';
 
 declare const __APP_VERSION__: string | undefined;
 
@@ -215,6 +216,21 @@ export function SettingsView() {
         >
           {t('settings.eraseAll')}
         </button>
+      </Section>
+
+      <Section label={t('live.settingsTitle')}>
+        {isSupabaseConfigured() ? (
+          <p
+            className="m-0 flex items-center gap-2 text-sm font-semibold"
+            style={{ color: 'var(--success)' }}
+          >
+            ● {t('live.settingsConfigured')}
+          </p>
+        ) : (
+          <p className="m-0 text-sm" style={{ color: 'var(--muted)' }}>
+            {t('live.settingsNotConfigured')}
+          </p>
+        )}
       </Section>
 
       <Section label={t('settings.about')}>

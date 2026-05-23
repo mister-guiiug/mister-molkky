@@ -218,6 +218,32 @@ export interface Messages {
     button: string;
     dismiss: string;
   };
+  live: {
+    shareTitle: string;
+    shareIntro: string;
+    shareHint: string;
+    shareText: string;
+    startSharing: string;
+    stopSharing: string;
+    codeLabel: string;
+    qrAlt: string;
+    activeBadge: string;
+    notConfigured: string;
+    join: string;
+    joinTitle: string;
+    joinHint: string;
+    joinScan: string;
+    joinCancelScan: string;
+    joinSubmit: string;
+    joinFailed: string;
+    spectatorTitle: string;
+    spectatorLive: string;
+    spectatorFinished: string;
+    spectatorLeave: string;
+    settingsTitle: string;
+    settingsConfigured: string;
+    settingsNotConfigured: string;
+  };
   offline: {
     title: string;
   };
@@ -469,6 +495,32 @@ const fr: Messages = {
     button: 'Installer',
     dismiss: 'Plus tard',
   },
+  live: {
+    shareTitle: 'Diffuser en direct',
+    shareIntro: 'Génère un code partageable pour que d’autres devices puissent suivre cette partie en temps réel.',
+    shareHint: 'Scanne le QR ou saisis le code dans « Rejoindre une partie ».',
+    shareText: 'Suis ma partie de Mölkky avec le code {code}',
+    startSharing: 'Démarrer la diffusion',
+    stopSharing: 'Arrêter la diffusion',
+    codeLabel: 'Code',
+    qrAlt: 'QR code à scanner',
+    activeBadge: 'En direct',
+    notConfigured: 'Le mode direct nécessite un backend Supabase configuré. Voir docs/live-supabase.md.',
+    join: 'Rejoindre une partie',
+    joinTitle: 'Rejoindre une partie en direct',
+    joinHint: 'Entre le code à 6 caractères ou scanne le QR du téléphone hôte.',
+    joinScan: 'Scanner le QR',
+    joinCancelScan: 'Annuler le scan',
+    joinSubmit: 'Rejoindre',
+    joinFailed: 'Code introuvable',
+    spectatorTitle: 'Suivi en direct',
+    spectatorLive: 'En direct',
+    spectatorFinished: 'Partie terminée',
+    spectatorLeave: 'Quitter',
+    settingsTitle: 'Mode direct',
+    settingsConfigured: 'Backend configuré — tu peux diffuser ou rejoindre des parties.',
+    settingsNotConfigured: 'Backend non configuré. Voir docs/live-supabase.md pour activer.',
+  },
   offline: {
     title: 'Hors-ligne — vos données sont sauvegardées localement.',
   },
@@ -718,6 +770,32 @@ const en: Messages = {
     text: 'Install this app on your device?',
     button: 'Install',
     dismiss: 'Later',
+  },
+  live: {
+    shareTitle: 'Share live',
+    shareIntro: 'Generate a shareable code so other devices can follow this match in real time.',
+    shareHint: 'Scan the QR code or enter the code in "Join a match".',
+    shareText: 'Follow my Mölkky match with code {code}',
+    startSharing: 'Start sharing',
+    stopSharing: 'Stop sharing',
+    codeLabel: 'Code',
+    qrAlt: 'QR code to scan',
+    activeBadge: 'Live',
+    notConfigured: 'Live mode needs a configured Supabase backend. See docs/live-supabase.md.',
+    join: 'Join a match',
+    joinTitle: 'Join a live match',
+    joinHint: 'Enter the 6-character code or scan the host phone QR.',
+    joinScan: 'Scan QR',
+    joinCancelScan: 'Cancel scan',
+    joinSubmit: 'Join',
+    joinFailed: 'Code not found',
+    spectatorTitle: 'Following live',
+    spectatorLive: 'Live',
+    spectatorFinished: 'Match finished',
+    spectatorLeave: 'Leave',
+    settingsTitle: 'Live mode',
+    settingsConfigured: 'Backend configured — you can share or join matches.',
+    settingsNotConfigured: 'Backend not configured. See docs/live-supabase.md to enable.',
   },
   offline: {
     title: 'Offline — your data is saved locally.',

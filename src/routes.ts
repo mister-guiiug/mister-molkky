@@ -5,9 +5,11 @@ export const ROUTES = {
   stats: '/statistiques',
   players: '/joueurs',
   settings: '/parametres',
+  joinLive: '/rejoindre',
+  spectator: '/direct',
 } as const;
 
-export type RouteKey = keyof typeof ROUTES;
+export type RouteKey = 'home' | 'match' | 'history' | 'stats' | 'players' | 'settings';
 
 export const LEGACY_REDIRECTS: Record<string, string> = {
   '/match': ROUTES.match,
@@ -15,6 +17,7 @@ export const LEGACY_REDIRECTS: Record<string, string> = {
   '/stats': ROUTES.stats,
   '/players': ROUTES.players,
   '/settings': ROUTES.settings,
+  '/join': ROUTES.joinLive,
 };
 
 export const ROUTE_TITLES: Record<RouteKey, string> = {

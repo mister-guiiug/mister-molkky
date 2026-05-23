@@ -41,6 +41,11 @@ jobs:
       - name: Build
         env:
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          # Optional — set as repository secrets to enable the live (multi-
+          # device) feature on the deployed Pages build. The app builds and
+          # runs fine without them, the "live" UI is just hidden.
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: npm run build
 
       - name: Upload Pages artifact
