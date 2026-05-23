@@ -20,14 +20,9 @@ export function JoinLiveView() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    return () => {
-      scannerRef.current?.stop();
-      scannerRef.current?.destroy();
-      scannerRef.current = null;
-    };
-  }, []);
-
+  // Submit is invoked from the QR-scanner callback inside an effect that
+  // should NOT re-run on every render — stash the latest version in a
+  // ref so the effect can read it without listing `submit` as a dep.
   const submit = async (rawCode: string) => {
     if (busy) return;
     setError(null);
@@ -43,41 +38,82 @@ export function JoinLiveView() {
       setBusy(false);
     }
   };
+  const submitRef = useRef(submit);
+  submitRef.current = submit;
 
-  const startScan = async () => {
-    if (!videoRef.current) return;
+  /**
+   * Click handler — just mounts the video element. We can't `new QrScanner`
+   * here because the <video> ref is null until React has rendered the
+   * conditional branch where it lives. That was the original bug: a tap
+   * on "Scanner le QR" returned silently because videoRef.current was
+   * null. The scanner itself is wired up in the effect below, once React
+   * has flushed the new DOM.
+   */
+  const startScan = () => {
     setError(null);
-    const scanner = new QrScanner(
-      videoRef.current,
-      result => {
-        const url = result.data;
-        const match = url.match(/direct\/([A-Za-z0-9]+)/);
-        const candidate = match?.[1] ?? url;
-        const normalized = normalizeCode(candidate);
-        if (normalized.length === 6) {
-          setCode(normalized);
-          scanner.stop();
-          setScanning(false);
-          void submit(normalized);
-        }
-      },
-      { highlightScanRegion: true, highlightCodeOutline: true }
-    );
-    scannerRef.current = scanner;
-    try {
-      await scanner.start();
-      setScanning(true);
-    } catch (err) {
-      setError((err as Error).message);
-    }
+    setScanning(true);
   };
 
   const stopScan = () => {
-    scannerRef.current?.stop();
-    scannerRef.current?.destroy();
-    scannerRef.current = null;
     setScanning(false);
   };
+
+  // When `scanning` flips true, the <video> mounts and React commits the
+  // ref. This effect picks it up and starts QrScanner; on cleanup (or
+  // when scanning flips false) it stops + destroys the camera stream so
+  // we never leak a torch-on flashlight.
+  useEffect(() => {
+    if (!scanning) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    let cancelled = false;
+    const scanner = new QrScanner(
+      video,
+      result => {
+        // Accept both the raw code and a full /direct/CODE URL.
+        const url = result.data ?? '';
+        const match = url.match(/direct\/([A-Za-z0-9]+)/);
+        const candidate = match?.[1] ?? url;
+        const normalized = normalizeCode(candidate);
+        if (normalized.length !== 6) return;
+        setCode(normalized);
+        scanner.stop();
+        scanner.destroy();
+        scannerRef.current = null;
+        setScanning(false);
+        void submitRef.current(normalized);
+      },
+      {
+        highlightScanRegion: true,
+        highlightCodeOutline: true,
+        // Prefer the rear camera on phones — front-cam scanning is a
+        // gymnastic exercise nobody asked for.
+        preferredCamera: 'environment',
+        returnDetailedScanResult: true,
+      }
+    );
+    scannerRef.current = scanner;
+
+    scanner.start().catch((err: unknown) => {
+      if (cancelled) return;
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : 'Camera unavailable';
+      setError(message);
+      scanner.destroy();
+      scannerRef.current = null;
+      setScanning(false);
+    });
+
+    return () => {
+      cancelled = true;
+      scanner.stop();
+      scanner.destroy();
+      scannerRef.current = null;
+    };
+  }, [scanning]);
 
   if (!supabaseReady) {
     return (
