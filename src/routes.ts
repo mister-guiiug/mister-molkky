@@ -1,13 +1,13 @@
 export const ROUTES = {
   home: '/',
-  match: '/partie',
-  history: '/historique',
-  stats: '/statistiques',
-  players: '/joueurs',
-  settings: '/parametres',
-  joinLive: '/rejoindre',
-  spectator: '/direct',
-  practice: '/entrainement',
+  match: '/match',
+  history: '/history',
+  stats: '/stats',
+  players: '/players',
+  settings: '/settings',
+  joinLive: '/join',
+  spectator: '/live',
+  practice: '/practice',
 } as const;
 
 export type RouteKey =
@@ -19,19 +19,19 @@ export type RouteKey =
   | 'settings';
 
 export const LEGACY_REDIRECTS: Record<string, string> = {
-  '/match': ROUTES.match,
-  '/history': ROUTES.history,
-  '/stats': ROUTES.stats,
-  '/players': ROUTES.players,
-  '/settings': ROUTES.settings,
-  '/join': ROUTES.joinLive,
+  '/partie': ROUTES.match,
+  '/historique': ROUTES.history,
+  '/statistiques': ROUTES.stats,
+  '/joueurs': ROUTES.players,
+  '/parametres': ROUTES.settings,
+  '/rejoindre': ROUTES.joinLive,
 };
 
 export const ROUTE_TITLES: Record<RouteKey, string> = {
   home: 'Mister Mölkky',
-  match: 'Partie en cours',
-  history: 'Historique',
-  stats: 'Statistiques',
-  players: 'Joueurs',
-  settings: 'Paramètres',
+  match: 'Match in progress',
+  history: 'History',
+  stats: 'Statistics',
+  players: 'Players',
+  settings: 'Settings',
 };

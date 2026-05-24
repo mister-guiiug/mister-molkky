@@ -19,6 +19,14 @@ export default defineConfig(({ command }) => {
 
   return {
     base: basePath,
+    optimizeDeps: {
+      esbuildOptions: {
+        // @supabase/supabase-js source maps reference `shared/tracing`, a
+        // monorepo-internal package not published to npm. Disabling sourcemaps
+        // for pre-bundled deps avoids "Could not read source map" warnings.
+        sourcemap: false,
+      },
+    },
     build: {
       sourcemap: true,
       chunkSizeWarningLimit: 800,
@@ -63,7 +71,7 @@ export default defineConfig(({ command }) => {
       // over. Ship a 404.html that is byte-for-byte identical to
       // index.html — GH Pages serves it, the SPA boots, BrowserRouter
       // parses the URL and renders the right view.
-      ({
+      {
         name: 'mister-molkky-spa-404',
         apply: 'build',
         async closeBundle() {
@@ -76,11 +84,10 @@ export default defineConfig(({ command }) => {
               resolve(dist, '404.html')
             );
           } catch (err) {
-            // eslint-disable-next-line no-console
             console.warn('[spa-404] could not emit 404.html:', err);
           }
         },
-      } satisfies Plugin),
+      } satisfies Plugin,
       {
         name: 'mister-molkky-trailing-slash',
         configureServer(server: ViteDevServer) {

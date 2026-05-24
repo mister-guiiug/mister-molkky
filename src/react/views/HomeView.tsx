@@ -98,7 +98,7 @@ export function HomeView() {
         {isSupabaseConfigured() && (
           <button
             type="button"
-            onClick={() => navigate('/rejoindre')}
+            onClick={() => navigate(ROUTES.joinLive)}
             className="touch-target flex items-center justify-between rounded-2xl border-2 px-5 py-3 text-left font-bold"
             style={{
               borderColor: 'var(--primary)',

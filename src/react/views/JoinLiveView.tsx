@@ -5,6 +5,7 @@ import { useI18n } from '../../i18n/useI18n';
 import { useLiveStore } from '../../store/useLiveStore';
 import { isSupabaseConfigured } from '../../supabase';
 import { normalizeCode } from '../../live/liveMatch';
+import { ROUTES } from '../../routes';
 import { PageContainer } from '../components/layout/PageContainer';
 import { CameraIcon } from '../components/icons';
 
@@ -30,7 +31,7 @@ export function JoinLiveView() {
     try {
       await startViewer(rawCode);
       const normalized = normalizeCode(rawCode);
-      navigate(`/direct/${normalized}`);
+      navigate(`${ROUTES.spectator}/${normalized}`);
     } catch (err) {
       setError(t('live.joinFailed'));
       void err;
@@ -71,9 +72,9 @@ export function JoinLiveView() {
     const scanner = new QrScanner(
       video,
       result => {
-        // Accept both the raw code and a full /direct/CODE URL.
+        // Accept both the raw code and a full /live/CODE URL.
         const url = result.data ?? '';
-        const match = url.match(/direct\/([A-Za-z0-9]+)/);
+        const match = url.match(/live\/([A-Za-z0-9]+)/);
         const candidate = match?.[1] ?? url;
         const normalized = normalizeCode(candidate);
         if (normalized.length !== 6) return;
