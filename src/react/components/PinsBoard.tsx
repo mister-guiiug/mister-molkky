@@ -25,8 +25,8 @@ const VIEW_H = 320;
 // kept tight so the widest row (5, 11, 12, 6) actually spans most of
 // the board width — otherwise the layout looks cramped in the middle.
 const PAD_X = 36;
-const PAD_TOP = 30;
-const PAD_BOTTOM = 72;
+const PAD_TOP = 50;
+const PAD_BOTTOM = 60;
 
 function projectX(x: number): number {
   const usable = VIEW_W - PAD_X * 2;
