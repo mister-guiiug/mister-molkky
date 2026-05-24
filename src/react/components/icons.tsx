@@ -35,11 +35,14 @@ import {
   Shuffle,
   Star,
   StarOff,
+  MousePointerClick,
   Target,
   Trash2,
   TrendingUp,
   Trophy,
+  TriangleAlert,
   Undo2,
+  UserX,
   Users,
   X,
   Zap,
@@ -92,6 +95,12 @@ export const CoffeeIcon = wrap(Coffee as IconComponent, 'CoffeeIcon');
 export const ShuffleIcon = wrap(Shuffle as IconComponent, 'ShuffleIcon');
 export const ForfeitIcon = wrap(DoorOpen as IconComponent, 'ForfeitIcon');
 export const TargetIcon = wrap(Target as IconComponent, 'TargetIcon');
+export const PointerClickIcon = wrap(
+  MousePointerClick as IconComponent,
+  'PointerClickIcon'
+);
+export const AlertIcon = wrap(TriangleAlert as IconComponent, 'AlertIcon');
+export const UserXIcon = wrap(UserX as IconComponent, 'UserXIcon');
 export const LightbulbIcon = wrap(Lightbulb as IconComponent, 'LightbulbIcon');
 export const StarIcon = wrap(Star as IconComponent, 'StarIcon');
 export const StarOffIcon = wrap(StarOff as IconComponent, 'StarOffIcon');

@@ -95,9 +95,7 @@ describe('view smoke tests — every route mounts without crashing', () => {
   });
 
   it('JoinLiveView mounts and shows the join heading', () => {
-    const { getByRole } = render(
-      withProviders(<JoinLiveView />, ['/rejoindre'])
-    );
+    const { getByRole } = render(withProviders(<JoinLiveView />, ['/join']));
     // Heading is rendered both when Supabase is configured and when it
     // isn't, so it's the safest "mounted ok" check.
     expect(
