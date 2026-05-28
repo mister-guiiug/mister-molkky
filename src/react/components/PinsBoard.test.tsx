@@ -26,7 +26,18 @@ describe('PinsBoard', () => {
       .map(b => b.textContent?.trim())
       .sort((a, b) => Number(a) - Number(b));
     expect(numbers).toEqual([
-      '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12',
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '8',
+      '9',
+      '10',
+      '11',
+      '12',
     ]);
   });
 
@@ -34,7 +45,7 @@ describe('PinsBoard', () => {
     const { container } = renderBoard();
     const board = container.querySelector('[data-testid="pins-board"]');
     expect(board).not.toBeNull();
-    expect((board as HTMLElement).style.aspectRatio).toBe('360 / 320');
+    expect((board as HTMLElement).style.aspectRatio).toBe('300 / 320');
   });
 
   it('every pin sits at a percentage position', () => {

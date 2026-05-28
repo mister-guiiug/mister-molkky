@@ -291,6 +291,8 @@ export interface Messages {
     about: string;
     aboutText: string;
     version: string;
+    sourceCode: string;
+    buyCoffee: string;
   };
   practice: {
     title: string;
@@ -673,8 +675,10 @@ const fr: Messages = {
     forceUpdateInProgress: 'Mise à jour…',
     about: 'À propos',
     aboutText:
-      'Mister Mölkky — application offline, vos données restent sur votre appareil.',
-    version: 'Version',
+      'Application offline — vos données restent sur votre appareil et ne sont jamais partagées.',
+    version: 'v',
+    sourceCode: 'Code source',
+    buyCoffee: 'Buy me a coffee',
   },
   practice: {
     title: 'Entraînement solo',
@@ -1054,8 +1058,11 @@ const en: Messages = {
       'Clears the service worker cache and reloads the app to grab the latest deployed version.',
     forceUpdateInProgress: 'Updating…',
     about: 'About',
-    aboutText: 'Mister Mölkky — offline app, your data stays on your device.',
-    version: 'Version',
+    aboutText:
+      'Offline app — your data stays on your device and is never shared.',
+    version: 'v',
+    sourceCode: 'Source code',
+    buyCoffee: 'Buy me a coffee',
   },
   practice: {
     title: 'Solo practice',

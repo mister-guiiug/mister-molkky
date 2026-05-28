@@ -16,9 +16,19 @@ const analyze = process.env.ANALYZE === '1';
 export default defineConfig(({ command }) => {
   const envBase = process.env.VITE_BASE_PATH;
   const basePath = envBase ?? (command === 'build' ? '/mister-molkky/' : '/');
+  // usePolling is required when running on a Windows NTFS mount via WSL:
+  // inotify does not fire for /mnt/d/ paths, so Vite never detects saves.
+  const usePolling =
+    process.platform === 'linux' && process.env.WSL_DISTRO_NAME != null;
 
   return {
     base: basePath,
+    server: {
+      watch: {
+        usePolling,
+        interval: 300,
+      },
+    },
     optimizeDeps: {
       esbuildOptions: {
         // @supabase/supabase-js source maps reference `shared/tracing`, a
@@ -65,7 +75,6 @@ export default defineConfig(({ command }) => {
     plugins: [
       react(),
       tailwindcss(),
-      // GitHub Pages serves 404.html for any path it can't resolve. For
       // a SPA, that means deep links / route refreshes return the stock
       // "404 — File not found" instead of letting BrowserRouter take
       // over. Ship a 404.html that is byte-for-byte identical to
