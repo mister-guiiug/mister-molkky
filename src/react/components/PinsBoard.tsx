@@ -183,7 +183,9 @@ export function PinsBoard({
                 ? 'none'
                 : `0 0 0 4px color-mix(in srgb, ${ringColor} 14%, transparent)`,
               color: isDown ? 'var(--muted)' : 'var(--wood-shadow)',
-              opacity: disabled ? 0.6 : 1,
+              // Inline opacity is used as a fallback when prefers-reduced-motion
+              // disables the animation (the animation's own opacity wins otherwise).
+              opacity: disabled ? 0.6 : isDown ? 0.65 : 1,
               cursor: disabled ? 'default' : 'pointer',
             }}
           >
