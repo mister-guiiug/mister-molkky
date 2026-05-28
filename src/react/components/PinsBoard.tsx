@@ -15,18 +15,17 @@ interface PinsBoardProps {
 
 // Board virtual dimensions kept from the original SVG so the projection
 // matches existing tests.
-const VIEW_W = 360;
+const VIEW_W = 300;
 const VIEW_H = 320;
 
-// Padding inside the board so the edge pins (5, 6 horizontally; 1, 2 at
-// the bottom) stay clear of the rounded corners + overflow-hidden clip.
-// PAD_BOTTOM is generous so the "↑ Touchez ↑" hint sits cleanly below
-// the bottom row of pins instead of being covered by them. PAD_X is
-// kept tight so the widest row (5, 11, 12, 6) actually spans most of
-// the board width — otherwise the layout looks cramped in the middle.
-const PAD_X = 36;
-const PAD_TOP = 51;
-const PAD_BOTTOM = 51;
+// Padding inside the board.
+// PAD_X: pin 6 (rightmost, x=3.5) right edge lands at ~92 % → comfortable
+//        clearance from overflow-hidden clip. Pin 5 left edge at ~8 %.
+// PAD_TOP: pins 7/9/8 centre at ~12.5 % from top → clear of rounded corners.
+// PAD_BOTTOM: room for the "Touchez" hint below the bottom pins.
+const PAD_X = 40;
+const PAD_TOP = 30;
+const PAD_BOTTOM = 44;
 
 function projectX(x: number): number {
   const usable = VIEW_W - PAD_X * 2;
@@ -125,17 +124,32 @@ export function PinsBoard({
       }}
     >
       <span
-        className="pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-xs font-semibold"
-        style={{ bottom: '0.6rem', color: 'var(--muted)' }}
+        className="pointer-events-none absolute inset-x-0 text-center text-xs font-semibold"
+        style={{ bottom: '0.75rem', color: 'var(--muted)' }}
       >
-        ↑ {t('match.tap')} ↑
+        {t('match.tap')}
       </span>
 
       {INITIAL_LAYOUT.map(({ pin, x, y }) => {
+        // cx/cy are the pin's CENTRE in % of the board dimensions.
         const cx = (projectX(x) / VIEW_W) * 100;
         const cy = (projectY(y) / VIEW_H) * 100;
         const isDown = fallen.has(pin);
         const ringColor = isDown ? 'var(--muted)' : playerColor;
+
+        // Compute the TOP-LEFT corner directly so no CSS transform or
+        // negative margin is needed for centering. This keeps the
+        // position stable even when mm-pin-stand/fall animations
+        // override `transform` via animation-fill-mode: forwards.
+        //  · halfW  : half pin width  as % of board WIDTH
+        //  · halfH  : half pin height as % of board HEIGHT
+        //             (pin height = pin width because aspect-ratio 1/1,
+        //              but expressed in % of the taller board height)
+        const halfW = pinSizePct / 2;
+        const halfH = (pinSizePct / 2) * (VIEW_W / VIEW_H);
+        const leftPct = cx - halfW;
+        const topPct = cy - halfH;
+
         return (
           <button
             key={pin}
@@ -153,13 +167,12 @@ export function PinsBoard({
               e.preventDefault();
               handleClick(pin);
             }}
-            className={`absolute flex items-center justify-center rounded-full text-lg font-black tabular-nums transition-transform ${isDown ? 'mm-pin-fall' : 'mm-pin-stand'}`}
+            className={`absolute flex items-center justify-center rounded-full text-lg font-black tabular-nums ${isDown ? 'mm-pin-fall' : 'mm-pin-stand'}`}
             style={{
-              left: `${cx}%`,
-              top: `${cy}%`,
+              left: `${leftPct}%`,
+              top: `${topPct}%`,
               width: `${pinSizePct}%`,
               aspectRatio: '1 / 1',
-              transform: 'translate(-50%, -50%)',
               background: isDown
                 ? 'color-mix(in srgb, var(--muted) 30%, transparent)'
                 : 'linear-gradient(to bottom, var(--wood-light), var(--wood-deep))',
