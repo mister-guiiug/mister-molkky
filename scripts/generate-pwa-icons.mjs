@@ -67,6 +67,7 @@ const sizes = [
   { w: 192, h: 192, name: 'icon-192.png' },
   { w: 512, h: 512, name: 'icon-512.png' },
   { w: 180, h: 180, name: 'apple-touch-icon.png' },
+  { w: 128, h: 128, name: 'logo-128.png' },
   { w: 64, h: 64, name: 'favicon.png' },
 ];
 
@@ -76,5 +77,5 @@ for (const { w, h, name } of sizes) {
 }
 
 console.log(
-  'Icônes écrites dans public/icons/ (192, 512, apple-touch 180, favicon 64).'
+  'Icônes écrites dans public/icons/ (192, 512, apple-touch 180, logo 128, favicon 64).'
 );
