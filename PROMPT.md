@@ -40,24 +40,24 @@ joueurs / équipes. L'app doit :
 Reprendre **strictement** la stack de `dev-wpa-config@^1.2.0` et le squelette
 de `miss-badminton/` :
 
-| Couche             | Choix                                                         |
-| ------------------ | ------------------------------------------------------------- |
-| Build              | **Vite 7**                                                    |
-| Framework          | **React 19** (function components, hooks, `StrictMode`)       |
-| Langage            | **TypeScript ~6.0.2 strict**, cible ES2025                    |
-| Styling            | **Tailwind CSS 4** via `@tailwindcss/vite` + tokens famille   |
-| Routing            | **react-router-dom 7** (`BrowserRouter` + `basename`)         |
-| État global        | **Zustand 5** + `persist` + `createJSONStorage`               |
-| Validation         | **Zod 3** (schémas dans `src/schemas.ts`)                     |
-| Storage            | `localStorage` (Zustand persist) + `IndexedDB` (photos / blobs via `src/idb.ts`) |
-| PWA                | **vite-plugin-pwa** (mode `prompt`, Workbox)                  |
-| Animations         | **@rive-app/react-canvas 4** (cf. § 8)                        |
-| Tests unitaires    | **Vitest 3** (jsdom + globals)                                |
-| Tests E2E          | **Playwright** (smoke + critical + a11y)                      |
-| Lint / Format      | ESLint 9 flat + Prettier 3.6 (via `dev-wpa-config`)           |
-| Hooks Git          | Husky + lint-staged + commitlint (Conventional Commits)       |
-| i18n               | provider maison `I18nProvider` (cf. `miss-badminton/src/i18n/`) |
-| Déploiement        | GitHub Pages via reusable workflow `pwa-deploy.yml`           |
+| Couche          | Choix                                                                            |
+| --------------- | -------------------------------------------------------------------------------- |
+| Build           | **Vite 7**                                                                       |
+| Framework       | **React 19** (function components, hooks, `StrictMode`)                          |
+| Langage         | **TypeScript ~6.0.2 strict**, cible ES2025                                       |
+| Styling         | **Tailwind CSS 4** via `@tailwindcss/vite` + tokens famille                      |
+| Routing         | **react-router-dom 7** (`BrowserRouter` + `basename`)                            |
+| État global     | **Zustand 5** + `persist` + `createJSONStorage`                                  |
+| Validation      | **Zod 3** (schémas dans `src/schemas.ts`)                                        |
+| Storage         | `localStorage` (Zustand persist) + `IndexedDB` (photos / blobs via `src/idb.ts`) |
+| PWA             | **vite-plugin-pwa** (mode `prompt`, Workbox)                                     |
+| Animations      | **@rive-app/react-canvas 4** (cf. § 8)                                           |
+| Tests unitaires | **Vitest 3** (jsdom + globals)                                                   |
+| Tests E2E       | **Playwright** (smoke + critical + a11y)                                         |
+| Lint / Format   | ESLint 9 flat + Prettier 3.6 (via `dev-wpa-config`)                              |
+| Hooks Git       | Husky + lint-staged + commitlint (Conventional Commits)                          |
+| i18n            | provider maison `I18nProvider` (cf. `miss-badminton/src/i18n/`)                  |
+| Déploiement     | GitHub Pages via reusable workflow `pwa-deploy.yml`                              |
 
 ### 2.1. Dépendances famille à consommer telles quelles
 
@@ -171,16 +171,16 @@ son état avant validation du tir).
 
 Minimum à couvrir :
 
-| Cas                                            | Entrée                       | Score attendu |
-| ---------------------------------------------- | ---------------------------- | ------------- |
-| 1 quille → numéro                              | quilles=[7]                  | 7             |
-| 2 quilles → nombre                             | quilles=[3,9]                | 2             |
-| 5 quilles → nombre                             | quilles=[1,2,4,8,11]         | 5             |
-| 0 quille → 0                                   | quilles=[]                   | 0             |
-| Dépassement 50 → 25                            | total=45, +12                | 25            |
-| Pile 50 → victoire                             | total=42, +8                 | 50 + winner   |
-| 3 ratés → élimination                          | missStreak=2, +0             | éliminé       |
-| Tous éliminés sauf 1 → victoire                | n=4, 3 éliminés              | winner        |
+| Cas                             | Entrée               | Score attendu |
+| ------------------------------- | -------------------- | ------------- |
+| 1 quille → numéro               | quilles=[7]          | 7             |
+| 2 quilles → nombre              | quilles=[3,9]        | 2             |
+| 5 quilles → nombre              | quilles=[1,2,4,8,11] | 5             |
+| 0 quille → 0                    | quilles=[]           | 0             |
+| Dépassement 50 → 25             | total=45, +12        | 25            |
+| Pile 50 → victoire              | total=42, +8         | 50 + winner   |
+| 3 ratés → élimination           | missStreak=2, +0     | éliminé       |
+| Tous éliminés sauf 1 → victoire | n=4, 3 éliminés      | winner        |
 
 ---
 
@@ -192,14 +192,14 @@ les clés localStorage) + IDB pour les avatars (Blob).
 ```ts
 // Identifiants
 export const PlayerIdSchema = z.string().uuid().brand<'PlayerId'>();
-export const MatchIdSchema  = z.string().uuid().brand<'MatchId'>();
+export const MatchIdSchema = z.string().uuid().brand<'MatchId'>();
 
 // Joueur (persistant entre parties)
 export const PlayerSchema = z.object({
   id: PlayerIdSchema,
   name: z.string().min(1).max(30),
-  color: z.string().regex(/^#[0-9a-f]{6}$/i),   // couleur d'équipe
-  avatarBlobKey: z.string().optional(),         // référence IDB
+  color: z.string().regex(/^#[0-9a-f]{6}$/i), // couleur d'équipe
+  avatarBlobKey: z.string().optional(), // référence IDB
   createdAt: z.number().int(),
 });
 
@@ -218,8 +218,8 @@ export const ThrowSchema = z.object({
   id: z.string().uuid(),
   playerId: PlayerIdSchema,
   timestamp: z.number().int(),
-  fallenPins: z.array(z.number().int().min(1).max(12)),  // n° des quilles
-  computedScore: z.number().int().min(0).max(12),         // dérivé
+  fallenPins: z.array(z.number().int().min(1).max(12)), // n° des quilles
+  computedScore: z.number().int().min(0).max(12), // dérivé
   resultedInElimination: z.boolean().default(false),
   resultedInOvershoot: z.boolean().default(false),
 });
@@ -232,12 +232,14 @@ export const FinishedMatchSchema = z.object({
   startedAt: z.number().int(),
   finishedAt: z.number().int(),
   winnerId: PlayerIdSchema,
-  ranking: z.array(z.object({
-    playerId: PlayerIdSchema,
-    finalScore: z.number().int(),
-    eliminated: z.boolean(),
-    rank: z.number().int().min(1),
-  })),
+  ranking: z.array(
+    z.object({
+      playerId: PlayerIdSchema,
+      finalScore: z.number().int(),
+      eliminated: z.boolean(),
+      rank: z.number().int().min(1),
+    })
+  ),
 });
 
 // Bundle d'export (JSON shareable)
@@ -270,8 +272,7 @@ export const ExportBundleSchema = z.object({
 mister-molkky/
 ├── public/
 │   ├── icons/              # généré par scripts/generate-pwa-icons.mjs
-│   ├── favicon.svg
-│   ├── logo.svg
+│   ├── logo.png            # logo de marque (source des icônes)
 │   └── robots.txt
 ├── src/
 │   ├── assets/
@@ -367,14 +368,14 @@ mister-molkky/
 
 ### 5.2. Routes
 
-| Path             | View          | Lazy ? |
-| ---------------- | ------------- | ------ |
-| `/`              | `HomeView`    | non    |
-| `/partie`        | `MatchView`   | oui    |
-| `/historique`    | `HistoryView` | oui    |
-| `/statistiques`  | `StatsView`   | oui    |
-| `/joueurs`       | `PlayersView` | oui    |
-| `/parametres`    | `SettingsView`| oui    |
+| Path            | View           | Lazy ? |
+| --------------- | -------------- | ------ |
+| `/`             | `HomeView`     | non    |
+| `/partie`       | `MatchView`    | oui    |
+| `/historique`   | `HistoryView`  | oui    |
+| `/statistiques` | `StatsView`    | oui    |
+| `/joueurs`      | `PlayersView`  | oui    |
+| `/parametres`   | `SettingsView` | oui    |
 
 Garder les alias anglais (`/match`, `/history`, `/stats`, `/players`,
 `/settings`) en `<Navigate replace />` comme dans `miss-badminton`.
@@ -421,12 +422,21 @@ Encoder en coordonnées `{x: 0..4, y: 0..3}` dans
 `src/molkky/pins-layout.ts` :
 
 ```ts
-export const INITIAL_LAYOUT: readonly { pin: number; x: number; y: number }[] = [
-  { pin: 1,  x: 1.5, y: 0 }, { pin: 2,  x: 2.5, y: 0 },
-  { pin: 3,  x: 1,   y: 1 }, { pin: 10, x: 2,   y: 1 }, { pin: 4,  x: 3, y: 1 },
-  { pin: 5,  x: 0.5, y: 2 }, { pin: 11, x: 1.5, y: 2 }, { pin: 12, x: 2.5, y: 2 }, { pin: 6, x: 3.5, y: 2 },
-  { pin: 7,  x: 1,   y: 3 }, { pin: 9,  x: 2,   y: 3 }, { pin: 8,  x: 3,   y: 3 },
-];
+export const INITIAL_LAYOUT: readonly { pin: number; x: number; y: number }[] =
+  [
+    { pin: 1, x: 1.5, y: 0 },
+    { pin: 2, x: 2.5, y: 0 },
+    { pin: 3, x: 1, y: 1 },
+    { pin: 10, x: 2, y: 1 },
+    { pin: 4, x: 3, y: 1 },
+    { pin: 5, x: 0.5, y: 2 },
+    { pin: 11, x: 1.5, y: 2 },
+    { pin: 12, x: 2.5, y: 2 },
+    { pin: 6, x: 3.5, y: 2 },
+    { pin: 7, x: 1, y: 3 },
+    { pin: 9, x: 2, y: 3 },
+    { pin: 8, x: 3, y: 3 },
+  ];
 ```
 
 ---
@@ -438,10 +448,7 @@ export const INITIAL_LAYOUT: readonly { pin: number; x: number; y: number }[] = 
 - [ ] Splash + onboarding (`WelcomeTutorial`) avec règles résumées
 - [ ] CRUD joueurs persistants (`/joueurs`) avec nom + couleur + photo
       (caméra ou galerie, stockée en IDB)
-- [ ] Wizard de création de partie (3 étapes) :
-      1. Choix des joueurs (chips, drag-to-reorder, "mélanger")
-      2. Score cible (25 / 50 / 100), pénalité dépassement, max ratés
-      3. Récap + démarrer
+- [ ] Wizard de création de partie (3 étapes) : 1. Choix des joueurs (chips, drag-to-reorder, "mélanger") 2. Score cible (25 / 50 / 100), pénalité dépassement, max ratés 3. Récap + démarrer
 - [ ] `MatchView` complète avec `PinsBoard` interactif et `ScoreTicker`
 - [ ] Calcul automatique des règles (`molkky/rules.ts`)
 - [ ] Undo / refaire (basé sur le tableau de `throws`)
@@ -514,13 +521,13 @@ export const INITIAL_LAYOUT: readonly { pin: number; x: number; y: number }[] = 
 
 ### 8.2. Animations à prévoir
 
-| Fichier `.riv`   | Artboard       | State machine    | Inputs (entrées)                  | Utilisation                   |
-| ---------------- | -------------- | ---------------- | --------------------------------- | ----------------------------- |
-| `pins.riv`       | `PinsBoard`    | `Throw`          | `pin1Down`..`pin12Down` (bool), `reset` (trigger), `playerColor` (number) | Plan de 12 quilles animé      |
-| `score-pop.riv`  | `ScoreTicker`  | `Pop`            | `delta` (number), `play` (trigger) | +N points qui surgit          |
-| `victory.riv`    | `Victory`      | `Cheer`          | `playerColor` (number)            | Plein écran fin de partie     |
-| `elimination.riv`| `Elim`         | `Out`            | `play` (trigger)                  | Bannière élimination          |
-| `idle.riv`       | `Idle`         | `Idle`           | -                                 | Écran d'accueil (boucle)      |
+| Fichier `.riv`    | Artboard      | State machine | Inputs (entrées)                                                          | Utilisation               |
+| ----------------- | ------------- | ------------- | ------------------------------------------------------------------------- | ------------------------- |
+| `pins.riv`        | `PinsBoard`   | `Throw`       | `pin1Down`..`pin12Down` (bool), `reset` (trigger), `playerColor` (number) | Plan de 12 quilles animé  |
+| `score-pop.riv`   | `ScoreTicker` | `Pop`         | `delta` (number), `play` (trigger)                                        | +N points qui surgit      |
+| `victory.riv`     | `Victory`     | `Cheer`       | `playerColor` (number)                                                    | Plein écran fin de partie |
+| `elimination.riv` | `Elim`        | `Out`         | `play` (trigger)                                                          | Bannière élimination      |
+| `idle.riv`        | `Idle`        | `Idle`        | -                                                                         | Écran d'accueil (boucle)  |
 
 Fallbacks **React purs** obligatoires pour les 5 (SVG + Tailwind animations)
 — l'app doit être visuellement complète sans les `.riv`. Le rendu Rive est
