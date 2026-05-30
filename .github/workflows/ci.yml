@@ -11,9 +11,6 @@ permissions:
   contents: read
   packages: read
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
-
 jobs:
   ci:
     uses: mister-guiiug/dev-wpa-config/.github/workflows/pwa-ci.yml@v1
