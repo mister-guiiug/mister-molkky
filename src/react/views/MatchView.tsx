@@ -45,6 +45,8 @@ import {
   LightbulbIcon,
   LiveIcon,
   MenuIcon,
+  PauseIcon,
+  PlayIcon,
   RematchIcon,
   ShareIcon,
   StarIcon,
@@ -85,6 +87,8 @@ export function MatchView() {
   const recordThrow = useMatchStore(s => s.recordThrow);
   const undo = useMatchStore(s => s.undoLastThrow);
   const abandon = useMatchStore(s => s.abandonMatch);
+  const pauseChrono = useMatchStore(s => s.pauseChrono);
+  const resumeChrono = useMatchStore(s => s.resumeChrono);
   const startMatch = useMatchStore(s => s.startMatch);
   const pendingFeedback = useMatchStore(s => s.pendingFeedback);
   const clearFeedback = useMatchStore(s => s.clearFeedback);
@@ -325,6 +329,7 @@ export function MatchView() {
     );
   }
 
+  const chronoPaused = current.pausedAt != null;
   const targetScore = current.config.targetScore;
   const maxMisses = current.config.maxMisses;
   const players = current.config.players;
@@ -373,11 +378,33 @@ export function MatchView() {
             ● {t('live.activeBadge')}
           </span>
         )}
-        <Chrono
-          startedAt={current.startedAt}
-          className="rounded-full border px-2 py-0.5 text-xs font-bold tabular-nums"
-          aria-label={t('match.chrono')}
-        />
+        <div className="flex items-center gap-0.5">
+          <Chrono
+            startedAt={current.startedAt}
+            pausedAt={current.pausedAt}
+            pausedTotalMs={current.pausedTotalMs}
+            className={`rounded-full border px-2 py-0.5 text-xs font-bold tabular-nums ${
+              chronoPaused
+                ? 'border-[var(--warning)] text-[var(--warning)]'
+                : ''
+            }`}
+            aria-label={t('match.chrono')}
+          />
+          <button
+            type="button"
+            onClick={() => (chronoPaused ? resumeChrono() : pauseChrono())}
+            className="touch-target rounded-full p-2"
+            aria-label={
+              chronoPaused ? t('match.chronoResume') : t('match.chronoPause')
+            }
+            aria-pressed={chronoPaused}
+            style={{
+              color: chronoPaused ? 'var(--warning)' : 'var(--muted)',
+            }}
+          >
+            {chronoPaused ? <PlayIcon size={18} /> : <PauseIcon size={18} />}
+          </button>
+        </div>
         <FullscreenToggle />
         <button
           type="button"

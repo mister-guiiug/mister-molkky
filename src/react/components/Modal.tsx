@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { useI18n } from '../../i18n/useI18n';
 import { CloseIcon } from './icons';
 
@@ -10,6 +10,25 @@ interface ModalProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
+// Elements that can hold keyboard focus. Used by the focus trap to find
+// the first/last tabbable target inside the dialog.
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'textarea:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
+function getFocusable(container: HTMLElement): HTMLElement[] {
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+    // offsetParent is null for display:none elements — skip those so we
+    // never trap focus on something the user can't see.
+  ).filter(el => el.offsetParent !== null || el === document.activeElement);
+}
+
 export function Modal({
   open,
   onClose,
@@ -18,14 +37,55 @@ export function Modal({
   size = 'md',
 }: ModalProps) {
   const { t } = useI18n();
+  const panelRef = useRef<HTMLDivElement>(null);
+  // The element that had focus before the dialog opened — we hand focus
+  // back to it on close so keyboard users land where they left off.
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
+    restoreFocusRef.current = document.activeElement as HTMLElement | null;
+    const panel = panelRef.current;
+    // Move focus into the dialog on open (first focusable, else the panel
+    // itself which is tabindex=-1) so the keyboard isn't stranded behind
+    // the backdrop.
+    const initial = panel ? getFocusable(panel) : [];
+    (initial[0] ?? panel)?.focus();
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+      if (e.key !== 'Tab' || !panel) return;
+      const items = getFocusable(panel);
+      if (items.length === 0) {
+        e.preventDefault();
+        panel.focus();
+        return;
+      }
+      const first = items[0]!;
+      const last = items[items.length - 1]!;
+      const active = document.activeElement;
+      if (!panel.contains(active)) {
+        // Focus escaped the dialog (e.g. after a backdrop click) — pull it
+        // back in rather than letting Tab wander the page behind it.
+        e.preventDefault();
+        first.focus();
+      } else if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
+
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      restoreFocusRef.current?.focus?.();
+    };
   }, [open, onClose]);
 
   if (!open) return null;
@@ -45,7 +105,9 @@ export function Modal({
       onClick={onClose}
     >
       <div
-        className={`mm-modal-pop flex w-full ${widths[size]} max-h-[92dvh] flex-col rounded-t-2xl sm:rounded-2xl border shadow-xl sm:max-h-[88dvh]`}
+        ref={panelRef}
+        tabIndex={-1}
+        className={`mm-modal-pop flex w-full ${widths[size]} max-h-[92dvh] flex-col rounded-t-2xl sm:rounded-2xl border shadow-xl sm:max-h-[88dvh] outline-none`}
         style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
         onClick={e => e.stopPropagation()}
       >

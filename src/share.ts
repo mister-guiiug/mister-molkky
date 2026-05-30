@@ -4,14 +4,16 @@ export interface ShareOptions {
   url?: string;
 }
 
-export async function shareOrCopy(options: ShareOptions): Promise<
-  'shared' | 'copied' | 'failed'
-> {
+export async function shareOrCopy(
+  options: ShareOptions
+): Promise<'shared' | 'copied' | 'failed'> {
   if (typeof navigator !== 'undefined' && 'share' in navigator) {
     try {
-      await (navigator as Navigator & { share: (data: ShareOptions) => Promise<void> }).share(
-        options
-      );
+      await (
+        navigator as Navigator & {
+          share: (data: ShareOptions) => Promise<void>;
+        }
+      ).share(options);
       return 'shared';
     } catch {
       /* fall through to clipboard */

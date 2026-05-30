@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
-import {
-  CheckIcon,
-  HomeIcon,
-  MenuIcon,
-  PlayIcon,
-  TrashIcon,
-} from './icons';
+import { CheckIcon, HomeIcon, MenuIcon, PlayIcon, TrashIcon } from './icons';
 
 describe('icons (lucide-react wrappers)', () => {
   it('renders an SVG with at least one drawable child for every wrapped icon', () => {

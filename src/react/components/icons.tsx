@@ -24,6 +24,7 @@ import {
   Medal,
   Menu,
   Minimize2,
+  Pause,
   Play,
   Plus,
   Radio,
@@ -64,6 +65,7 @@ function wrap(Comp: IconComponent, displayName: string): IconComponent {
 
 export const HomeIcon = wrap(Home as IconComponent, 'HomeIcon');
 export const PlayIcon = wrap(Play as IconComponent, 'PlayIcon');
+export const PauseIcon = wrap(Pause as IconComponent, 'PauseIcon');
 export const HistoryIcon = wrap(HistoryGlyph as IconComponent, 'HistoryIcon');
 export const ChartIcon = wrap(BarChart3 as IconComponent, 'ChartIcon');
 export const UsersIcon = wrap(Users as IconComponent, 'UsersIcon');

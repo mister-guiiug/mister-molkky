@@ -55,7 +55,7 @@ export const useLiveStore = create<LiveState>()((set, get) => ({
     set({ status: 'connecting', error: null });
     try {
       const { id, code } = await createLiveMatch(state);
-      const sub = subscribeLiveMatch(
+      const sub = await subscribeLiveMatch(
         id,
         row => set({ remote: row }),
         err => set({ error: err.message })
@@ -128,7 +128,7 @@ export const useLiveStore = create<LiveState>()((set, get) => ({
     }
     try {
       const row = await joinLiveMatch(code);
-      const sub = subscribeLiveMatch(
+      const sub = await subscribeLiveMatch(
         row.id,
         next => {
           // Successful update — clear any error chip + reset retry budget.

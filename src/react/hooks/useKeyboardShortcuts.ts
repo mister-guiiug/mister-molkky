@@ -4,7 +4,10 @@ export interface ShortcutMap {
   [key: string]: (e: KeyboardEvent) => void;
 }
 
-export function useKeyboardShortcuts(shortcuts: ShortcutMap, enabled = true): void {
+export function useKeyboardShortcuts(
+  shortcuts: ShortcutMap,
+  enabled = true
+): void {
   useEffect(() => {
     if (!enabled) return;
     const onKey = (e: KeyboardEvent) => {

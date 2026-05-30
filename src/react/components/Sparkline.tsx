@@ -38,13 +38,13 @@ export function Sparkline({
   const pad = 2;
   const points = values.map((v, i) => {
     const x = pad + i * dx;
-    const y = height - pad - ((v / upper) * (height - pad * 2));
+    const y = height - pad - (v / upper) * (height - pad * 2);
     return `${x.toFixed(2)},${y.toFixed(2)}`;
   });
 
   const lastX = pad + (values.length - 1) * dx;
   const lastY =
-    height - pad - ((values[values.length - 1]! / upper) * (height - pad * 2));
+    height - pad - (values[values.length - 1]! / upper) * (height - pad * 2);
 
   return (
     <svg width={width} height={height} aria-hidden className="block">

@@ -61,6 +61,14 @@ export default defineConfig(({ command }) => {
             if (norm.includes('/react-router/')) return 'router';
             if (norm.includes('/zustand/')) return 'zustand';
             if (norm.includes('/@rive-app/')) return 'rive';
+            // These three are dynamically imported (live share QR, QR
+            // scanner, Supabase client). Give each its OWN chunk so it
+            // splits out as an on-demand async bundle — folding them into
+            // the eager `vendor` catch-all below would defeat the lazy
+            // import and ship them in the initial payload anyway.
+            if (norm.includes('/qrcode/')) return 'qrcode';
+            if (norm.includes('/qr-scanner/')) return 'qr-scanner';
+            if (norm.includes('/@supabase/')) return 'supabase';
             if (
               norm.includes('/tailwindcss/') ||
               norm.includes('/@tailwindcss/')
@@ -134,7 +142,7 @@ export default defineConfig(({ command }) => {
         manifest: {
           id: basePath,
           name: 'Mister Mölkky',
-          short_name: 'Mölkky',
+          short_name: 'Mister Mölkky',
           description:
             'Compteur de points et statistiques pour le jeu de Mölkky',
           theme_color: '#4a7c2a',

@@ -18,7 +18,9 @@ describe('usePlayersStore', () => {
   });
 
   it('pickNextColor avoids re-using a colour already in the roster', () => {
-    const first = usePlayersStore.getState().add({ name: 'A', color: '#4a7c2a' });
+    const first = usePlayersStore
+      .getState()
+      .add({ name: 'A', color: '#4a7c2a' });
     const fresh = pickNextColor([first]);
     expect(fresh.toLowerCase()).not.toBe('#4a7c2a');
   });
@@ -33,7 +35,9 @@ describe('usePlayersStore', () => {
   });
 
   it('removes a player', () => {
-    const p = usePlayersStore.getState().add({ name: 'Carol', color: '#0000ff' });
+    const p = usePlayersStore
+      .getState()
+      .add({ name: 'Carol', color: '#0000ff' });
     usePlayersStore.getState().remove(p.id);
     expect(usePlayersStore.getState().players).toHaveLength(0);
   });

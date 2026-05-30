@@ -3,18 +3,32 @@ import { test, expect } from '@playwright/test';
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     try {
-      localStorage.setItem('mm_settings', JSON.stringify({
-        state: { hasSeenWelcome: true, locale: 'fr', sounds: false, vibrations: false, wakeLock: false },
-        version: 1,
-      }));
-    } catch {}
+      localStorage.setItem(
+        'mm_settings',
+        JSON.stringify({
+          state: {
+            hasSeenWelcome: true,
+            locale: 'fr',
+            sounds: false,
+            vibrations: false,
+            wakeLock: false,
+          },
+          version: 1,
+        })
+      );
+    } catch {
+      /* best-effort: ignore storage seeding failures in the test harness */
+    }
   });
 });
 
 test('@critical can play a 3-player match end to end', async ({ page }) => {
   await page.goto('/');
 
-  await page.getByRole('button', { name: /Nouvelle partie/i }).first().click();
+  await page
+    .getByRole('button', { name: /Nouvelle partie/i })
+    .first()
+    .click();
 
   for (const name of ['Alice', 'Bob', 'Carol']) {
     await page.getByPlaceholder(/Prénom du joueur/i).fill(name);

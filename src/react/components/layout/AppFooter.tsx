@@ -39,9 +39,7 @@ export function AppFooter() {
           Buy me a coffee
         </a>
       </div>
-      <p className="m-0">
-        Mister Mölkky © {new Date().getFullYear()}
-      </p>
+      <p className="m-0">Mister Mölkky © {new Date().getFullYear()}</p>
     </footer>
   );
 }

@@ -89,7 +89,20 @@ describe('derived metrics', () => {
   });
 
   it('returns 0 for empty stats', () => {
-    const empty = { playerId: 'x', matchesPlayed: 0, matchesWon: 0, podiums: 0, totalThrows: 0, totalPinsHit: 0, totalScore: 0, bestStreak: 0, exactFifties: 0, overshoots: 0, pinFrequency: {}, topPin: null };
+    const empty = {
+      playerId: 'x',
+      matchesPlayed: 0,
+      matchesWon: 0,
+      podiums: 0,
+      totalThrows: 0,
+      totalPinsHit: 0,
+      totalScore: 0,
+      bestStreak: 0,
+      exactFifties: 0,
+      overshoots: 0,
+      pinFrequency: {},
+      topPin: null,
+    };
     expect(winRate(empty)).toBe(0);
     expect(accuracy(empty)).toBe(0);
     expect(averageScorePerMatch(empty)).toBe(0);
