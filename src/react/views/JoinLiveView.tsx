@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import QrScanner from 'qr-scanner';
+// Type-only import: the runtime constructor is pulled in via a dynamic
+// import below so the camera/decoder bundle stays out of the initial
+// chunk until the user actually starts a scan.
+import type QrScanner from 'qr-scanner';
 import { useI18n } from '../../i18n/useI18n';
 import { useLiveStore } from '../../store/useLiveStore';
 import { isSupabaseConfigured } from '../../supabase';
@@ -69,49 +72,58 @@ export function JoinLiveView() {
     if (!video) return;
 
     let cancelled = false;
-    const scanner = new QrScanner(
-      video,
-      result => {
-        // Accept both the raw code and a full /live/CODE URL.
-        const url = result.data ?? '';
-        const match = url.match(/live\/([A-Za-z0-9]+)/);
-        const candidate = match?.[1] ?? url;
-        const normalized = normalizeCode(candidate);
-        if (normalized.length !== 6) return;
-        setCode(normalized);
-        scanner.stop();
+    let scanner: QrScanner | null = null;
+
+    void (async () => {
+      // Lazy-load the qr-scanner runtime only once a scan begins.
+      const { default: QrScannerCtor } = await import('qr-scanner');
+      if (cancelled) return;
+      scanner = new QrScannerCtor(
+        video,
+        result => {
+          // Accept both the raw code and a full /live/CODE URL.
+          const url = result.data ?? '';
+          const match = url.match(/live\/([A-Za-z0-9]+)/);
+          const candidate = match?.[1] ?? url;
+          const normalized = normalizeCode(candidate);
+          if (normalized.length !== 6) return;
+          setCode(normalized);
+          scanner?.stop();
+          scanner?.destroy();
+          scannerRef.current = null;
+          setScanning(false);
+          void submitRef.current(normalized);
+        },
+        {
+          highlightScanRegion: true,
+          highlightCodeOutline: true,
+          // Prefer the rear camera on phones — front-cam scanning is a
+          // gymnastic exercise nobody asked for.
+          preferredCamera: 'environment',
+          returnDetailedScanResult: true,
+        }
+      );
+      scannerRef.current = scanner;
+
+      try {
+        await scanner.start();
+      } catch (err: unknown) {
+        if (cancelled) return;
+        const message =
+          err instanceof Error && err.message
+            ? err.message
+            : 'Camera unavailable';
+        setError(message);
         scanner.destroy();
         scannerRef.current = null;
         setScanning(false);
-        void submitRef.current(normalized);
-      },
-      {
-        highlightScanRegion: true,
-        highlightCodeOutline: true,
-        // Prefer the rear camera on phones — front-cam scanning is a
-        // gymnastic exercise nobody asked for.
-        preferredCamera: 'environment',
-        returnDetailedScanResult: true,
       }
-    );
-    scannerRef.current = scanner;
-
-    scanner.start().catch((err: unknown) => {
-      if (cancelled) return;
-      const message =
-        err instanceof Error && err.message
-          ? err.message
-          : 'Camera unavailable';
-      setError(message);
-      scanner.destroy();
-      scannerRef.current = null;
-      setScanning(false);
-    });
+    })();
 
     return () => {
       cancelled = true;
-      scanner.stop();
-      scanner.destroy();
+      scanner?.stop();
+      scanner?.destroy();
       scannerRef.current = null;
     };
   }, [scanning]);

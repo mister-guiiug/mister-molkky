@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import QRCode from 'qrcode';
 import { useI18n } from '../../i18n/useI18n';
 import { useLiveStore } from '../../store/useLiveStore';
 import { useMatchStore } from '../../store/useMatchStore';
 import { isSupabaseConfigured } from '../../supabase';
 import { shareOrCopy } from '../../share';
 import { Modal } from './Modal';
+import { Skeleton } from './Skeleton';
 import { CheckIcon, ShareIcon } from './icons';
 
 interface LiveShareSheetProps {
@@ -37,15 +37,22 @@ export function LiveShareSheet({ open, onClose }: LiveShareSheetProps) {
       return;
     }
     let cancelled = false;
-    QRCode.toDataURL(shareUrl, {
-      margin: 1,
-      width: 240,
-      color: { dark: '#1b1d18', light: '#ffffff' },
-    })
-      .then(url => {
+    // Lazy-load `qrcode` (~50 KB) only when a share URL actually needs
+    // encoding — it's dead weight in the initial bundle for everyone who
+    // never opens the live-share sheet.
+    void (async () => {
+      try {
+        const { default: QRCode } = await import('qrcode');
+        const url = await QRCode.toDataURL(shareUrl, {
+          margin: 1,
+          width: 240,
+          color: { dark: '#1b1d18', light: '#ffffff' },
+        });
         if (!cancelled) setQrDataUrl(url);
-      })
-      .catch(() => undefined);
+      } catch {
+        /* leave qrDataUrl null — the code text below is still shareable */
+      }
+    })();
     return () => {
       cancelled = true;
     };
@@ -126,16 +133,23 @@ export function LiveShareSheet({ open, onClose }: LiveShareSheetProps) {
         </div>
       ) : (
         <div className="flex flex-col items-center gap-4">
-          {qrDataUrl && (
+          {qrDataUrl ? (
             <img
               src={qrDataUrl}
               alt={t('live.qrAlt')}
               className="h-56 w-56 rounded-lg border"
               style={{ borderColor: 'var(--border)' }}
             />
+          ) : (
+            // Hold the QR's footprint while `qrcode` lazy-loads + encodes
+            // so the sheet doesn't jump when the image pops in.
+            <Skeleton width={224} height={224} rounded="lg" />
           )}
           <div className="flex flex-col items-center gap-1">
-            <p className="m-0 text-xs uppercase" style={{ color: 'var(--muted)' }}>
+            <p
+              className="m-0 text-xs uppercase"
+              style={{ color: 'var(--muted)' }}
+            >
               {t('live.codeLabel')}
             </p>
             <p
@@ -145,7 +159,10 @@ export function LiveShareSheet({ open, onClose }: LiveShareSheetProps) {
               {liveCode}
             </p>
           </div>
-          <p className="m-0 text-center text-xs" style={{ color: 'var(--muted)' }}>
+          <p
+            className="m-0 text-center text-xs"
+            style={{ color: 'var(--muted)' }}
+          >
             {t('live.shareHint')}
           </p>
           <div className="flex flex-wrap justify-center gap-2">
