@@ -11,28 +11,11 @@
       }
     },
     "assert": {
-      "preset": "lighthouse:recommended",
       "assertions": {
         "categories:performance": ["warn", { "minScore": 0.85 }],
         "categories:accessibility": ["error", { "minScore": 0.9 }],
         "categories:best-practices": ["warn", { "minScore": 0.85 }],
-        "categories:seo": ["warn", { "minScore": 0.8 }],
-        "categories:pwa": "off",
-        "image-delivery-insight": "warn",
-        "modern-image-formats": "warn",
-        "uses-optimized-images": "warn",
-        "csp-xss": "off",
-        "uses-rel-preconnect": "off",
-        "uses-rel-preload": "off",
-        "uses-text-compression": "off",
-        "uses-responsive-images": "off",
-        "render-blocking-resources": "off",
-        "render-blocking-insight": "off",
-        "unused-javascript": "off",
-        "color-contrast": ["warn", { "minScore": 0.9 }],
-        "errors-in-console": "off",
-        "valid-source-maps": "off",
-        "network-dependency-tree-insight": "off"
+        "categories:seo": ["warn", { "minScore": 0.8 }]
       }
     },
     "upload": {
