@@ -77,7 +77,10 @@ export function PlayersView() {
             <li
               key={p.id}
               className="flex items-center gap-3 rounded-2xl border p-3"
-              style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+              style={{
+                borderColor: 'var(--border)',
+                background: 'var(--surface)',
+              }}
             >
               <span
                 className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full text-lg font-black text-white"
@@ -191,7 +194,10 @@ function PlayerEditor({
     >
       <div className="flex flex-col gap-3">
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-bold uppercase" style={{ color: 'var(--muted)' }}>
+          <span
+            className="text-sm font-bold uppercase"
+            style={{ color: 'var(--muted)' }}
+          >
             {t('players.name')}
           </span>
           <input
@@ -208,7 +214,10 @@ function PlayerEditor({
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-bold uppercase" style={{ color: 'var(--muted)' }}>
+          <span
+            className="text-sm font-bold uppercase"
+            style={{ color: 'var(--muted)' }}
+          >
             {t('players.color')}
           </span>
           <input
@@ -216,12 +225,18 @@ function PlayerEditor({
             value={color}
             onChange={e => setColor(e.target.value)}
             className="h-12 w-full cursor-pointer rounded-lg border"
-            style={{ borderColor: 'var(--border)', background: 'var(--surface-input)' }}
+            style={{
+              borderColor: 'var(--border)',
+              background: 'var(--surface-input)',
+            }}
           />
         </label>
         {player && (
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-bold uppercase" style={{ color: 'var(--muted)' }}>
+            <span
+              className="text-sm font-bold uppercase"
+              style={{ color: 'var(--muted)' }}
+            >
               {t('players.avatar')}
             </span>
             <div className="flex gap-2">
@@ -245,7 +260,10 @@ function PlayerEditor({
                   type="button"
                   onClick={onAvatarClear}
                   className="touch-target rounded-lg border px-3 text-sm font-semibold"
-                  style={{ borderColor: 'var(--danger)', color: 'var(--danger)' }}
+                  style={{
+                    borderColor: 'var(--danger)',
+                    color: 'var(--danger)',
+                  }}
                 >
                   {t('players.clearAvatar')}
                 </button>

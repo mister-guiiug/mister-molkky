@@ -92,7 +92,12 @@ describe('schemas', () => {
       finishedAt: 2,
       winnerId: makePlayerId('a'),
       ranking: [
-        { playerId: makePlayerId('a'), finalScore: 50, eliminated: false, rank: 1 },
+        {
+          playerId: makePlayerId('a'),
+          finalScore: 50,
+          eliminated: false,
+          rank: 1,
+        },
       ],
     });
     expect(match.winnerId).toBe('a');

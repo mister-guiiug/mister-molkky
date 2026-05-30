@@ -15,7 +15,8 @@ function openDb(): Promise<IDBDatabase | null> {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onupgradeneeded = () => {
       const db = req.result;
-      if (!db.objectStoreNames.contains(STORE_KV)) db.createObjectStore(STORE_KV);
+      if (!db.objectStoreNames.contains(STORE_KV))
+        db.createObjectStore(STORE_KV);
       if (!db.objectStoreNames.contains(STORE_BLOBS))
         db.createObjectStore(STORE_BLOBS);
     };
