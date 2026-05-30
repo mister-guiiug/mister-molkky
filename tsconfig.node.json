@@ -1,19 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@mister-guiiug/dev-wpa-config/tsconfig-node",
   "compilerOptions": {
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
-
-    // === Inlined from @mister-guiiug/dev-wpa-config/tsconfig-node ===
-    // Same rationale as tsconfig.app.json: avoid the brittle subpath
-    // export from the published dev-wpa-config package.
-    "target": "ES2025",
-    "lib": ["ES2025"],
-    "module": "ESNext",
-    "skipLibCheck": true,
-    "moduleResolution": "bundler",
-    "types": ["node"],
-    "strict": true,
-    "noEmit": true
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo"
   },
   "include": ["vite.config.ts", "vitest.config.ts", "scripts/**/*.mjs"]
 }
