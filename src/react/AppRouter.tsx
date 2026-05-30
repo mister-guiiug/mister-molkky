@@ -66,32 +66,42 @@ function RouteFallback() {
 }
 
 function AppRoutes() {
+  const location = useLocation();
   return (
     <Shell>
       <DocumentTitle />
       <Suspense fallback={<RouteFallback />}>
-        <Routes>
-          <Route path={ROUTES.home} element={<HomeView />} />
-          <Route path={ROUTES.match} element={<MatchView />} />
-          <Route path={ROUTES.history} element={<HistoryView />} />
-          <Route path={ROUTES.stats} element={<StatsView />} />
-          <Route path={ROUTES.players} element={<PlayersView />} />
-          <Route path={ROUTES.settings} element={<SettingsView />} />
-          <Route path={ROUTES.joinLive} element={<JoinLiveView />} />
-          <Route
-            path={`${ROUTES.spectator}/:code`}
-            element={<SpectatorView />}
-          />
-          <Route path={ROUTES.practice} element={<PracticeView />} />
-          {Object.entries(LEGACY_REDIRECTS).map(([legacy, target]) => (
+        {/*
+          Keying the wrapper on the pathname remounts it on every
+          navigation, which replays the `mm-view-enter` CSS animation for
+          a gentle cross-route fade/lift. The keyframes are disabled under
+          prefers-reduced-motion (see styles.css), so this is a no-op for
+          users who opt out of motion.
+        */}
+        <div key={location.pathname} className="mm-view-enter">
+          <Routes location={location}>
+            <Route path={ROUTES.home} element={<HomeView />} />
+            <Route path={ROUTES.match} element={<MatchView />} />
+            <Route path={ROUTES.history} element={<HistoryView />} />
+            <Route path={ROUTES.stats} element={<StatsView />} />
+            <Route path={ROUTES.players} element={<PlayersView />} />
+            <Route path={ROUTES.settings} element={<SettingsView />} />
+            <Route path={ROUTES.joinLive} element={<JoinLiveView />} />
             <Route
-              key={legacy}
-              path={legacy}
-              element={<Navigate to={target} replace />}
+              path={`${ROUTES.spectator}/:code`}
+              element={<SpectatorView />}
             />
-          ))}
-          <Route path="*" element={<Navigate to={ROUTES.home} replace />} />
-        </Routes>
+            <Route path={ROUTES.practice} element={<PracticeView />} />
+            {Object.entries(LEGACY_REDIRECTS).map(([legacy, target]) => (
+              <Route
+                key={legacy}
+                path={legacy}
+                element={<Navigate to={target} replace />}
+              />
+            ))}
+            <Route path="*" element={<Navigate to={ROUTES.home} replace />} />
+          </Routes>
+        </div>
       </Suspense>
     </Shell>
   );

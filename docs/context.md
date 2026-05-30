@@ -8,7 +8,7 @@ exact 50 → win), per-player stats and a full match history. Works offline.
 
 The two reference apps on the Play Store (Tactic Games' tracker and Vincent
 Guillebaud's Champion) cover the basics but no Mölkky tracker bundles
-*persisted players*, *animated UI*, *stats* and *offline-first* in a
+_persisted players_, _animated UI_, _stats_ and _offline-first_ in a
 mobile-installable package. Mister Mölkky aims for parity then differentiates
 with Rive animations, per-pin heatmaps and shareable match exports.
 

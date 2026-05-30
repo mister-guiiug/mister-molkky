@@ -19,10 +19,12 @@ describe('messages', () => {
   it('every leaf is a non-empty string', () => {
     for (const locale of ['fr', 'en'] as const) {
       for (const key of collectKeys(messages[locale])) {
-        const value = key.split('.').reduce<unknown>(
-          (acc, p) => (acc as Record<string, unknown>)[p],
-          messages[locale] as unknown as Messages
-        );
+        const value = key
+          .split('.')
+          .reduce<unknown>(
+            (acc, p) => (acc as Record<string, unknown>)[p],
+            messages[locale] as unknown as Messages
+          );
         expect(typeof value).toBe('string');
         expect((value as string).length).toBeGreaterThan(0);
       }

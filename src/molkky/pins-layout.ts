@@ -31,7 +31,9 @@ export const INITIAL_LAYOUT: readonly PinPosition[] = [
   { pin: 8, x: 3, y: 3 },
 ];
 
-export const ALL_PIN_NUMBERS: readonly number[] = INITIAL_LAYOUT.map(p => p.pin);
+export const ALL_PIN_NUMBERS: readonly number[] = INITIAL_LAYOUT.map(
+  p => p.pin
+);
 
 export const LAYOUT_BOUNDS = {
   minX: 0.5,

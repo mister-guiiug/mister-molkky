@@ -72,8 +72,7 @@ export function PlayerCard({
               key={i}
               className="h-1.5 w-1.5 rounded-full"
               style={{
-                background:
-                  i < missStreak ? 'var(--danger)' : 'var(--border)',
+                background: i < missStreak ? 'var(--danger)' : 'var(--border)',
               }}
             />
           ))}

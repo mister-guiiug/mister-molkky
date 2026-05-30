@@ -5,14 +5,14 @@ contract:
 
 ## Inputs
 
-| Name           | Type    | Notes                                          |
-| -------------- | ------- | ---------------------------------------------- |
-| `pin1Down`     | bool    | `true` ⇒ pin 1 lies flat                       |
-| …              | bool    | one input per pin (1..12)                      |
-| `pin12Down`    | bool    | idem                                            |
-| `playerColor`  | number  | 0..15, indexes the team palette (see below)   |
-| `reset`        | trigger | redresses all pins                             |
-| `throw`        | trigger | plays the "stick lands" cinematic              |
+| Name          | Type    | Notes                                       |
+| ------------- | ------- | ------------------------------------------- |
+| `pin1Down`    | bool    | `true` ⇒ pin 1 lies flat                    |
+| …             | bool    | one input per pin (1..12)                   |
+| `pin12Down`   | bool    | idem                                        |
+| `playerColor` | number  | 0..15, indexes the team palette (see below) |
+| `reset`       | trigger | redresses all pins                          |
+| `throw`       | trigger | plays the "stick lands" cinematic           |
 
 ## Player colour palette
 
@@ -28,9 +28,9 @@ The board is 256 × 256, viewing the pin field from above. Positions match
 
 ## Other artboards
 
-| Artboard      | SM           | Trigger             |
-| ------------- | ------------ | ------------------- |
-| `ScoreTicker` | `Pop`        | `delta`, `play`     |
-| `Victory`     | `Cheer`      | `playerColor`       |
-| `Elim`        | `Out`        | `play`              |
-| `Idle`        | `Idle`       | (none, autoplay)    |
+| Artboard      | SM      | Trigger          |
+| ------------- | ------- | ---------------- |
+| `ScoreTicker` | `Pop`   | `delta`, `play`  |
+| `Victory`     | `Cheer` | `playerColor`    |
+| `Elim`        | `Out`   | `play`           |
+| `Idle`        | `Idle`  | (none, autoplay) |

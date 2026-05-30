@@ -1,11 +1,16 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMatchStore } from './useMatchStore';
 import { MatchConfigSchema, makePlayerId, type MatchConfig } from '../schemas';
 
 function setupConfig(): MatchConfig {
   return MatchConfigSchema.parse({
     players: [
-      { id: makePlayerId('p-a'), name: 'Alice', color: '#4a7c2a', createdAt: 1 },
+      {
+        id: makePlayerId('p-a'),
+        name: 'Alice',
+        color: '#4a7c2a',
+        createdAt: 1,
+      },
       { id: makePlayerId('p-b'), name: 'Bob', color: '#d4892b', createdAt: 2 },
     ],
     targetScore: 50,
@@ -103,5 +108,95 @@ describe('useMatchStore', () => {
     const id = useMatchStore.getState().history[0]!.id;
     useMatchStore.getState().removeFromHistory(id);
     expect(useMatchStore.getState().history).toHaveLength(0);
+  });
+});
+
+describe('useMatchStore — chrono pause/resume', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('starts a match with the chrono running (no pause)', () => {
+    useMatchStore.getState().startMatch(setupConfig());
+    const c = useMatchStore.getState().current;
+    expect(c?.pausedAt).toBeNull();
+    expect(c?.pausedTotalMs).toBe(0);
+  });
+
+  it('pauseChrono stamps pausedAt and is idempotent', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
+    useMatchStore.getState().startMatch(setupConfig());
+
+    vi.advanceTimersByTime(60_000);
+    useMatchStore.getState().pauseChrono();
+    const pausedAt = useMatchStore.getState().current?.pausedAt;
+    expect(typeof pausedAt).toBe('number');
+
+    // A second pause must not move the timestamp.
+    vi.advanceTimersByTime(5_000);
+    useMatchStore.getState().pauseChrono();
+    expect(useMatchStore.getState().current?.pausedAt).toBe(pausedAt);
+  });
+
+  it('resumeChrono clears the pause and folds elapsed time into pausedTotalMs', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
+    useMatchStore.getState().startMatch(setupConfig());
+
+    useMatchStore.getState().pauseChrono();
+    vi.advanceTimersByTime(30_000);
+    useMatchStore.getState().resumeChrono();
+
+    const c = useMatchStore.getState().current;
+    expect(c?.pausedAt).toBeNull();
+    expect(c?.pausedTotalMs).toBe(30_000);
+  });
+
+  it('accumulates across multiple pause/resume cycles', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
+    useMatchStore.getState().startMatch(setupConfig());
+
+    useMatchStore.getState().pauseChrono();
+    vi.advanceTimersByTime(10_000);
+    useMatchStore.getState().resumeChrono();
+
+    vi.advanceTimersByTime(5_000);
+    useMatchStore.getState().pauseChrono();
+    vi.advanceTimersByTime(20_000);
+    useMatchStore.getState().resumeChrono();
+
+    expect(useMatchStore.getState().current?.pausedTotalMs).toBe(30_000);
+  });
+
+  it('resumeChrono is a no-op when the chrono is not paused', () => {
+    useMatchStore.getState().startMatch(setupConfig());
+    useMatchStore.getState().resumeChrono();
+    expect(useMatchStore.getState().current?.pausedTotalMs).toBe(0);
+    expect(useMatchStore.getState().current?.pausedAt).toBeNull();
+  });
+
+  it('recordThrow auto-resumes an open pause and excludes the break', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
+    useMatchStore.getState().startMatch(setupConfig());
+
+    useMatchStore.getState().pauseChrono();
+    vi.advanceTimersByTime(15_000);
+    useMatchStore.getState().recordThrow([7]);
+
+    const c = useMatchStore.getState().current;
+    expect(c?.pausedAt).toBeNull();
+    expect(c?.pausedTotalMs).toBe(15_000);
+    expect(c?.throws).toHaveLength(1);
+  });
+
+  it('pause/resume are no-ops when there is no current match', () => {
+    expect(() => {
+      useMatchStore.getState().pauseChrono();
+      useMatchStore.getState().resumeChrono();
+    }).not.toThrow();
+    expect(useMatchStore.getState().current).toBeNull();
   });
 });
