@@ -1,5 +1,9 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { useRive, Layout, Fit, Alignment } from '@rive-app/react-canvas';
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
+
+// Lazy boundary: the Rive runtime lives in RiveCanvas and only loads once
+// a valid .riv file has been probed (see below), keeping the WASM bundle
+// out of the initial app chunk.
+const RiveCanvas = lazy(() => import('./RiveCanvas'));
 
 interface RiveSceneProps {
   src: string;
@@ -54,33 +58,17 @@ export function RiveScene({
     return <>{fallback ?? null}</>;
   }
 
+  // Show the same fallback while the lazy Rive chunk downloads so there's
+  // no blank flash between "file probed OK" and "runtime ready".
   return (
-    <RiveCanvas
-      src={src}
-      stateMachine={stateMachine}
-      artboard={artboard}
-      className={className}
-      ariaLabel={ariaLabel}
-    />
-  );
-}
-
-function RiveCanvas({
-  src,
-  stateMachine,
-  artboard,
-  className,
-  ariaLabel,
-}: Omit<RiveSceneProps, 'fallback'>) {
-  const { RiveComponent } = useRive({
-    src,
-    stateMachines: stateMachine,
-    artboard,
-    autoplay: true,
-    layout: new Layout({ fit: Fit.Contain, alignment: Alignment.Center }),
-  });
-
-  return (
-    <RiveComponent className={className} role="img" aria-label={ariaLabel} />
+    <Suspense fallback={<>{fallback ?? null}</>}>
+      <RiveCanvas
+        src={src}
+        stateMachine={stateMachine}
+        artboard={artboard}
+        className={className}
+        ariaLabel={ariaLabel}
+      />
+    </Suspense>
   );
 }

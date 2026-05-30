@@ -46,6 +46,14 @@ interface MatchStoreState {
   undoLastThrow: () => boolean;
   editThrow: (throwId: string, fallenPins: number[]) => boolean;
   abandonMatch: () => void;
+  /** Stop the live chrono (e.g. a break). No-op if already paused. */
+  pauseChrono: () => void;
+  /**
+   * Resume the live chrono, folding the just-elapsed pause into
+   * pausedTotalMs so the displayed duration excludes paused time. No-op
+   * if not paused.
+   */
+  resumeChrono: () => void;
   /**
    * Mark a single actor (player ID in solo, team ID in team mode) as having
    * forfeited the match. They're treated as eliminated for ranking + turn
@@ -218,7 +226,22 @@ export const useMatchStore = create<MatchStoreState>()(
         });
 
         const nextThrows = [...state.throws, newThrow];
-        const nextState: CurrentMatchState = { ...state, throws: nextThrows };
+        // Recording a throw means play has resumed — auto-fold any open
+        // pause into pausedTotalMs so the chrono never counts a break
+        // during which the game actually continued.
+        const resumed =
+          state.pausedAt != null
+            ? {
+                pausedAt: null,
+                pausedTotalMs:
+                  (state.pausedTotalMs ?? 0) + (Date.now() - state.pausedAt),
+              }
+            : {};
+        const nextState: CurrentMatchState = {
+          ...state,
+          ...resumed,
+          throws: nextThrows,
+        };
 
         const afterOutcome = replayThrows(
           actorIds,
@@ -330,6 +353,22 @@ export const useMatchStore = create<MatchStoreState>()(
       },
 
       abandonMatch: () => set({ current: null, pendingFeedback: null }),
+
+      pauseChrono: () => {
+        const state = get().current;
+        if (!state || state.pausedAt != null) return;
+        set({ current: { ...state, pausedAt: Date.now() } });
+      },
+
+      resumeChrono: () => {
+        const state = get().current;
+        if (!state || state.pausedAt == null) return;
+        const accumulated =
+          (state.pausedTotalMs ?? 0) + (Date.now() - state.pausedAt);
+        set({
+          current: { ...state, pausedAt: null, pausedTotalMs: accumulated },
+        });
+      },
 
       toggleHighlight: throwId => {
         const state = get().current;
@@ -503,11 +542,12 @@ export const useMatchStore = create<MatchStoreState>()(
     {
       name: 'mm_match',
       storage: createJSONStorage(() => safeLocalStorage()),
-      // Bumped to 2 to trigger the migrate() below — earlier persisted
-      // matches don't carry forfeitedActorIds / highlightedThrowIds /
-      // predictions, and accessing them in the UI (.includes, Object.
-      // entries) was crashing /partie when an old match sat in history.
-      version: 2,
+      // Bumped to 3 across feature additions — earlier persisted matches
+      // don't carry forfeitedActorIds / highlightedThrowIds / predictions
+      // (v2) nor pausedAt / pausedTotalMs (v3). The migrate() below
+      // backfills them so accessing the fields in the UI never crashes a
+      // rehydrated match.
+      version: 3,
       migrate: (persistedState: unknown, version) => {
         if (!persistedState || typeof persistedState !== 'object') {
           return persistedState as never;
@@ -530,6 +570,9 @@ export const useMatchStore = create<MatchStoreState>()(
               m.predictions && typeof m.predictions === 'object'
                 ? m.predictions
                 : {},
+            pausedAt: typeof m.pausedAt === 'number' ? m.pausedAt : null,
+            pausedTotalMs:
+              typeof m.pausedTotalMs === 'number' ? m.pausedTotalMs : 0,
           };
         };
         const fillFinished = (m: Record<string, unknown>) => ({

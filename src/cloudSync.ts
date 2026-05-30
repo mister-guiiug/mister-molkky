@@ -39,7 +39,7 @@ const TABLE = 'user_data';
  */
 export async function ensureSyncSession(): Promise<string | null> {
   if (!isSupabaseConfigured()) return null;
-  const client = getSupabase();
+  const client = await getSupabase();
   if (!client) return null;
   const {
     data: { session: existing },
@@ -57,7 +57,7 @@ export async function ensureSyncSession(): Promise<string | null> {
 export async function pushSync(payload: SyncPayload): Promise<SyncResult> {
   const userId = await ensureSyncSession();
   if (!userId) throw new Error('Sync session unavailable');
-  const client = getSupabase();
+  const client = await getSupabase();
   if (!client) throw new Error('Supabase client unavailable');
   const updatedAt = new Date().toISOString();
   const { error } = await client.from(TABLE).upsert(
@@ -75,7 +75,7 @@ export async function pushSync(payload: SyncPayload): Promise<SyncResult> {
 export async function pullSync(): Promise<SyncResult | null> {
   const userId = await ensureSyncSession();
   if (!userId) return null;
-  const client = getSupabase();
+  const client = await getSupabase();
   if (!client) return null;
   const { data, error } = await client
     .from(TABLE)

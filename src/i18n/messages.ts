@@ -164,6 +164,9 @@ export interface Messages {
     tap: string;
     longPressHint: string;
     chrono: string;
+    chronoPause: string;
+    chronoResume: string;
+    chronoPaused: string;
     standUp: string;
     pin: string;
     pinDown: string;
@@ -542,6 +545,9 @@ const fr: Messages = {
     tap: 'Touchez',
     longPressHint: 'Appui long : tout sélectionner',
     chrono: 'Chrono',
+    chronoPause: 'Mettre le chrono en pause',
+    chronoResume: 'Reprendre le chrono',
+    chronoPaused: 'En pause',
     standUp: 'Redresser',
     pin: 'Quille',
     pinDown: 'tombée',
@@ -928,6 +934,9 @@ const en: Messages = {
     tap: 'Tap',
     longPressHint: 'Long press: select all',
     chrono: 'Timer',
+    chronoPause: 'Pause timer',
+    chronoResume: 'Resume timer',
+    chronoPaused: 'Paused',
     standUp: 'Stand up',
     pin: 'Pin',
     pinDown: 'down',

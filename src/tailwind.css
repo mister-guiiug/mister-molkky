@@ -1,5 +1,11 @@
 @import 'tailwindcss';
 
+/*
+ * Scale tokens (fluid type + spacing) live here because Tailwind v4's
+ * `@theme` must be processed by the plugin to emit utilities. The
+ * semantic colour/surface/theme tokens live in ./tokens.css — keep the
+ * two files in sync when adding new design tokens.
+ */
 @theme {
   --text-fluid-xs: clamp(0.7rem, 1.6vw, 0.8125rem);
   --text-fluid-sm: clamp(0.8125rem, 1.9vw, 0.95rem);

@@ -48,13 +48,15 @@ export function normalizeCode(input: string): string {
 
 export class LiveBackendUnavailableError extends Error {
   constructor() {
-    super('Supabase is not configured (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY missing)');
+    super(
+      'Supabase is not configured (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY missing)'
+    );
     this.name = 'LiveBackendUnavailableError';
   }
 }
 
-function requireClient() {
-  const client = getSupabase();
+async function requireClient() {
+  const client = await getSupabase();
   if (!client) throw new LiveBackendUnavailableError();
   return client;
 }
@@ -62,7 +64,7 @@ function requireClient() {
 export async function createLiveMatch(
   state: CurrentMatchState
 ): Promise<{ id: string; code: string }> {
-  const client = requireClient();
+  const client = await requireClient();
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const code = makeCode();
     const { data, error } = await client
@@ -83,7 +85,7 @@ export async function createLiveMatch(
 }
 
 export async function joinLiveMatch(rawCode: string): Promise<LiveMatchRow> {
-  const client = requireClient();
+  const client = await requireClient();
   const code = normalizeCode(rawCode);
   if (code.length !== CODE_LENGTH) {
     throw new Error('Invalid code');
@@ -99,9 +101,11 @@ export async function joinLiveMatch(rawCode: string): Promise<LiveMatchRow> {
 
 export async function pushLiveState(
   matchId: string,
-  patch: Partial<Pick<LiveMatchRow, 'throws' | 'winner_id' | 'finished_at' | 'config'>>
+  patch: Partial<
+    Pick<LiveMatchRow, 'throws' | 'winner_id' | 'finished_at' | 'config'>
+  >
 ): Promise<void> {
-  const client = requireClient();
+  const client = await requireClient();
   const { error } = await client
     .from('live_matches')
     .update(patch)
@@ -114,12 +118,12 @@ export interface LiveSubscription {
   unsubscribe: () => void;
 }
 
-export function subscribeLiveMatch(
+export async function subscribeLiveMatch(
   matchId: string,
   onChange: (row: LiveMatchRow) => void,
   onError?: (err: Error) => void
-): LiveSubscription {
-  const client = requireClient();
+): Promise<LiveSubscription> {
+  const client = await requireClient();
   const channel = client
     .channel(`live_match:${matchId}`)
     .on(
