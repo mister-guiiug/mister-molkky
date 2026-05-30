@@ -6,7 +6,10 @@ interface EliminationToastProps {
   onDismiss: () => void;
 }
 
-export function EliminationToast({ playerName, onDismiss }: EliminationToastProps) {
+export function EliminationToast({
+  playerName,
+  onDismiss,
+}: EliminationToastProps) {
   const { t } = useI18n();
   const [show, setShow] = useState(false);
 

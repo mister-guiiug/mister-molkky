@@ -14,7 +14,10 @@ import { idbDelBlob, idbGetBlob, idbPutBlob } from '../idb';
 interface PlayersState {
   players: Player[];
   add: (data: { name: string; color: string }) => Player;
-  update: (id: PlayerId, patch: Partial<Omit<Player, 'id' | 'createdAt'>>) => void;
+  update: (
+    id: PlayerId,
+    patch: Partial<Omit<Player, 'id' | 'createdAt'>>
+  ) => void;
   remove: (id: PlayerId) => void;
   setAvatar: (id: PlayerId, blob: Blob) => Promise<void>;
   clearAvatar: (id: PlayerId) => Promise<void>;
@@ -64,7 +67,12 @@ export const usePlayersStore = create<PlayersState>()(
         set(state => ({
           players: state.players.map(p =>
             p.id === id
-              ? PlayerSchema.parse({ ...p, ...patch, id: p.id, createdAt: p.createdAt })
+              ? PlayerSchema.parse({
+                  ...p,
+                  ...patch,
+                  id: p.id,
+                  createdAt: p.createdAt,
+                })
               : p
           ),
         }));

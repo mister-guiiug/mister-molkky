@@ -26,7 +26,7 @@ export function PullIndicator({
       className="pointer-events-none fixed inset-x-0 top-0 z-40 flex justify-center pt-2"
       style={{
         opacity: visible ? 1 : 0,
-        transform: `translateY(${refreshing ? 0 : (pulling ? Math.min(progress, 1) * 20 - 20 : -20)}px)`,
+        transform: `translateY(${refreshing ? 0 : pulling ? Math.min(progress, 1) * 20 - 20 : -20}px)`,
         transition: 'opacity 200ms, transform 200ms',
       }}
     >
