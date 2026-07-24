@@ -42,10 +42,21 @@ test('@critical can play a 3-player match end to end', async ({ page }) => {
 
   await expect(page.getByText(/Au tour de/i)).toBeVisible();
 
+  // Ancré : les cartes joueurs sont aussi des boutons dont le nom accessible
+  // contient « … ratés » — seul le bouton de saisie est libellé « Raté (n) ».
+  // La partie peut se terminer AVANT 12 lancers : 3 ratés consécutifs
+  // éliminent un joueur, et le dernier restant gagne par forfait.
+  const rateButton = page.getByRole('button', { name: /^Raté \(\d+\)$/ });
+  const victoire = page.getByText(/Victoire/i);
   for (let i = 0; i < 12; i += 1) {
-    await page.getByRole('button', { name: /Raté/i }).click();
+    if (await victoire.isVisible().catch(() => false)) break;
+    try {
+      await rateButton.click({ timeout: 2000 });
+    } catch {
+      break; // bouton disparu → l'écran de fin est attendu juste après
+    }
     await page.waitForTimeout(60);
   }
 
-  await expect(page.getByText(/Victoire/i)).toBeVisible({ timeout: 8000 });
+  await expect(victoire).toBeVisible({ timeout: 8000 });
 });
