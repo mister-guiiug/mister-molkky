@@ -64,9 +64,40 @@
       name="description"
       content="Compteur de points et statistiques pour le jeu de Mölkky : 100 % offline, animations Rive, historique des parties."
     />
+    <link rel="canonical" href="__SEO_HOME_URL__" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Mister Mölkky" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:url" content="__SEO_HOME_URL__" />
+    <meta
+      property="og:title"
+      content="Mister Mölkky — compteur de points et statistiques"
+    />
+    <meta
+      property="og:description"
+      content="Compteur de points et statistiques pour le jeu de Mölkky : 100 % offline, animations Rive, historique des parties."
+    />
+    <meta property="og:image" content="__SEO_LOGO_URL__" />
+
+    <meta name="twitter:card" content="summary" />
+    <meta
+      name="twitter:title"
+      content="Mister Mölkky — compteur de points et statistiques"
+    />
+    <meta
+      name="twitter:description"
+      content="Compteur de points et statistiques pour le jeu de Mölkky, 100 % offline et installable (PWA)."
+    />
+    <meta name="twitter:image" content="__SEO_LOGO_URL__" />
+
+    <!-- Analytics (GTM/GA4) injecté par pwaSeoPlugin() — vide tant qu'aucun
+         VITE_GTM_CONTAINER_ID / VITE_GA_MEASUREMENT_ID n'est configuré. -->
+    __ANALYTICS_HEAD__
     <title>Mister Mölkky</title>
   </head>
   <body>
+    __ANALYTICS_BODY__
     <div id="app"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
