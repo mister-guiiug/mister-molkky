@@ -1,3 +1,4 @@
+# Déploiement GitHub Pages délégué au reusable workflow famille (dev-wpa-config).
 name: Deploy to GitHub Pages
 
 on:
@@ -16,49 +17,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          persist-credentials: false
-
-      - name: Setup Node
-        uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-          cache: npm
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@mister-guiiug'
-
-      - name: Install
-        run: npm ci --no-audit --no-fund
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build
-        env:
-          VITE_BASE_PATH: /${{ github.event.repository.name }}/
-          # Optional — set as repository secrets to enable the live (multi-
-          # device) feature on the deployed Pages build. The app builds and
-          # runs fine without them, the "live" UI is just hidden.
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-        run: npm run build
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
   deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4
+    uses: mister-guiiug/dev-wpa-config/.github/workflows/pwa-deploy.yml@v3
+    secrets: inherit
+    with:
+      use-base-path: true
+      # Secrets Supabase OPTIONNELS (fonction « live » multi-appareils) : l'app
+      # build et tourne sans — l'UI live est alors simplement masquée. Absents,
+      # ces lignes injectent une valeur vide (comportement inchangé).
+      build-env: |
+        VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
+        VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
