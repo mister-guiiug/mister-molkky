@@ -6,6 +6,7 @@ import { createRoot } from 'react-dom/client';
 import { ErrorBoundary } from '@mister-guiiug/dev-wpa-config/react';
 import {
   installErrorReporter,
+  initSentry,
   recordError,
 } from '@mister-guiiug/dev-wpa-config/react/observability';
 import { applyResolvedTheme, wireSystemThemeListener } from './theme';
@@ -14,6 +15,10 @@ import { App } from './react/AppRouter';
 import { I18nProvider } from './i18n/I18nProvider';
 
 installErrorReporter();
+void initSentry({
+  dsn: import.meta.env.VITE_SENTRY_DSN,
+  environment: import.meta.env.MODE,
+});
 applyResolvedTheme();
 wireSystemThemeListener();
 registerServiceWorker();
