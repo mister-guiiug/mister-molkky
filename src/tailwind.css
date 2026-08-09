@@ -1,73 +1,13 @@
 @import 'tailwindcss';
+@import '@mister-guiiug/dev-wpa-config/tailwind-preset.css';
 
 /*
- * Scale tokens (fluid type + spacing) live here because Tailwind v4's
- * `@theme` must be processed by the plugin to emit utilities. The
- * semantic colour/surface/theme tokens live in ./tokens.css — keep the
- * two files in sync when adding new design tokens.
+ * The fluid type/spacing scales, the safe-area helpers and `touch-target` now
+ * come from the shared preset (@mister-guiiug/dev-wpa-config); only the
+ * molkky-specific scale token stays here. The semantic colour/surface/theme
+ * tokens live in ./tokens.css — keep the two files in sync when adding new
+ * design tokens.
  */
 @theme {
-  --text-fluid-xs: clamp(0.7rem, 1.6vw, 0.8125rem);
-  --text-fluid-sm: clamp(0.8125rem, 1.9vw, 0.95rem);
-  --text-fluid-base: clamp(0.9rem, 2.2vw, 1.05rem);
-  --text-fluid-lg: clamp(1rem, 2.6vw, 1.25rem);
-  --text-fluid-xl: clamp(1.15rem, 3vw, 1.5rem);
-  --text-fluid-2xl: clamp(1.35rem, 4.2vw, 2rem);
   --text-fluid-3xl: clamp(1.75rem, 5.5vw, 2.75rem);
-
-  --spacing-fluid-sm: clamp(0.5rem, 1.4vw, 0.75rem);
-  --spacing-fluid-md: clamp(0.75rem, 2.4vw, 1.25rem);
-  --spacing-fluid-lg: clamp(1rem, 3.2vw, 1.75rem);
-}
-
-@utility pt-safe {
-  padding-top: max(env(safe-area-inset-top), 0px);
-}
-@utility pb-safe {
-  padding-bottom: max(env(safe-area-inset-bottom), 0px);
-}
-@utility pl-safe {
-  padding-left: max(env(safe-area-inset-left), 0px);
-}
-@utility pr-safe {
-  padding-right: max(env(safe-area-inset-right), 0px);
-}
-@utility px-safe {
-  padding-left: max(env(safe-area-inset-left), 0px);
-  padding-right: max(env(safe-area-inset-right), 0px);
-}
-@utility py-safe {
-  padding-top: max(env(safe-area-inset-top), 0px);
-  padding-bottom: max(env(safe-area-inset-bottom), 0px);
-}
-
-@utility top-safe {
-  top: max(env(safe-area-inset-top), 0px);
-}
-@utility bottom-safe {
-  bottom: max(env(safe-area-inset-bottom), 0px);
-}
-@utility left-safe {
-  left: max(env(safe-area-inset-left), 0px);
-}
-@utility right-safe {
-  right: max(env(safe-area-inset-right), 0px);
-}
-
-@utility top-safe-3 {
-  top: calc(max(env(safe-area-inset-top), 0px) + 0.75rem);
-}
-@utility bottom-safe-3 {
-  bottom: calc(max(env(safe-area-inset-bottom), 0px) + 0.75rem);
-}
-@utility left-safe-3 {
-  left: calc(max(env(safe-area-inset-left), 0px) + 0.75rem);
-}
-@utility right-safe-3 {
-  right: calc(max(env(safe-area-inset-right), 0px) + 0.75rem);
-}
-
-@utility touch-target {
-  min-height: 2.75rem;
-  min-width: 2.75rem;
 }
