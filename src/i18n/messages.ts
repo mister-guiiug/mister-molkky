@@ -297,6 +297,13 @@ export interface Messages {
     sourceCode: string;
     buyCoffee: string;
   };
+  family: {
+    title: string;
+    lead: string;
+    maturityAlpha: string;
+    maturityBeta: string;
+    maturityStable: string;
+  };
   practice: {
     title: string;
     cta: string;
@@ -686,6 +693,13 @@ const fr: Messages = {
     sourceCode: 'Code source',
     buyCoffee: 'Buy me a coffee',
   },
+  family: {
+    title: 'Nos autres applications',
+    lead: 'D’autres apps de la même famille, faites avec soin. Touchez une carte pour la découvrir.',
+    maturityAlpha: 'Alpha',
+    maturityBeta: 'Bêta',
+    maturityStable: 'Stable',
+  },
   practice: {
     title: 'Entraînement solo',
     cta: 'Entraînement solo',
@@ -1072,6 +1086,13 @@ const en: Messages = {
     version: 'v',
     sourceCode: 'Source code',
     buyCoffee: 'Buy me a coffee',
+  },
+  family: {
+    title: 'Our other apps',
+    lead: 'More apps from the same family, crafted with care. Tap a card to explore.',
+    maturityAlpha: 'Alpha',
+    maturityBeta: 'Beta',
+    maturityStable: 'Stable',
   },
   practice: {
     title: 'Solo practice',

@@ -2,17 +2,9 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <!--
-      connect-src includes the Supabase domains for the optional live
-      multi-device feature: REST via HTTPS and Realtime via WSS.
-      Everything else stays self-only — no third-party scripts, no fonts,
-      no analytics. media-src covers the camera stream the QR-code
-      scanner uses when joining a live match.
-    -->
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
-    />
+    <!-- La Content-Security-Policy est injectée au build par cspPlugin()
+         (@mister-guiiug/dev-wpa-config/vite-csp) : script-src par hash SHA-256
+         de l'IIFE anti-FOUC ci-dessous, plus de 'unsafe-inline'. -->
     <script>
       (function () {
         try {
@@ -64,9 +56,40 @@
       name="description"
       content="Compteur de points et statistiques pour le jeu de Mölkky : 100 % offline, animations Rive, historique des parties."
     />
+    <link rel="canonical" href="__SEO_HOME_URL__" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Mister Mölkky" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:url" content="__SEO_HOME_URL__" />
+    <meta
+      property="og:title"
+      content="Mister Mölkky — compteur de points et statistiques"
+    />
+    <meta
+      property="og:description"
+      content="Compteur de points et statistiques pour le jeu de Mölkky : 100 % offline, animations Rive, historique des parties."
+    />
+    <meta property="og:image" content="__SEO_LOGO_URL__" />
+
+    <meta name="twitter:card" content="summary" />
+    <meta
+      name="twitter:title"
+      content="Mister Mölkky — compteur de points et statistiques"
+    />
+    <meta
+      name="twitter:description"
+      content="Compteur de points et statistiques pour le jeu de Mölkky, 100 % offline et installable (PWA)."
+    />
+    <meta name="twitter:image" content="__SEO_LOGO_URL__" />
+
+    <!-- Analytics (GTM/GA4) injecté par pwaSeoPlugin() — vide tant qu'aucun
+         VITE_GTM_CONTAINER_ID / VITE_GA_MEASUREMENT_ID n'est configuré. -->
+    __ANALYTICS_HEAD__
     <title>Mister Mölkky</title>
   </head>
   <body>
+    __ANALYTICS_BODY__
     <div id="app"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

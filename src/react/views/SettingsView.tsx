@@ -17,6 +17,7 @@ import { isSupabaseConfigured } from '../../supabase';
 import { forceAppUpdate } from '../../register-sw';
 import { AppFooter } from '../components/layout/AppFooter';
 import { useSyncStore } from '../../store/useSyncStore';
+import { FamilyApps } from '@mister-guiiug/dev-wpa-config/react';
 
 declare const __APP_VERSION__: string | undefined;
 
@@ -343,6 +344,35 @@ export function SettingsView() {
               {t('settings.buyCoffee')}
             </a>
           </div>
+        </div>
+      </Section>
+
+      {/* Nos autres applications — grille partagée (FamilyApps). Source /
+          sponsor sont déjà couverts par la section « À propos » et l'AppFooter,
+          donc on masque ces cartes et on n'affiche QUE la grille des autres
+          apps. Le composant rend son propre <h3> (masqué en CSS puisque la
+          Section fournit déjà son <h2>). */}
+      <Section label={t('family.title')}>
+        <p
+          className="m-0 mb-3 text-sm leading-relaxed"
+          style={{ color: 'var(--muted)' }}
+        >
+          {t('family.lead')}
+        </p>
+        <div className="mm-family">
+          <FamilyApps
+            currentAppId="mister-molkky"
+            showSource={false}
+            showSponsor={false}
+            labels={{
+              otherApps: t('family.title'),
+              maturity: {
+                alpha: t('family.maturityAlpha'),
+                beta: t('family.maturityBeta'),
+                stable: t('family.maturityStable'),
+              },
+            }}
+          />
         </div>
       </Section>
 

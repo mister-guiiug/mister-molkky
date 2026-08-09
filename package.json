@@ -27,6 +27,7 @@
     "prepare": "husky"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@eslint/js": "^9.39.4",
     "@mister-guiiug/dev-wpa-config": "^3.5.1",
     "@playwright/test": "^1.49.1",
