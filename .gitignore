@@ -10,3 +10,6 @@ playwright-report/
 test-results/
 coverage/
 .vite/
+
+# Lighthouse CI (rapports locaux)
+.lighthouseci/
