@@ -17,6 +17,7 @@ import { isSupabaseConfigured } from '../../supabase';
 import { forceAppUpdate } from '../../register-sw';
 import { AppFooter } from '../components/layout/AppFooter';
 import { useSyncStore } from '../../store/useSyncStore';
+import { dateSlug, downloadJson } from '@mister-guiiug/dev-wpa-config/download';
 import { FamilyApps } from '@mister-guiiug/dev-wpa-config/react';
 
 declare const __APP_VERSION__: string | undefined;
@@ -50,14 +51,7 @@ export function SettingsView() {
       players,
       matches: history,
     });
-    const json = JSON.stringify(bundle, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `mister-molkky-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadJson(bundle, `mister-molkky-${dateSlug()}.json`);
   };
 
   const onImport = async (file: File) => {
