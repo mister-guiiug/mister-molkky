@@ -1,4 +1,4 @@
-import { useOnline } from '../hooks/useOnline';
+import { useOnline } from '@mister-guiiug/dev-wpa-config/react/use-online';
 import { useI18n } from '../../i18n/useI18n';
 
 export function OfflineIndicator() {
