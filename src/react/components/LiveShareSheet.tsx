@@ -3,7 +3,7 @@ import { useI18n } from '../../i18n/useI18n';
 import { useLiveStore } from '../../store/useLiveStore';
 import { useMatchStore } from '../../store/useMatchStore';
 import { isSupabaseConfigured } from '../../supabase';
-import { shareOrCopy } from '../../share';
+import { shareOrCopy } from '@mister-guiiug/dev-wpa-config/share';
 import { Modal } from './Modal';
 import { Skeleton } from './Skeleton';
 import { CheckIcon, ShareIcon } from './icons';
@@ -72,12 +72,14 @@ export function LiveShareSheet({ open, onClose }: LiveShareSheetProps) {
 
   const handleCopy = async () => {
     if (!liveCode) return;
-    const text = shareUrl ?? liveCode;
     const result = await shareOrCopy({
       title: t('appName'),
       text: t('live.shareText', { code: liveCode }),
       url: shareUrl ?? undefined,
     });
+    // L'utilisateur a refermé la feuille de partage : ce n'est ni un succès
+    // ni un échec — on n'affiche rien (contrat du socle).
+    if (result === 'cancelled') return;
     setFeedback(
       result === 'shared'
         ? t('toast.shared')
@@ -85,14 +87,6 @@ export function LiveShareSheet({ open, onClose }: LiveShareSheetProps) {
           ? t('toast.copied')
           : t('toast.failed')
     );
-    if (result === 'failed') {
-      try {
-        await navigator.clipboard.writeText(text);
-        setFeedback(t('toast.copied'));
-      } catch {
-        /* ignore */
-      }
-    }
   };
 
   const handleStop = () => {
