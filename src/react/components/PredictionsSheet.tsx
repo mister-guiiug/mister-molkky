@@ -1,6 +1,6 @@
+import { Sheet } from '@mister-guiiug/dev-wpa-config/react/sheet';
 import { useI18n } from '../../i18n/useI18n';
 import { useMatchStore } from '../../store/useMatchStore';
-import { Modal } from './Modal';
 
 interface PredictionsSheetProps {
   open: boolean;
@@ -22,12 +22,7 @@ export function PredictionsSheet({ open, onClose }: PredictionsSheetProps) {
   const players = current.config.players;
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={t('match.predictionsTitle')}
-      size="md"
-    >
+    <Sheet open={open} onClose={onClose} title={t('match.predictionsTitle')}>
       <p className="m-0 mb-3 text-sm" style={{ color: 'var(--muted)' }}>
         {t('match.predictionsHint')}
       </p>
@@ -76,6 +71,6 @@ export function PredictionsSheet({ open, onClose }: PredictionsSheetProps) {
           );
         })}
       </ul>
-    </Modal>
+    </Sheet>
   );
 }

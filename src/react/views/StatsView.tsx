@@ -484,6 +484,8 @@ function StreakAndTrendSection({
             width={320}
             height={48}
             max={1}
+            label={t('stats.winRateTrend', { n: '10' })}
+            format={pct}
           />
         </div>
       )}

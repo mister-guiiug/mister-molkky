@@ -1,8 +1,8 @@
 import { useState } from 'react';
+import { Sheet } from '@mister-guiiug/dev-wpa-config/react/sheet';
 import { useI18n } from '../../i18n/useI18n';
 import { useMatchStore } from '../../store/useMatchStore';
 import { ALL_PIN_NUMBERS } from '../../molkky/pins-layout';
-import { Modal } from './Modal';
 import { CheckIcon, StarIcon } from './icons';
 
 interface ThrowsLogProps {
@@ -50,7 +50,7 @@ export function ThrowsLog({ open, onClose }: ThrowsLogProps) {
     });
 
   return (
-    <Modal open={open} onClose={onClose} title={t('match.throwsLog')} size="md">
+    <Sheet open={open} onClose={onClose} title={t('match.throwsLog')}>
       {throws.length === 0 ? (
         <p style={{ color: 'var(--muted)' }}>{t('match.throwsLogEmpty')}</p>
       ) : (
@@ -210,6 +210,6 @@ export function ThrowsLog({ open, onClose }: ThrowsLogProps) {
           })}
         </ol>
       )}
-    </Modal>
+    </Sheet>
   );
 }

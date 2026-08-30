@@ -301,6 +301,7 @@ export function SpectatorView() {
                 width={100}
                 height={20}
                 max={computed.settings.targetScore}
+                label={t('a11y.scoreTrend', { name: a.name })}
               />
             </li>
           );

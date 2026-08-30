@@ -1,22 +1,42 @@
+import { Sparkline as SocleSparkline } from '@mister-guiiug/dev-wpa-config/react/sparkline';
+
 interface SparklineProps {
   values: readonly number[];
   width?: number;
   height?: number;
   color?: string;
   max?: number;
+  /** Libellé de l'alternative textuelle (calculée par `describeSeries`). */
+  label?: string;
+  /** Mise en forme des valeurs dans l'alternative textuelle. */
+  format?: (value: number) => string;
 }
 
+/**
+ * Adaptateur vers la sparkline du socle (`react/sparkline`) : la géométrie
+ * (projection, série constante, arrondis) et l'ALTERNATIVE TEXTUELLE
+ * (`describeSeries`, lue par les lecteurs d'écran là où l'ancien SVG était
+ * muet) viennent du paquet ; l'habillage de `[data-dwc='sparkline']` vient
+ * de components.css.
+ *
+ * Restent ici les trois choix propres à l'app :
+ *  - l'échelle part de zéro (`min=0`) et plafonne au score cible (`max`),
+ *    comme l'ancienne copie — sans quoi l'axe suivrait les données ;
+ *  - la couleur est celle du JOUEUR : posée sur le conteneur, héritée via
+ *    la règle `[data-dwc='sparkline'] { color: inherit }` de styles.css ;
+ *  - moins de deux points : simple ligne de base en pointillés. Le socle
+ *    marquerait le point isolé, ce qui remettait un point orphelin sous
+ *    les cartes de score en début de partie.
+ */
 export function Sparkline({
   values,
   width = 80,
   height = 22,
   color = 'var(--primary)',
   max,
+  label,
+  format,
 }: SparklineProps) {
-  // Until the actor has thrown at least once we only have the starting
-  // score in the history. Rendering the line + end-marker in that case
-  // produces an orphan coloured dot under the scoreboard cards, which
-  // reads as a visual glitch. Just emit an empty baseline instead.
   if (values.length < 2) {
     return (
       <svg width={width} height={height} aria-hidden className="block">
@@ -33,30 +53,18 @@ export function Sparkline({
     );
   }
 
-  const upper = max ?? Math.max(...values, 1);
-  const dx = (width - 4) / (values.length - 1);
-  const pad = 2;
-  const points = values.map((v, i) => {
-    const x = pad + i * dx;
-    const y = height - pad - (v / upper) * (height - pad * 2);
-    return `${x.toFixed(2)},${y.toFixed(2)}`;
-  });
-
-  const lastX = pad + (values.length - 1) * dx;
-  const lastY =
-    height - pad - (values[values.length - 1]! / upper) * (height - pad * 2);
-
   return (
-    <svg width={width} height={height} aria-hidden className="block">
-      <polyline
-        points={points.join(' ')}
-        fill="none"
-        stroke={color}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+    <span className="block" style={{ color }}>
+      <SocleSparkline
+        values={values}
+        width={width}
+        height={height}
+        padding={2}
+        min={0}
+        max={max ?? Math.max(...values, 1)}
+        label={label}
+        format={format}
       />
-      <circle cx={lastX} cy={lastY} r={1.8} fill={color} />
-    </svg>
+    </span>
   );
 }

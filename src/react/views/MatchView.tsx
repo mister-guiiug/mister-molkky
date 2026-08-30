@@ -11,11 +11,12 @@ import { useAvatarUrls } from '../../store/usePlayersStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { ALL_PIN_NUMBERS } from '../../molkky/pins-layout';
 import { ROUTES } from '../../routes';
+import { Sheet } from '@mister-guiiug/dev-wpa-config/react/sheet';
+import { ConfirmDialog } from '@mister-guiiug/dev-wpa-config/react/confirm-dialog';
 import { PageContainer } from '../components/layout/PageContainer';
 import { PinsBoard } from '../components/PinsBoard';
 import { ScoreTicker } from '../components/ScoreTicker';
 import { PlayerCard } from '../components/PlayerCard';
-import { ConfirmDialog } from '../components/ConfirmDialog';
 import { EliminationToast } from '../components/EliminationToast';
 import { VictoryConfetti } from '../components/VictoryConfetti';
 import { FullscreenToggle } from '../components/FullscreenToggle';
@@ -710,6 +711,7 @@ export function MatchView() {
                       width={80}
                       height={18}
                       max={targetScore}
+                      label={t('a11y.scoreTrend', { name: p.name })}
                     />
                   </li>
                 );
@@ -717,11 +719,10 @@ export function MatchView() {
         </ul>
       </section>
 
-      <Modal
+      <Sheet
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
         title={t('appName')}
-        size="sm"
       >
         <ul className="flex flex-col gap-2">
           <li>
@@ -810,11 +811,14 @@ export function MatchView() {
             </button>
           </li>
         </ul>
-      </Modal>
+      </Sheet>
 
       <ConfirmDialog
         open={confirmAbandon}
-        message={t('match.abandonConfirm')}
+        title={t('match.abandonConfirm')}
+        // « Confirmer », pas le « Supprimer » par défaut du destructif : on
+        // abandonne la partie, on ne supprime rien.
+        confirmLabel={t('common.confirm')}
         onConfirm={() => {
           abandon();
           setConfirmAbandon(false);
@@ -848,11 +852,10 @@ export function MatchView() {
         onClose={() => setPredictionsOpen(false)}
       />
 
-      <Modal
+      <Sheet
         open={callPickerOpen}
         onClose={() => setCallPickerOpen(false)}
         title={t('match.callYourShotTitle')}
-        size="sm"
       >
         <p className="m-0 mb-3 text-sm" style={{ color: 'var(--muted)' }}>
           {t('match.callYourShotHint')}
@@ -896,7 +899,7 @@ export function MatchView() {
             {t('match.callYourShotClear')}
           </button>
         )}
-      </Modal>
+      </Sheet>
 
       {showVictory && lastFinished && (
         <>

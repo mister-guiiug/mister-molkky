@@ -111,3 +111,40 @@ html[data-theme='dark'] {
     ),
     #141813;
 }
+
+/*
+ * Contrat des composants partagés (@mister-guiiug/dev-wpa-config) : les
+ * quinze jetons `--dwc-*` sont branchés UNE fois sur les tokens Mölkky.
+ * Ceux qui pointent vers une variable de l'app suivent le thème sombre tout
+ * seuls (la redéfinition sous html[data-theme='dark'] se propage à la
+ * résolution) ; seuls les jetons posés en DUR reçoivent une contre-valeur
+ * dans le bloc sombre ci-dessous.
+ */
+:root {
+  --dwc-surface: var(--surface);
+  --dwc-surface-2: var(--surface-highlight);
+  --dwc-text: var(--text);
+  --dwc-text-soft: var(--muted);
+  --dwc-border: var(--border);
+  /* Pourtour d'un CONTRÔLE (bouton secondaire, champ), pas un filet de
+     séparation : WCAG 1.4.11 lui demande 3:1, que `--border` (#d8d6cb) ne
+     tient pas sur fond clair. `--muted` donne ≈4,9:1 en clair. */
+  --dwc-border-strong: var(--muted);
+  --dwc-primary: var(--primary);
+  --dwc-primary-contrast: #ffffff;
+  --dwc-primary-soft: color-mix(in srgb, var(--primary) 15%, var(--surface));
+  --dwc-success: var(--success);
+  --dwc-danger: var(--danger);
+  --dwc-warning: var(--warning);
+  /* L'app n'a pas de couleur « info » : bleu accessible (≈5,9:1 sur blanc). */
+  --dwc-info: #0369a1;
+  --dwc-radius: 0.75rem;
+  --dwc-shadow: var(--shadow);
+}
+
+html[data-theme='dark'] {
+  /* Le vert primaire sombre (#7eb455) est CLAIR : du blanc posé dessus ne
+     tient que 2,4:1. L'encre sombre de l'app porte le contraste (≈7:1). */
+  --dwc-primary-contrast: #141813;
+  --dwc-info: #38bdf8;
+}

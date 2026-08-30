@@ -1,8 +1,8 @@
 import { useState } from 'react';
+import { Sheet } from '@mister-guiiug/dev-wpa-config/react/sheet';
+import { ConfirmDialog } from '@mister-guiiug/dev-wpa-config/react/confirm-dialog';
 import { useI18n } from '../../i18n/useI18n';
 import { useMatchStore, useScores } from '../../store/useMatchStore';
-import { Modal } from './Modal';
-import { ConfirmDialog } from './ConfirmDialog';
 import { ForfeitIcon } from './icons';
 
 interface ForfeitPlayerSheetProps {
@@ -70,11 +70,10 @@ export function ForfeitPlayerSheet({ open, onClose }: ForfeitPlayerSheetProps) {
 
   return (
     <>
-      <Modal
+      <Sheet
         open={open}
         onClose={onClose}
         title={t('match.forfeitPlayerTitle')}
-        size="sm"
       >
         <p className="m-0 mb-3 text-sm" style={{ color: 'var(--muted)' }}>
           {t('match.forfeitPlayerHint')}
@@ -139,14 +138,15 @@ export function ForfeitPlayerSheet({ open, onClose }: ForfeitPlayerSheetProps) {
             })}
           </ul>
         )}
-      </Modal>
+      </Sheet>
 
       <ConfirmDialog
         open={pending !== null}
-        message={
-          pending ? t('match.forfeitConfirm', { name: pending.name }) : ''
-        }
+        title={pending ? t('match.forfeitConfirm', { name: pending.name }) : ''}
         destructive
+        // « Confirmer », pas le « Supprimer » par défaut du destructif : on
+        // fait abandonner un joueur, on ne supprime rien.
+        confirmLabel={t('common.confirm')}
         onConfirm={() => {
           if (pending) forfeitActor(pending.id);
           setPending(null);
