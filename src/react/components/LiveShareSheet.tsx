@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useI18n } from '../../i18n/useI18n';
+import { buildLiveShareUrl } from '../../live/liveMatch';
 import { useLiveStore } from '../../store/useLiveStore';
 import { useMatchStore } from '../../store/useMatchStore';
 import { isSupabaseConfigured } from '../../supabase';
@@ -29,7 +30,11 @@ export function LiveShareSheet({ open, onClose }: LiveShareSheetProps) {
 
   const shareUrl =
     liveCode && typeof window !== 'undefined'
-      ? `${window.location.origin}${import.meta.env.BASE_URL}direct/${liveCode}`
+      ? buildLiveShareUrl(
+          window.location.origin,
+          import.meta.env.BASE_URL,
+          liveCode
+        )
       : null;
 
   useEffect(() => {
