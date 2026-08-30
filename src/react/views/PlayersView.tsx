@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { useI18n } from '../../i18n/useI18n';
 import { usePlayersStore, pickNextColor } from '../../store/usePlayersStore';
 import type { Player, PlayerId } from '../../schemas';
+import { ConfirmDialog } from '@mister-guiiug/dev-wpa-config/react/confirm-dialog';
 import { PageContainer } from '../components/layout/PageContainer';
 import { Modal } from '../components/Modal';
-import { ConfirmDialog } from '../components/ConfirmDialog';
 import { PlusIcon, TrashIcon } from '../components/icons';
 
 export function PlayersView() {
@@ -143,7 +143,7 @@ export function PlayersView() {
       {confirmRemove && (
         <ConfirmDialog
           open
-          message={t('players.removeConfirm', { name: confirmRemove.name })}
+          title={t('players.removeConfirm', { name: confirmRemove.name })}
           destructive
           onConfirm={() => {
             remove(confirmRemove.id);

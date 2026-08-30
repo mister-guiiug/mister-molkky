@@ -13,7 +13,7 @@ import { Modal } from '../components/Modal';
 import { MatchSetupWizard } from '../components/MatchSetupWizard';
 import { WelcomeTutorial } from '../components/WelcomeTutorial';
 import { PwaInstallPrompt } from '../components/PwaInstallPrompt';
-import { ConfirmDialog } from '../components/ConfirmDialog';
+import { ConfirmDialog } from '@mister-guiiug/dev-wpa-config/react/confirm-dialog';
 import { LiveIcon, PlayIcon, TargetIcon, TrashIcon } from '../components/icons';
 import { isSupabaseConfigured } from '../../supabase';
 import { AppFooter } from '../components/layout/AppFooter';
@@ -224,7 +224,7 @@ export function HomeView() {
 
       <ConfirmDialog
         open={Boolean(confirmDelete)}
-        message={t('home.templateDelete')}
+        title={t('home.templateDelete')}
         destructive
         onConfirm={() => {
           if (confirmDelete) removeTemplate(confirmDelete.id);

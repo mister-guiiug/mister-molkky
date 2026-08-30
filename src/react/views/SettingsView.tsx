@@ -12,7 +12,7 @@ import {
 } from '../../theme';
 import { ExportBundleSchema, type Locale } from '../../schemas';
 import { PageContainer } from '../components/layout/PageContainer';
-import { ConfirmDialog } from '../components/ConfirmDialog';
+import { ConfirmDialog } from '@mister-guiiug/dev-wpa-config/react/confirm-dialog';
 import { isSupabaseConfigured } from '../../supabase';
 import { forceAppUpdate } from '../../register-sw';
 import { AppFooter } from '../components/layout/AppFooter';
@@ -374,7 +374,7 @@ export function SettingsView() {
 
       <ConfirmDialog
         open={confirmErase}
-        message={t('settings.eraseAllConfirm')}
+        title={t('settings.eraseAllConfirm')}
         destructive
         onConfirm={onEraseAll}
         onCancel={() => setConfirmErase(false)}

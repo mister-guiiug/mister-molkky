@@ -1,7 +1,7 @@
 import { useState } from 'react';
+import { Sheet } from '@mister-guiiug/dev-wpa-config/react/sheet';
 import { useI18n } from '../../i18n/useI18n';
 import { useSettingsStore } from '../../store/useSettingsStore';
-import { Modal } from './Modal';
 import { AlertIcon, PointerClickIcon, TargetIcon, UserXIcon } from './icons';
 
 export function WelcomeTutorial() {
@@ -15,7 +15,7 @@ export function WelcomeTutorial() {
   };
 
   return (
-    <Modal open={open} onClose={dismiss} title={t('welcome.title')}>
+    <Sheet open={open} onClose={dismiss} title={t('welcome.title')}>
       <ul className="mb-5 flex flex-col gap-3 text-sm leading-relaxed">
         <li className="flex items-start gap-2">
           <TargetIcon
@@ -60,6 +60,6 @@ export function WelcomeTutorial() {
           {t('welcome.cta')}
         </button>
       </div>
-    </Modal>
+    </Sheet>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Sheet } from '@mister-guiiug/dev-wpa-config/react/sheet';
 import { useI18n } from '../../i18n/useI18n';
-import { Modal } from './Modal';
 import { replayThrows, type RuleSettings } from '../../molkky/rules';
 import type { FinishedMatch } from '../../schemas';
 
@@ -114,12 +114,7 @@ export function MatchReplay({ match, open, onClose }: MatchReplayProps) {
     : null;
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={t('history.replayTitle')}
-      size="md"
-    >
+    <Sheet open={open} onClose={onClose} title={t('history.replayTitle')}>
       <div className="flex flex-col gap-3">
         <div
           className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
@@ -210,6 +205,6 @@ export function MatchReplay({ match, open, onClose }: MatchReplayProps) {
           </button>
         </div>
       </div>
-    </Modal>
+    </Sheet>
   );
 }

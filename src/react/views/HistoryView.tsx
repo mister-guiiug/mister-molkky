@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
+import { Sheet } from '@mister-guiiug/dev-wpa-config/react/sheet';
+import { ConfirmDialog } from '@mister-guiiug/dev-wpa-config/react/confirm-dialog';
 import { useI18n } from '../../i18n/useI18n';
 import { useMatchStore } from '../../store/useMatchStore';
 import { PageContainer } from '../components/layout/PageContainer';
-import { Modal } from '../components/Modal';
-import { ConfirmDialog } from '../components/ConfirmDialog';
 import { PullIndicator } from '../components/PullIndicator';
 import { PlayIcon, TrashIcon, TrophyIcon } from '../components/icons';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
@@ -254,7 +254,7 @@ export function HistoryView() {
       )}
 
       {selected && (
-        <Modal
+        <Sheet
           open
           onClose={() => setSelected(null)}
           title={t('history.title')}
@@ -322,12 +322,12 @@ export function HistoryView() {
               </button>
             </div>
           </div>
-        </Modal>
+        </Sheet>
       )}
 
       <ConfirmDialog
         open={confirmClear}
-        message={t('history.deleteAllConfirm')}
+        title={t('history.deleteAllConfirm')}
         destructive
         onConfirm={() => {
           clear();
@@ -337,7 +337,7 @@ export function HistoryView() {
       />
       <ConfirmDialog
         open={Boolean(confirmRemove)}
-        message={t('history.deleteOne')}
+        title={t('history.deleteOne')}
         destructive
         onConfirm={() => {
           if (confirmRemove) remove(confirmRemove.id);
