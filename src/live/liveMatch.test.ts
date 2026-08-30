@@ -4,8 +4,10 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { CurrentMatchState } from '../schemas';
 import { getSupabase } from '../supabase';
 import {
+  buildLiveShareUrl,
   CODE_LENGTH,
   createLiveMatch,
+  extractScannedCode,
   joinLiveMatch,
   normalizeCode,
 } from './liveMatch';
@@ -108,6 +110,54 @@ describe('normalizeCode — saisie sur l’union des deux alphabets', () => {
   it('borne la saisie à CODE_LENGTH', () => {
     expect(normalizeCode('MZ7K2AXY')).toBe('MZ7K2A');
     expect(normalizeCode('MZ7K2AXY')).toHaveLength(CODE_LENGTH);
+  });
+});
+
+describe('URL de partage ↔ scan — l’aller-retour sur la route réelle', () => {
+  const origin = 'https://mister-guiiug.github.io';
+
+  it('construit l’URL sur ROUTES.spectator (/live) — plus jamais /direct', () => {
+    expect(buildLiveShareUrl(origin, '/mister-molkky/', 'MZ7K2A')).toBe(
+      'https://mister-guiiug.github.io/mister-molkky/live/MZ7K2A'
+    );
+  });
+
+  it('gère la base racine du dev sans doubler le slash', () => {
+    expect(buildLiveShareUrl('http://localhost:5173', '/', 'MZ7K2A')).toBe(
+      'http://localhost:5173/live/MZ7K2A'
+    );
+  });
+
+  it('extrait le code de l’URL qu’il vient de construire (aller-retour)', () => {
+    const url = buildLiveShareUrl(origin, '/mister-molkky/', 'MZ7K2A');
+    expect(extractScannedCode(url)).toBe('MZ7K2A');
+  });
+
+  it('accepte l’ancien chemin /direct/CODE des QR déjà imprimés ou partagés', () => {
+    expect(extractScannedCode(`${origin}/mister-molkky/direct/MZ7K2A`)).toBe(
+      'MZ7K2A'
+    );
+    // Un vieux QR peut aussi porter un code de l’ancien alphabet (L, U) :
+    // l’extraction les préserve, la résolution `joinLiveMatch` fait le reste.
+    expect(extractScannedCode(`${origin}/mister-molkky/direct/MZLKUW`)).toBe(
+      'MZLKUW'
+    );
+  });
+
+  it('tolère une URL en majuscules (mode alphanumérique des QR)', () => {
+    expect(extractScannedCode(`${origin}/MISTER-MOLKKY/LIVE/MZ7K2A`)).toBe(
+      'MZ7K2A'
+    );
+  });
+
+  it('accepte un code brut, normalisé comme la saisie (minuscules, I → 1, O → 0)', () => {
+    expect(extractScannedCode('mz7k2a')).toBe('MZ7K2A');
+    expect(extractScannedCode('MZIOKA')).toBe('MZ10KA');
+  });
+
+  it('renvoie null quand le contenu ne porte aucun code exploitable', () => {
+    expect(extractScannedCode('AB')).toBeNull();
+    expect(extractScannedCode('')).toBeNull();
   });
 });
 

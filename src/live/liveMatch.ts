@@ -5,6 +5,7 @@ import {
   normalizeCode as normalizePairingCode,
   type PairingAlphabet,
 } from '@mister-guiiug/dev-wpa-config/pairing';
+import { LEGACY_SPECTATOR_PATH, ROUTES } from '../routes';
 import { getSupabase } from '../supabase';
 import type { CurrentMatchState, MatchConfig, Throw } from '../schemas';
 
@@ -79,6 +80,48 @@ export function normalizeCode(input: string): string {
     alphabet: INPUT_ALPHABET,
     maxLength: CODE_LENGTH,
   });
+}
+
+/**
+ * URL de partage d'une partie live, alignée sur la route RÉELLE du routeur
+ * (`ROUTES.spectator`/:code). Historique : après le renommage des routes
+ * (`/direct` → `/live`), LiveShareSheet a gardé un littéral `direct/` codé
+ * en dur — le QR menait au catch-all, donc à l'accueil. Construire l'URL
+ * depuis la constante de route rend cette divergence impossible.
+ *
+ * `base` est le BASE_URL Vite (slash final garanti) ; `origin` n'en a pas.
+ */
+export function buildLiveShareUrl(
+  origin: string,
+  base: string,
+  code: string
+): string {
+  return `${origin}${base}`.replace(/\/$/, '') + `${ROUTES.spectator}/${code}`;
+}
+
+/**
+ * Chemins acceptés au scan : la route spectateur actuelle, plus l'ancienne
+ * (`/direct`) que portent les QR imprimés/partagés avant le correctif —
+ * voir LEGACY_SPECTATOR_PATH. Dérivés des constantes de routes pour ne
+ * plus pouvoir diverger du routeur. Le segment doit commencer après un `/`
+ * (ou en début de chaîne) : « molkky-live/X » n'est pas un chemin live.
+ */
+const SCANNED_PATH_RE = new RegExp(
+  `(?:^|/)(?:${[ROUTES.spectator, LEGACY_SPECTATOR_PATH]
+    .map(path => path.slice(1))
+    .join('|')})/([A-Za-z0-9]+)`,
+  'i'
+);
+
+/**
+ * Extrait le code d'un contenu scanné — URL de partage (chemin actuel ou
+ * hérité) ou code brut — et le normalise (saisie). Renvoie null quand le
+ * contenu ne porte pas un code de la bonne longueur.
+ */
+export function extractScannedCode(data: string): string | null {
+  const candidate = SCANNED_PATH_RE.exec(data)?.[1] ?? data;
+  const normalized = normalizeCode(candidate);
+  return normalized.length === CODE_LENGTH ? normalized : null;
 }
 
 export class LiveBackendUnavailableError extends Error {

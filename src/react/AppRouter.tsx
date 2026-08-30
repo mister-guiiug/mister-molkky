@@ -5,12 +5,18 @@ import {
   Route,
   Routes,
   useLocation,
+  useParams,
 } from 'react-router-dom';
 import { Shell } from './components/layout/Shell';
 import { HomeView } from './views/HomeView';
 import { ViewSkeleton } from './components/Skeleton';
 import { useI18n } from '../i18n/useI18n';
-import { LEGACY_REDIRECTS, ROUTES, type RouteKey } from '../routes';
+import {
+  LEGACY_REDIRECTS,
+  LEGACY_SPECTATOR_PATH,
+  ROUTES,
+  type RouteKey,
+} from '../routes';
 
 const MatchView = lazy(() =>
   import('./views/MatchView').then(m => ({ default: m.MatchView }))
@@ -65,6 +71,15 @@ function RouteFallback() {
   );
 }
 
+// Les QR de partage émis avant le correctif de l'URL portent l'ancien
+// chemin spectateur `/direct/CODE` (voir LEGACY_SPECTATOR_PATH) : scannés
+// par l'appareil photo natif, ils arrivent ici — hors de portée de
+// LEGACY_REDIRECTS, statique — et doivent conserver leur code.
+function LegacySpectatorRedirect() {
+  const { code } = useParams<{ code: string }>();
+  return <Navigate to={`${ROUTES.spectator}/${code ?? ''}`} replace />;
+}
+
 function AppRoutes() {
   const location = useLocation();
   return (
@@ -90,6 +105,10 @@ function AppRoutes() {
             <Route
               path={`${ROUTES.spectator}/:code`}
               element={<SpectatorView />}
+            />
+            <Route
+              path={`${LEGACY_SPECTATOR_PATH}/:code`}
+              element={<LegacySpectatorRedirect />}
             />
             <Route path={ROUTES.practice} element={<PracticeView />} />
             {Object.entries(LEGACY_REDIRECTS).map(([legacy, target]) => (

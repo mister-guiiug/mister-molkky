@@ -27,6 +27,16 @@ export const LEGACY_REDIRECTS: Record<string, string> = {
   '/rejoindre': ROUTES.joinLive,
 };
 
+/**
+ * Ancien chemin de la vue spectateur (« /direct », l'ère des routes en
+ * français) : encodé dans les QR imprimés/partagés avant le renommage vers
+ * `/live` — et même après, tant que LiveShareSheet a gardé un littéral
+ * `direct/` codé en dur. Paramétré (`/direct/:code`), il ne rentre pas dans
+ * LEGACY_REDIRECTS, qui ne mappe que des chemins statiques : AppRouter le
+ * redirige explicitement, et l'extraction de scan l'accepte encore.
+ */
+export const LEGACY_SPECTATOR_PATH = '/direct';
+
 export const ROUTE_TITLES: Record<RouteKey, string> = {
   home: 'Mister Mölkky',
   match: 'Match in progress',

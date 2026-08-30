@@ -20,7 +20,7 @@ interface PullToRefreshState {
  * gesture crosses the threshold.
  *
  * Scoped to a single component (the call site owns the state) so we can
- * enable it on /historique and /direct/:code without re-enabling the
+ * enable it on /history and /live/:code without re-enabling the
  * native browser pull-to-refresh on the rest of the app — which would
  * accidentally reload mid-match. While enabled we also flip
  * overscroll-behavior-y to 'auto' so the browser doesn't fight us.

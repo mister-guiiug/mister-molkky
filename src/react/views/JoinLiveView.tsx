@@ -4,7 +4,11 @@ import { useQrScanner } from '@mister-guiiug/dev-wpa-config/react/use-qr-scanner
 import { useI18n } from '../../i18n/useI18n';
 import { useLiveStore } from '../../store/useLiveStore';
 import { isSupabaseConfigured } from '../../supabase';
-import { CODE_LENGTH, normalizeCode } from '../../live/liveMatch';
+import {
+  CODE_LENGTH,
+  extractScannedCode,
+  normalizeCode,
+} from '../../live/liveMatch';
 import { ROUTES } from '../../routes';
 import { PageContainer } from '../components/layout/PageContainer';
 import { CameraIcon } from '../components/icons';
@@ -53,11 +57,10 @@ export function JoinLiveView() {
     stop,
   } = useQrScanner({
     onScan: data => {
-      // Accept both the raw code and a full /live/CODE URL.
-      const match = data.match(/live\/([A-Za-z0-9]+)/);
-      const candidate = match?.[1] ?? data;
-      const normalized = normalizeCode(candidate);
-      if (normalized.length !== CODE_LENGTH) return;
+      // Code brut ou URL de partage — chemin actuel `/live/CODE` comme
+      // hérité `/direct/CODE` (QR d'avant le correctif de l'URL).
+      const normalized = extractScannedCode(data);
+      if (!normalized) return;
       setCode(normalized);
       void submitRef.current(normalized);
     },
