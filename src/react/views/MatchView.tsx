@@ -13,6 +13,7 @@ import { ALL_PIN_NUMBERS } from '../../molkky/pins-layout';
 import { ROUTES } from '../../routes';
 import { Sheet } from '@mister-guiiug/dev-wpa-config/react/sheet';
 import { ConfirmDialog } from '@mister-guiiug/dev-wpa-config/react/confirm-dialog';
+import { useWakeLock } from '@mister-guiiug/dev-wpa-config/react/use-wake-lock';
 import { PageContainer } from '../components/layout/PageContainer';
 import { PinsBoard } from '../components/PinsBoard';
 import { ScoreTicker } from '../components/ScoreTicker';
@@ -31,7 +32,6 @@ import { Chrono } from '../components/Chrono';
 import { SituationPhoto } from '../components/SituationPhoto';
 import { useLiveStore } from '../../store/useLiveStore';
 import { useFeedback } from '../hooks/useFeedback';
-import { useWakeLock } from '../hooks/useWakeLock';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useSwipeDown } from '../hooks/useSwipeDown';
 import {
@@ -102,6 +102,7 @@ export function MatchView() {
   const outdoor = useSettingsStore(s => s.outdoor);
   const coachEnabled = useSettingsStore(s => s.coach);
   const voiceEnabled = useSettingsStore(s => s.voiceAnnouncer);
+  const wakeLockEnabled = useSettingsStore(s => s.wakeLock);
   const toggleHighlight = useMatchStore(s => s.toggleHighlight);
   // Memoise the player list so the inline `?? []` fallback doesn't hand
   // useAvatarUrls a fresh array reference on every render — see hook
@@ -142,7 +143,9 @@ export function MatchView() {
   const lastFinishedRef = useRef<string | null>(null);
   const lastVictoryRef = useRef<string | null>(null);
 
-  useWakeLock(Boolean(current));
+  // Écran allumé pendant la partie — mais seulement si le joueur l'a demandé
+  // dans les réglages (« Garder l'écran allumé en partie »).
+  useWakeLock(Boolean(current) && wakeLockEnabled);
 
   useEffect(() => {
     if (!pendingFeedback) return;
