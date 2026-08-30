@@ -91,11 +91,23 @@ export default defineConfig(({ command }) => {
         siteName: 'Mister Mölkky',
         basePath,
         logoPath: '/logo.png',
+        // Script anti-FOUC engendré par le socle (theme-boot), en remplacement
+        // de l'IIFE recopiée dans index.html. `legacyKeys` doit rester aligné
+        // sur THEME_LEGACY_KEYS (src/themeConfig.ts) : ce fichier s'exécute
+        // côté Node, hors du projet TypeScript de l'app, il ne peut pas
+        // l'importer. Deux valeurs divergentes = le script pose un thème que
+        // React repeint aussitôt.
+        themeBoot: { legacyKeys: ['mm_theme'] },
+        // Deux <meta name="theme-color"> par schéma (attribut media) : la barre
+        // du navigateur suit le système dès le premier rendu, sans le script
+        // qui allait chercher la balise pour réécrire `content`. Le choix
+        // explicite contraire au système est couvert par ThemeProvider.
+        themeColor: { light: '#4a7c2a', dark: '#11140f' },
       }),
-      // CSP durcie : script-src par hash SHA-256 de l'IIFE anti-FOUC inline
+      // CSP durcie : script-src par hash SHA-256 du script anti-FOUC inline
       // (plus de 'unsafe-inline' en prod). Placé après pwaSeoPlugin pour hasher
-      // aussi d'éventuels scripts injectés au build. Directives portées à
-      // l'identique depuis l'ancienne meta statique de index.html.
+      // le script que celui-ci injecte. Directives portées à l'identique depuis
+      // l'ancienne meta statique de index.html.
       cspPlugin({
         dev: command === 'serve',
         connectSrc: ["'self'", 'https://*.supabase.co', 'wss://*.supabase.co'],

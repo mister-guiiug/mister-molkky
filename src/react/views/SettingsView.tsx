@@ -6,10 +6,9 @@ import { Logo } from '../components/Logo';
 import { useMatchStore } from '../../store/useMatchStore';
 import { usePlayersStore } from '../../store/usePlayersStore';
 import {
-  getStoredThemePreference,
-  setThemePreference,
+  useThemeContext,
   type ThemePreference,
-} from '../../theme';
+} from '@mister-guiiug/dev-wpa-config/react';
 import { ExportBundleSchema, type Locale } from '../../schemas';
 import { PageContainer } from '../components/layout/PageContainer';
 import { ConfirmDialog } from '@mister-guiiug/dev-wpa-config/react/confirm-dialog';
@@ -32,16 +31,18 @@ export function SettingsView() {
   const history = useMatchStore(s => s.history);
   const importBundle = useMatchStore(s => s.importBundle);
   const fileInput = useRef<HTMLInputElement>(null);
-  const [themePref, setThemePref] = useState<ThemePreference>(
-    getStoredThemePreference()
-  );
+  // État partagé du ThemeProvider monté dans main.tsx (persistance, écoute du
+  // thème système et <meta theme-color> comprises). L'ancien écran gardait SA
+  // copie dans un useState : elle ne bougeait plus si le thème changeait
+  // ailleurs. Hors fournisseur (test isolé), repli inerte sur `system`.
+  const themeCtx = useThemeContext();
+  const themePref = (themeCtx?.theme ?? 'system') as ThemePreference;
   const [confirmErase, setConfirmErase] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
 
   const setTheme = (v: ThemePreference) => {
-    setThemePref(v);
-    setThemePreference(v);
+    themeCtx?.setTheme(v);
   };
 
   const onExport = () => {

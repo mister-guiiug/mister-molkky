@@ -1,45 +1,29 @@
-import { CoffeeIcon } from '../icons';
+import { AppFooter as SocleAppFooter } from '@mister-guiiug/dev-wpa-config/react';
+import { repoUrl } from '@mister-guiiug/dev-wpa-config/apps-catalog';
 
-const REPO_URL = 'https://github.com/mister-guiiug/mister-molkky';
-const BMAC_URL = 'https://buymeacoffee.com/mister.guiiug';
-
+/**
+ * Pied de page de l'app : les deux liens viennent du socle, la mention de
+ * copyright reste ici.
+ *
+ * CE QUE LE SOCLE APPORTE. Les liens externes sécurisés (`target="_blank"` +
+ * `rel="noopener noreferrer"`), l'URL du dépôt tirée du catalogue famille
+ * (`repoUrl('mister-molkky')`, vérifiée identique à celle qui était codée en
+ * dur ici), l'URL sponsor par défaut, et surtout des libellés TRADUITS —
+ * « Code source » et « Buy me a coffee » étaient figés en français et en
+ * anglais dans le même pied de page, quelle que soit la langue choisie.
+ *
+ * CE QUI RESTE LOCAL, et pourquoi : le copyright, que le composant partagé ne
+ * rend pas, et l'habillage (`styles.css`, sélecteurs `[data-dwc]`) — le socle
+ * livre la structure, l'app garde la pastille jaune du lien sponsor.
+ */
 export function AppFooter() {
   return (
-    <footer
+    <div
       className="mt-8 flex flex-col items-center gap-3 border-t pt-6 pb-2 text-xs"
       style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}
     >
-      <div className="flex flex-wrap items-center justify-center gap-4">
-        <a
-          href={REPO_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 transition hover:opacity-80"
-          style={{ color: 'var(--text)' }}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            width="16"
-            height="16"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
-          </svg>
-          Code source
-        </a>
-        <a
-          href={BMAC_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 rounded-full px-3 py-1 font-bold text-yellow-900 transition hover:brightness-95"
-          style={{ background: '#fbbf24' }}
-        >
-          <CoffeeIcon size={14} />
-          Buy me a coffee
-        </a>
-      </div>
+      <SocleAppFooter repoUrl={repoUrl('mister-molkky')} />
       <p className="m-0">Mister Mölkky © {new Date().getFullYear()}</p>
-    </footer>
+    </div>
   );
 }

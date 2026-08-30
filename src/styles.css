@@ -341,6 +341,44 @@ textarea:focus-visible {
 }
 
 /* ─────────────────────────────────────────────────────────────────────
+   Pied de page partagé (AppFooter de dev-wpa-config, attributs [data-dwc]).
+   components.css lui donne déjà une mise en page correcte et des couleurs
+   branchées sur les jetons --dwc-* de tokens.css ; ces règles reprennent
+   l'habillage EXACT du pied de page maison qu'il remplace — l'encre du lien
+   source, la pastille jaune du lien sponsor. Non layered, donc prioritaires
+   sur le @layer components du socle.
+   ───────────────────────────────────────────────────────────────────── */
+
+[data-dwc='app-footer'] {
+  justify-content: center;
+  align-items: center;
+}
+
+[data-dwc='footer-source'] {
+  color: var(--text);
+}
+
+[data-dwc='footer-sponsor'] {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  background: #fbbf24;
+  color: #713f12;
+  font-weight: 700;
+}
+
+[data-dwc='footer-source']:hover,
+[data-dwc='footer-sponsor']:hover {
+  text-decoration: none;
+  filter: brightness(0.95);
+  opacity: 0.85;
+}
+
+[data-dwc='footer-sponsor']:hover {
+  color: #713f12;
+  opacity: 1;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
    Famille — grille « Nos autres applications » (composant partagé
    FamilyApps de dev-wpa-config). Le composant n'est pas stylé : il pose
    des attributs [data-dwc="…"]. Tout est scopé sous .mm-family (rendu dans
