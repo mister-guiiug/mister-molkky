@@ -175,16 +175,6 @@ body {
   }
 }
 
-@keyframes mm-skeleton-pulse {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 0.85;
-  }
-}
-
 @keyframes mm-view-enter {
   0% {
     opacity: 0;
@@ -249,11 +239,17 @@ body {
 .mm-victory-pop {
   animation: mm-victory-pop 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.mm-skeleton {
-  animation: mm-skeleton-pulse 1.4s ease-in-out infinite;
-}
+/* `backwards`, jamais `both` : ce conteneur ENVELOPPE toutes les vues, or
+   `both` retient la valeur d'arrivée après la fin — et une transformation
+   retenue reste une transformation, même réduite à l'identité. Le wrapper
+   devenait alors le bloc conteneur de tout descendant `position: fixed` :
+   les feuilles et confirmations (Sheet/ConfirmDialog du socle, comme la
+   Modal locale avant elles) se retrouvaient rognées à la colonne centrale
+   au lieu de couvrir l'écran, et le clic sur le fond hors colonne ne les
+   atteignait jamais. Avec `backwards`, l'état final est l'état naturel :
+   rien à retenir, rien ne saute. */
 .mm-view-enter {
-  animation: mm-view-enter 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: mm-view-enter 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -265,7 +261,6 @@ body {
   .mm-glow,
   .mm-toast-pop,
   .mm-victory-pop,
-  .mm-skeleton,
   .mm-view-enter {
     animation: none !important;
   }
@@ -283,6 +278,49 @@ select:focus-visible,
 textarea:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   Identité Mölkky sur les composants du socle (components.css).
+   Ne figurent ici que les écarts VOULUS par rapport à la base partagée :
+   ce que les copies locales (Modal, Skeleton, Sparkline) faisaient et que
+   la base ne fait pas. CSS non layered : il l'emporte sur @layer components.
+   ───────────────────────────────────────────────────────────────────── */
+
+/* Le clic sur le fond doit fermer, comme le faisait la Modal locale. Le
+   composant du socle n'écoute que sa racine (`target === currentTarget`),
+   or le voile est un enfant qui couvre toute la racine : sans cette règle,
+   le mousedown cible le voile et la fermeture ne part jamais. Le voile est
+   purement décoratif (aria-hidden) — le laisser transparent aux clics ne
+   retire rien au clavier ni aux lecteurs d'écran. */
+[data-dwc='sheet-backdrop'],
+[data-dwc='confirm-backdrop'] {
+  pointer-events: none;
+}
+
+/* Voile : mêmes opacité et flou que la Modal locale (bg-black/55 +
+   backdrop-blur-sm) pour ne pas changer l'ambiance des feuilles. */
+[data-dwc='sheet-backdrop'] {
+  background: rgb(0 0 0 / 0.55);
+  backdrop-filter: blur(4px);
+}
+
+[data-dwc='confirm-backdrop'] {
+  backdrop-filter: blur(4px);
+}
+
+/* Les titres de dialogues étaient en gras (text-lg font-bold) ; la base du
+   socle laisse le h2 au poids hérité. */
+[data-dwc='sheet-title'],
+[data-dwc='confirm-title'] {
+  font-weight: 700;
+}
+
+/* Les sparklines de l'app portent la couleur du joueur : l'encre vient du
+   parent (posée par l'adaptateur src/react/components/Sparkline.tsx), pas
+   de la primaire imposée par la base. */
+[data-dwc='sparkline'] {
+  color: inherit;
 }
 
 /* Écran de secours du composant partagé ErrorBoundary (dev-wpa-config). */
