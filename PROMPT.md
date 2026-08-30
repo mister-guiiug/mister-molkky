@@ -321,8 +321,8 @@ mister-molkky/
 │   │   │   ├── useFeedback.ts          # vibration + sons
 │   │   │   ├── useKeyboardShortcuts.ts
 │   │   │   ├── useLongPress.ts
-│   │   │   ├── useOnline.ts
-│   │   │   └── useWakeLock.ts          # garder l'écran allumé
+│   │   │   ├── usePullToRefresh.ts
+│   │   │   └── useSwipeDown.ts
 │   │   └── views/
 │   │       ├── HomeView.tsx
 │   │       ├── MatchView.tsx           # cœur de l'app
