@@ -376,6 +376,7 @@ export interface Messages {
     closeDialog: string;
     fullscreen: string;
     exitFullscreen: string;
+    scoreTrend: string;
   };
 }
 
@@ -776,6 +777,7 @@ const fr: Messages = {
     closeDialog: 'Fermer la fenêtre',
     fullscreen: 'Passer en plein écran',
     exitFullscreen: 'Quitter le plein écran',
+    scoreTrend: 'Évolution du score de {name}',
   },
 };
 
@@ -1169,6 +1171,7 @@ const en: Messages = {
     closeDialog: 'Close dialog',
     fullscreen: 'Enter fullscreen',
     exitFullscreen: 'Exit fullscreen',
+    scoreTrend: 'Score trend for {name}',
   },
 };
 
