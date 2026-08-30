@@ -1,13 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-// Type-only import: the runtime constructor is pulled in via a dynamic
-// import below so the camera/decoder bundle stays out of the initial
-// chunk until the user actually starts a scan.
-import type QrScanner from 'qr-scanner';
+import { useQrScanner } from '@mister-guiiug/dev-wpa-config/react/use-qr-scanner';
 import { useI18n } from '../../i18n/useI18n';
 import { useLiveStore } from '../../store/useLiveStore';
 import { isSupabaseConfigured } from '../../supabase';
-import { normalizeCode } from '../../live/liveMatch';
+import { CODE_LENGTH, normalizeCode } from '../../live/liveMatch';
 import { ROUTES } from '../../routes';
 import { PageContainer } from '../components/layout/PageContainer';
 import { CameraIcon } from '../components/icons';
@@ -17,24 +14,23 @@ export function JoinLiveView() {
   const navigate = useNavigate();
   const startViewer = useLiveStore(s => s.startViewer);
   const supabaseReady = isSupabaseConfigured();
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const scannerRef = useRef<QrScanner | null>(null);
   const [code, setCode] = useState('');
-  const [scanning, setScanning] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Submit is invoked from the QR-scanner callback inside an effect that
-  // should NOT re-run on every render — stash the latest version in a
-  // ref so the effect can read it without listing `submit` as a dep.
+  // Submit is invoked from the QR-scanner callback, which must stay stable
+  // across renders — stash the latest version in a ref so the callback can
+  // read it without retriggering the camera effect.
   const submit = async (rawCode: string) => {
     if (busy) return;
     setError(null);
     setBusy(true);
     try {
-      await startViewer(rawCode);
-      const normalized = normalizeCode(rawCode);
-      navigate(`${ROUTES.spectator}/${normalized}`);
+      const row = await startViewer(rawCode);
+      // Naviguer avec le code CANONIQUE (celui de la ligne trouvée) : avec
+      // la rustine de compat de `joinLiveMatch`, le code saisi peut différer
+      // du code stocké (ancien alphabet, confusion I/O corrigée).
+      navigate(`${ROUTES.spectator}/${row.code}`);
     } catch (err) {
       setError(t('live.joinFailed'));
       void err;
@@ -45,88 +41,34 @@ export function JoinLiveView() {
   const submitRef = useRef(submit);
   submitRef.current = submit;
 
-  /**
-   * Click handler — just mounts the video element. We can't `new QrScanner`
-   * here because the <video> ref is null until React has rendered the
-   * conditional branch where it lives. That was the original bug: a tap
-   * on "Scanner le QR" returned silently because videoRef.current was
-   * null. The scanner itself is wired up in the effect below, once React
-   * has flushed the new DOM.
-   */
+  // Cycle de vie caméra délégué au socle (promu depuis cette vue) : import
+  // paresseux de `qr-scanner` au premier `start()`, câblage dans un effet
+  // une fois la <video> commitée, stop + destroy garantis au nettoyage — et
+  // arrêt SYNCHRONE au premier décodage (`stopOnScan`, défaut).
+  const {
+    videoRef,
+    scanning,
+    error: scanError,
+    start,
+    stop,
+  } = useQrScanner({
+    onScan: data => {
+      // Accept both the raw code and a full /live/CODE URL.
+      const match = data.match(/live\/([A-Za-z0-9]+)/);
+      const candidate = match?.[1] ?? data;
+      const normalized = normalizeCode(candidate);
+      if (normalized.length !== CODE_LENGTH) return;
+      setCode(normalized);
+      void submitRef.current(normalized);
+    },
+  });
+
   const startScan = () => {
     setError(null);
-    setScanning(true);
+    start();
   };
 
-  const stopScan = () => {
-    setScanning(false);
-  };
-
-  // When `scanning` flips true, the <video> mounts and React commits the
-  // ref. This effect picks it up and starts QrScanner; on cleanup (or
-  // when scanning flips false) it stops + destroys the camera stream so
-  // we never leak a torch-on flashlight.
-  useEffect(() => {
-    if (!scanning) return;
-    const video = videoRef.current;
-    if (!video) return;
-
-    let cancelled = false;
-    let scanner: QrScanner | null = null;
-
-    void (async () => {
-      // Lazy-load the qr-scanner runtime only once a scan begins.
-      const { default: QrScannerCtor } = await import('qr-scanner');
-      if (cancelled) return;
-      scanner = new QrScannerCtor(
-        video,
-        result => {
-          // Accept both the raw code and a full /live/CODE URL.
-          const url = result.data ?? '';
-          const match = url.match(/live\/([A-Za-z0-9]+)/);
-          const candidate = match?.[1] ?? url;
-          const normalized = normalizeCode(candidate);
-          if (normalized.length !== 6) return;
-          setCode(normalized);
-          scanner?.stop();
-          scanner?.destroy();
-          scannerRef.current = null;
-          setScanning(false);
-          void submitRef.current(normalized);
-        },
-        {
-          highlightScanRegion: true,
-          highlightCodeOutline: true,
-          // Prefer the rear camera on phones — front-cam scanning is a
-          // gymnastic exercise nobody asked for.
-          preferredCamera: 'environment',
-          returnDetailedScanResult: true,
-        }
-      );
-      scannerRef.current = scanner;
-
-      try {
-        await scanner.start();
-      } catch (err: unknown) {
-        if (cancelled) return;
-        const message =
-          err instanceof Error && err.message
-            ? err.message
-            : 'Camera unavailable';
-        setError(message);
-        scanner.destroy();
-        scannerRef.current = null;
-        setScanning(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      scanner?.stop();
-      scanner?.destroy();
-      scannerRef.current = null;
-    };
-  }, [scanning]);
+  const displayError = error ?? scanError?.message ?? null;
 
   if (!supabaseReady) {
     return (
@@ -161,7 +103,7 @@ export function JoinLiveView() {
           value={code}
           onChange={e => setCode(normalizeCode(e.target.value))}
           placeholder="MZ7K2A"
-          maxLength={6}
+          maxLength={CODE_LENGTH}
           className="touch-target rounded-xl border-2 px-4 py-3 text-center font-mono text-2xl font-black tracking-[0.3em]"
           style={{
             background: 'var(--surface-input)',
@@ -171,7 +113,7 @@ export function JoinLiveView() {
         />
         <button
           type="submit"
-          disabled={code.length !== 6 || busy}
+          disabled={code.length !== CODE_LENGTH || busy}
           className="touch-target rounded-lg px-4 py-3 font-bold text-white disabled:opacity-50"
           style={{ background: 'var(--primary)' }}
         >
@@ -210,7 +152,7 @@ export function JoinLiveView() {
           />
           <button
             type="button"
-            onClick={stopScan}
+            onClick={stop}
             className="touch-target rounded-lg border px-3 py-2 font-semibold"
             style={{ borderColor: 'var(--border)' }}
           >
@@ -219,9 +161,9 @@ export function JoinLiveView() {
         </div>
       )}
 
-      {error && (
+      {displayError && (
         <p className="mt-3 text-sm" style={{ color: 'var(--danger)' }}>
-          {error}
+          {displayError}
         </p>
       )}
     </PageContainer>
