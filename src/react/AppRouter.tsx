@@ -6,11 +6,21 @@ import {
   Routes,
   useLocation,
 } from 'react-router-dom';
+import { LabelsProvider } from '@mister-guiiug/dev-wpa-config/react/labels';
+import { IconsProvider } from '@mister-guiiug/dev-wpa-config/react/icons-context';
 import { Shell } from './components/layout/Shell';
 import { HomeView } from './views/HomeView';
 import { ViewSkeleton } from './components/Skeleton';
+import { CloseIcon } from './components/icons';
 import { useI18n } from '../i18n/useI18n';
 import { LEGACY_REDIRECTS, ROUTES, type RouteKey } from '../routes';
+
+/*
+ * Icônes injectées dans les composants du socle (Sheet, Toast…) : la croix
+ * de fermeture doit être la même lucide que partout ailleurs dans l'app,
+ * pas le SVG de repli du paquet.
+ */
+const SOCLE_ICONS = { close: CloseIcon };
 
 const MatchView = lazy(() =>
   import('./views/MatchView').then(m => ({ default: m.MatchView }))
@@ -58,11 +68,9 @@ function DocumentTitle() {
 }
 
 function RouteFallback() {
-  return (
-    <div role="status" aria-live="polite">
-      <ViewSkeleton />
-    </div>
-  );
+  // Le rôle `status` + aria-busy est porté par le SkeletonGroup du socle,
+  // à l'intérieur de ViewSkeleton — plus besoin d'un conteneur annoncé ici.
+  return <ViewSkeleton />;
 }
 
 function AppRoutes() {
@@ -108,10 +116,18 @@ function AppRoutes() {
 }
 
 export function App() {
+  const { locale } = useI18n();
   const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
   return (
-    <BrowserRouter basename={basename}>
-      <AppRoutes />
-    </BrowserRouter>
+    // Pont i18n → socle : les libellés internes des composants partagés
+    // (Annuler / Supprimer / Fermer…) suivent la langue de l'app au lieu de
+    // rester sur le français par défaut du paquet.
+    <LabelsProvider locale={locale}>
+      <IconsProvider icons={SOCLE_ICONS}>
+        <BrowserRouter basename={basename}>
+          <AppRoutes />
+        </BrowserRouter>
+      </IconsProvider>
+    </LabelsProvider>
   );
 }
