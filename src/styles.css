@@ -287,17 +287,6 @@ textarea:focus-visible {
    la base ne fait pas. CSS non layered : il l'emporte sur @layer components.
    ───────────────────────────────────────────────────────────────────── */
 
-/* Le clic sur le fond doit fermer, comme le faisait la Modal locale. Le
-   composant du socle n'écoute que sa racine (`target === currentTarget`),
-   or le voile est un enfant qui couvre toute la racine : sans cette règle,
-   le mousedown cible le voile et la fermeture ne part jamais. Le voile est
-   purement décoratif (aria-hidden) — le laisser transparent aux clics ne
-   retire rien au clavier ni aux lecteurs d'écran. */
-[data-dwc='sheet-backdrop'],
-[data-dwc='confirm-backdrop'] {
-  pointer-events: none;
-}
-
 /* Voile : mêmes opacité et flou que la Modal locale (bg-black/55 +
    backdrop-blur-sm) pour ne pas changer l'ambiance des feuilles. */
 [data-dwc='sheet-backdrop'] {
