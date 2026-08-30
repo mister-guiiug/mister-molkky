@@ -3,6 +3,7 @@ import { useI18n } from '../../i18n/useI18n';
 import { useLiveStore } from '../../store/useLiveStore';
 import { useMatchStore } from '../../store/useMatchStore';
 import { isSupabaseConfigured } from '../../supabase';
+import { qrToDataUrl } from '@mister-guiiug/dev-wpa-config/qr';
 import { shareOrCopy } from '@mister-guiiug/dev-wpa-config/share';
 import { Modal } from './Modal';
 import { Skeleton } from './Skeleton';
@@ -37,22 +38,20 @@ export function LiveShareSheet({ open, onClose }: LiveShareSheetProps) {
       return;
     }
     let cancelled = false;
-    // Lazy-load `qrcode` (~50 KB) only when a share URL actually needs
-    // encoding — it's dead weight in the initial bundle for everyone who
-    // never opens the live-share sheet.
-    void (async () => {
-      try {
-        const { default: QRCode } = await import('qrcode');
-        const url = await QRCode.toDataURL(shareUrl, {
-          margin: 1,
-          width: 240,
-          color: { dark: '#1b1d18', light: '#ffffff' },
-        });
+    // Le module socle `/qr` charge sa peer `qrcode` (~50 ko) paresseusement
+    // — le poids n'est téléchargé que si la feuille de partage s'ouvre,
+    // exactement l'ancien `import('qrcode')` local.
+    void qrToDataUrl(shareUrl, {
+      margin: 1,
+      width: 240,
+      color: { dark: '#1b1d18', light: '#ffffff' },
+    })
+      .then(url => {
         if (!cancelled) setQrDataUrl(url);
-      } catch {
+      })
+      .catch(() => {
         /* leave qrDataUrl null — the code text below is still shareable */
-      }
-    })();
+      });
     return () => {
       cancelled = true;
     };
