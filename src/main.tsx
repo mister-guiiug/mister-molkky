@@ -15,10 +15,10 @@ import {
   initSentry,
   recordError,
 } from '@mister-guiiug/dev-wpa-config/react/observability';
-import { registerServiceWorker } from './register-sw';
 import { App } from './react/AppRouter';
 import { I18nProvider } from './i18n/I18nProvider';
 import { SocleLabels } from './react/components/SocleLabels';
+import { SocleUpdates } from './react/components/SocleUpdates';
 import { THEME_COLOR, THEME_LEGACY_KEYS } from './themeConfig';
 
 installErrorReporter();
@@ -26,7 +26,6 @@ void initSentry({
   dsn: import.meta.env.VITE_SENTRY_DSN,
   environment: import.meta.env.MODE,
 });
-registerServiceWorker();
 
 /**
  * Mister Mölkky dessine avec lucide-react. Sans ce branchement, le café du
@@ -57,7 +56,12 @@ if (rootElement) {
           <I18nProvider>
             <SocleLabels>
               <IconsProvider icons={icons}>
-                <App />
+                {/* Le bandeau de mise à jour se pose lui-même, sous
+                    SocleLabels : c'est ce qui le fait enfin parler anglais
+                    aux anglophones. */}
+                <SocleUpdates>
+                  <App />
+                </SocleUpdates>
               </IconsProvider>
             </SocleLabels>
           </I18nProvider>

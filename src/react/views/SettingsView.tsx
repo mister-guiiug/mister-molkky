@@ -13,7 +13,7 @@ import { ExportBundleSchema, type Locale } from '../../schemas';
 import { PageContainer } from '../components/layout/PageContainer';
 import { ConfirmDialog } from '@mister-guiiug/dev-wpa-config/react/confirm-dialog';
 import { isSupabaseConfigured } from '../../supabase';
-import { forceAppUpdate } from '../../register-sw';
+import { applyUpdate } from '@mister-guiiug/dev-wpa-config/sw-update';
 import { AppFooter } from '../components/layout/AppFooter';
 import { useSyncStore } from '../../store/useSyncStore';
 import { dateSlug, downloadJson } from '@mister-guiiug/dev-wpa-config/download';
@@ -238,12 +238,34 @@ export function SettingsView() {
             type="button"
             disabled={updating}
             onClick={() => {
-              // Flip the overlay flag FIRST and synchronously, so the
-              // user sees instant feedback even if the SW cleanup is
-              // slow. `forceAppUpdate` schedules its own navigation
-              // and reload safety net — we don't need to await it.
+              // On lève le voile D'ABORD et de façon synchrone : le retour
+              // est immédiat même si le nettoyage du service worker traîne.
+              // `applyUpdate` programme sa propre navigation et sa minuterie
+              // de secours — inutile de l'attendre.
               setUpdating(true);
-              void forceAppUpdate();
+              // `hard: true` — DÉLIBÉRÉ, et c'est ce que faisait déjà
+              // `forceAppUpdate()`. Trois raisons de ne pas prendre le chemin
+              // doux ici :
+              //   1. Le libellé de ce bouton PROMET la purge :
+              //      « Vide le cache de l'application et recharge » (clé
+              //      settings.forceUpdateHint). Le chemin doux, lui, GARDE le
+              //      cache quand un worker attend — le bouton mentirait.
+              //   2. On n'arrive sur ce bouton que parce qu'on soupçonne
+              //      quelque chose de périmé. Le cache est précisément le
+              //      suspect.
+              //   3. C'est aussi ce que fait le `UpdateButton` du socle
+              //      (`forceUpdate` = `run({ hard: true })`) : même sémantique
+              //      pour le même écran.
+              // Le chemin doux, lui, est le bon pour le BANDEAU (SocleUpdates)
+              // — il n'apparaît que quand un worker attend vraiment.
+              //
+              // La cible d'atterrissage ne change pas : sur le chemin de la
+              // purge, le socle vise la PORTÉE du worker, soit `/mister-molkky/`
+              // — exactement le `BASE_URL` que `forceAppUpdate` visait. C'est
+              // aussi la seule URL que GitHub Pages sait servir : les routes
+              // profondes n'existent que par le `navigateFallback` du worker
+              // qu'on vient de purger.
+              void applyUpdate({ hard: true });
             }}
             className="touch-target flex items-center justify-center gap-2 rounded-lg border px-4 text-sm font-bold disabled:opacity-50"
             style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}

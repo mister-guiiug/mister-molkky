@@ -32,44 +32,6 @@ body {
   flex-direction: column;
 }
 
-.sw-update-banner {
-  position: fixed;
-  bottom: calc(1rem + max(env(safe-area-inset-bottom), 0px));
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 0.75rem;
-  box-shadow: var(--shadow);
-  padding: 0.75rem 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  z-index: 9999;
-  max-width: calc(100vw - 2rem);
-}
-
-.sw-update-banner__text {
-  margin: 0;
-  font-size: 0.875rem;
-  color: var(--text);
-}
-
-.sw-update-banner__btn {
-  background: var(--primary);
-  color: #fff;
-  border: none;
-  border-radius: 0.5rem;
-  padding: 0.375rem 0.75rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.sw-update-banner__btn:hover {
-  background: var(--primary-hover);
-}
-
 @keyframes mm-pin-fall {
   0% {
     transform: rotate(0) scale(1);
@@ -310,6 +272,57 @@ textarea:focus-visible {
    de la primaire imposée par la base. */
 [data-dwc='sparkline'] {
   color: inherit;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   Bandeau « Mise à jour disponible » (UpdatePromptBanner du socle, rendu
+   par SocleUpdates). components.css lui donne déjà son cadre, son rayon,
+   son ombre (--dwc-shadow, branché sur --shadow) et sa rangée flex ; ne
+   restent ici que les écarts VOULUS par rapport à la base — c'est-à-dire
+   ce que le bandeau maison faisait et que le socle ne fait pas :
+     · le faire FLOTTER en bas d'écran plutôt que de le poser dans le flux ;
+     · reprendre le fond `--surface` au lieu de la teinte primaire de la base ;
+     · l'encre des deux boutons (le second, « Plus tard », est nouveau : le
+       bandeau maison n'offrait aucune sortie).
+   CSS non layered : il l'emporte sur le @layer components du socle.
+   ───────────────────────────────────────────────────────────────────── */
+
+[data-dwc='update-banner'] {
+  position: fixed;
+  bottom: calc(1rem + max(env(safe-area-inset-bottom), 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  max-width: calc(100vw - 2rem);
+  background: var(--surface);
+}
+
+[data-dwc='update-banner-title'] {
+  color: var(--text);
+}
+
+[data-dwc='update-banner-update'] {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+[data-dwc='update-banner-update']:hover {
+  background: var(--primary-hover);
+}
+
+[data-dwc='update-banner-dismiss'] {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 /* Écran de secours du composant partagé ErrorBoundary (dev-wpa-config). */
