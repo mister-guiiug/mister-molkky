@@ -1,23 +1,37 @@
 import { defineConfig } from 'vitest/config';
-import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import {
   baseTestOptions,
   coveragePreset,
 } from '@mister-guiiug/dev-wpa-config/vitest-base';
 
+const pwaRegisterDouble = fileURLToPath(
+  import.meta.resolve('@mister-guiiug/dev-wpa-config/testing/pwa-register')
+);
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      // vite-plugin-pwa injects this virtual module at dev/build time.
-      // In vitest we never go through that plugin, so any test that
-      // pulls register-sw.ts (directly or transitively via SettingsView)
-      // would fail to resolve the import. Point it at a tiny stub.
-      'virtual:pwa-register': resolve(
-        __dirname,
-        'src/test/stub-pwa-register.ts'
-      ),
+      // vite-plugin-pwa injecte ce module virtuel au dev/build. Vitest ne
+      // passe pas par le plugin : sans alias, tout test qui tire un module
+      // important `virtual:pwa-register` échoue À LA RÉSOLUTION, avant
+      // d'avoir rien éprouvé — c'est pourquoi le `vi.mock` de vitest-setup
+      // ne suffit pas, il n'agit qu'à l'exécution.
+      //
+      // La cible est le double PILOTABLE du socle : `swStub.needRefresh()`
+      // rejoue ce que fait un vrai service worker quand une version attend,
+      // et LÈVE si personne n'a injecté `registerSW`. L'ancien stub maison
+      // (src/test/stub-pwa-register.ts) était muet : il prouvait qu'un
+      // composant se monte, jamais qu'un bandeau peut s'afficher.
+      //
+      // ATTENTION : `vitest-setup` du même paquet pose un
+      // `vi.mock('virtual:pwa-register')` MUET qui, résolu à travers cet
+      // alias, désigne le même fichier et l'écrase. Un test qui veut piloter
+      // le double doit donc écrire `vi.unmock('virtual:pwa-register')` en
+      // tête de fichier (voir SocleUpdates.test.tsx).
+      'virtual:pwa-register': pwaRegisterDouble,
     },
   },
   test: {
