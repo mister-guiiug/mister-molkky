@@ -16,8 +16,8 @@ import {
   recordError,
 } from '@mister-guiiug/dev-wpa-config/react/observability';
 import { App } from './react/AppRouter';
-import { I18nProvider } from './i18n/I18nProvider';
-import { SocleLabels } from './react/components/SocleLabels';
+import { I18nProvider } from './i18n';
+import { LocaleSync } from './i18n/LocaleSync';
 import { SocleUpdates } from './react/components/SocleUpdates';
 import { THEME_COLOR, THEME_LEGACY_KEYS } from './themeConfig';
 
@@ -53,17 +53,20 @@ if (rootElement) {
             palette --dwc-* n'est peinte, le contrat est déjà câblé sur les
             jetons de tokens.css. */}
         <ThemeProvider legacyKeys={THEME_LEGACY_KEYS} themeColor={THEME_COLOR}>
+          {/* `I18nProvider` vient de `createI18n` : il pose LUI-MÊME le
+              `LabelsProvider` du socle avec la locale courante — c'est ce qui
+              fait parler anglais aux anglophones les libellés du paquet
+              (« Fermer », « Code source »…), et ce que src/react/components/
+              SocleLabels.tsx câblait à la main. */}
           <I18nProvider>
-            <SocleLabels>
+            {/* La langue est aussi une donnée synchronisée : voir LocaleSync. */}
+            <LocaleSync>
               <IconsProvider icons={icons}>
-                {/* Le bandeau de mise à jour se pose lui-même, sous
-                    SocleLabels : c'est ce qui le fait enfin parler anglais
-                    aux anglophones. */}
                 <SocleUpdates>
                   <App />
                 </SocleUpdates>
               </IconsProvider>
-            </SocleLabels>
+            </LocaleSync>
           </I18nProvider>
         </ThemeProvider>
       </ErrorBoundary>

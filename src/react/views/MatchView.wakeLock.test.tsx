@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type { ReactElement } from 'react';
-import { I18nProvider } from '../../i18n/I18nProvider';
+import { I18nProvider } from '../../i18n';
 import {
   MatchConfigSchema,
   makePlayerId,

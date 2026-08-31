@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useI18n } from '../../i18n/useI18n';
+import { useI18n } from '../../i18n';
 import { usePlayersStore, pickNextColor } from '../../store/usePlayersStore';
 import type { Player, PlayerId } from '../../schemas';
 import { ConfirmDialog } from '@mister-guiiug/dev-wpa-config/react/confirm-dialog';

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQrScanner } from '@mister-guiiug/dev-wpa-config/react/use-qr-scanner';
-import { useI18n } from '../../i18n/useI18n';
+import { useI18n } from '../../i18n';
 import { useLiveStore } from '../../store/useLiveStore';
 import { isSupabaseConfigured } from '../../supabase';
 import {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Sheet } from '@mister-guiiug/dev-wpa-config/react/sheet';
-import { useI18n } from '../../i18n/useI18n';
+import { useI18n } from '../../i18n';
 import { replayThrows, type RuleSettings } from '../../molkky/rules';
 import type { FinishedMatch } from '../../schemas';
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useI18n } from '../../i18n/useI18n';
+import { useI18n } from '../../i18n';
 import { MaximizeIcon, MinimizeIcon } from './icons';
 
 export function FullscreenToggle() {

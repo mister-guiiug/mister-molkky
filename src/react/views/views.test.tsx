@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type { ReactElement } from 'react';
-import { I18nProvider } from '../../i18n/I18nProvider';
+import { I18nProvider, LOCALE_STORAGE_KEY } from '../../i18n';
 import { useMatchStore } from '../../store/useMatchStore';
 import { usePlayersStore } from '../../store/usePlayersStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
@@ -25,6 +25,13 @@ function withProviders(ui: ReactElement, initialEntries: string[] = ['/']) {
 }
 
 beforeEach(() => {
+  // Les attentes ci-dessous sont écrites EN FRANÇAIS : la langue doit donc
+  // être fixée, pas subie. Sans cette ligne, le provider retombe sur
+  // `navigator.language` — `en-US` sous jsdom — et les sept tests échouent sur
+  // la traduction anglaise. C'est le versant test d'un changement voulu : la
+  // détection par le navigateur, jusqu'ici morte (le magasin de réglages
+  // répondait toujours avant elle), fonctionne désormais.
+  localStorage.setItem(LOCALE_STORAGE_KEY, 'fr');
   useMatchStore.setState({ current: null, history: [], pendingFeedback: null });
   usePlayersStore.setState({ players: [] });
   useTemplatesStore.setState({ templates: [] });

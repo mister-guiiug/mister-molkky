@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { INITIAL_LAYOUT, LAYOUT_BOUNDS } from '../../molkky/pins-layout';
-import { useI18n } from '../../i18n/useI18n';
+import { useI18n } from '../../i18n';
 import { usePlaySound } from '../hooks/useFeedback';
 
 interface PinsBoardProps {
