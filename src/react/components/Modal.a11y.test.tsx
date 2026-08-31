@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { I18nProvider } from '../../i18n/I18nProvider';
+import { I18nProvider } from '../../i18n';
 import { Modal } from './Modal';
 
 /**

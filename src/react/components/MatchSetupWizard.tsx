@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useI18n } from '../../i18n/useI18n';
+import { useI18n } from '../../i18n';
 import { usePlayersStore, pickNextColor } from '../../store/usePlayersStore';
 import { useMatchStore } from '../../store/useMatchStore';
 import { useTemplatesStore } from '../../store/useTemplatesStore';

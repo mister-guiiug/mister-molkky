@@ -13,7 +13,7 @@ import { Shell } from './components/layout/Shell';
 import { HomeView } from './views/HomeView';
 import { ViewSkeleton } from './components/Skeleton';
 import { CloseIcon } from './components/icons';
-import { useI18n } from '../i18n/useI18n';
+import { useI18n } from '../i18n';
 import {
   LEGACY_REDIRECTS,
   LEGACY_SPECTATOR_PATH,

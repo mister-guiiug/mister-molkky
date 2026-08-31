@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import { useI18n } from '../../i18n/useI18n';
+import { useI18n } from '../../i18n';
 import { CloseIcon } from './icons';
 
 interface ModalProps {

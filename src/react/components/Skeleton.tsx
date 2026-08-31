@@ -2,7 +2,7 @@ import {
   Skeleton as SocleSkeleton,
   SkeletonGroup,
 } from '@mister-guiiug/dev-wpa-config/react/skeleton';
-import { useI18n } from '../../i18n/useI18n';
+import { useI18n } from '../../i18n';
 
 interface SkeletonProps {
   className?: string;

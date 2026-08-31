@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useI18n } from '../../i18n/useI18n';
+import { useI18n } from '../../i18n';
 import { PageContainer } from '../components/layout/PageContainer';
 import { PinsBoard } from '../components/PinsBoard';
 import { ROUTES } from '../../routes';

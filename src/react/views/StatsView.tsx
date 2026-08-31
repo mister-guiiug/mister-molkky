@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useI18n } from '../../i18n/useI18n';
+import { useI18n } from '../../i18n';
 import { useMatchStore } from '../../store/useMatchStore';
 import { usePlayersStore } from '../../store/usePlayersStore';
 import {

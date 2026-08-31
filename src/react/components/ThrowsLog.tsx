@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Sheet } from '@mister-guiiug/dev-wpa-config/react/sheet';
-import { useI18n } from '../../i18n/useI18n';
+import { useI18n } from '../../i18n';
 import { useMatchStore } from '../../store/useMatchStore';
 import { ALL_PIN_NUMBERS } from '../../molkky/pins-layout';
 import { CheckIcon, StarIcon } from './icons';

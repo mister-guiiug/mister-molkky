@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { useI18n } from '../../../i18n/useI18n';
+import { useI18n } from '../../../i18n';
 import { ROUTES } from '../../../routes';
 import { OfflineIndicator } from '../OfflineIndicator';
 import {

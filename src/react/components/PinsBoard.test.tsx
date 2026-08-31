@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { PinsBoard } from './PinsBoard';
-import { I18nProvider } from '../../i18n/I18nProvider';
+import { I18nProvider } from '../../i18n';
 
 function renderBoard(props?: Partial<React.ComponentProps<typeof PinsBoard>>) {
   return render(
