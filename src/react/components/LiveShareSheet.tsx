@@ -6,6 +6,7 @@ import { useMatchStore } from '../../store/useMatchStore';
 import { isSupabaseConfigured } from '../../supabase';
 import { qrToDataUrl } from '@mister-guiiug/dev-wpa-config/qr';
 import { shareOrCopy } from '@mister-guiiug/dev-wpa-config/share';
+import { useActionGuard } from '@mister-guiiug/dev-wpa-config/react/use-action-guard';
 import { Modal } from './Modal';
 import { Skeleton } from './Skeleton';
 import { CheckIcon, ShareIcon } from './icons';
@@ -27,6 +28,10 @@ export function LiveShareSheet({ open, onClose }: LiveShareSheetProps) {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  // Démarrer un partage INSÈRE une ligne dans Supabase : impossible hors ligne.
+  // Le libellé du motif vient des libellés du socle (fr + en, exactement les
+  // deux langues de l'app), via le `LabelsProvider` déjà monté par `AppRouter`.
+  const guard = useActionGuard({ online: true });
 
   const shareUrl =
     liveCode && typeof window !== 'undefined'
@@ -116,13 +121,23 @@ export function LiveShareSheet({ open, onClose }: LiveShareSheetProps) {
           </p>
           <button
             type="button"
-            onClick={handleStart}
+            {...guard.disabledProps}
+            onClick={guard.wrap(handleStart)}
             disabled={busy || !current}
-            className="touch-target rounded-lg px-4 py-2 font-bold text-white disabled:opacity-50"
+            className="touch-target rounded-lg px-4 py-2 font-bold text-white disabled:opacity-50 aria-disabled:opacity-50"
             style={{ background: 'var(--primary)' }}
           >
             {busy ? t('common.loading') : t('live.startSharing')}
           </button>
+          {guard.reason && (
+            <p
+              role="status"
+              className="m-0 text-xs"
+              style={{ color: 'var(--muted)' }}
+            >
+              {guard.reason}
+            </p>
+          )}
           {liveError && (
             <p className="m-0 text-xs" style={{ color: 'var(--danger)' }}>
               {liveError}

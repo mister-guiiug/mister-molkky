@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQrScanner } from '@mister-guiiug/dev-wpa-config/react/use-qr-scanner';
+import { useActionGuard } from '@mister-guiiug/dev-wpa-config/react/use-action-guard';
 import { useI18n } from '../../i18n';
 import { useLiveStore } from '../../store/useLiveStore';
 import { isSupabaseConfigured } from '../../supabase';
@@ -21,12 +22,15 @@ export function JoinLiveView() {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Rejoindre un direct LIT une ligne Supabase puis ouvre une websocket : les
+  // deux échouent hors ligne, et l'écran resterait sur « chargement… ».
+  const guard = useActionGuard({ online: true });
 
   // Submit is invoked from the QR-scanner callback, which must stay stable
   // across renders — stash the latest version in a ref so the callback can
   // read it without retriggering the camera effect.
   const submit = async (rawCode: string) => {
-    if (busy) return;
+    if (busy || !guard.allowed) return;
     setError(null);
     setBusy(true);
     try {
@@ -116,12 +120,22 @@ export function JoinLiveView() {
         />
         <button
           type="submit"
+          {...guard.disabledProps}
           disabled={code.length !== CODE_LENGTH || busy}
-          className="touch-target rounded-lg px-4 py-3 font-bold text-white disabled:opacity-50"
+          className="touch-target rounded-lg px-4 py-3 font-bold text-white disabled:opacity-50 aria-disabled:opacity-50"
           style={{ background: 'var(--primary)' }}
         >
           {busy ? t('common.loading') : t('live.joinSubmit')}
         </button>
+        {guard.reason && (
+          <p
+            role="status"
+            className="m-0 text-xs"
+            style={{ color: 'var(--muted)' }}
+          >
+            {guard.reason}
+          </p>
+        )}
       </form>
 
       <div className="my-4 flex items-center gap-2">
@@ -135,8 +149,9 @@ export function JoinLiveView() {
       {!scanning ? (
         <button
           type="button"
-          onClick={startScan}
-          className="touch-target flex w-full items-center justify-center gap-2 rounded-lg border-2 py-3 font-bold"
+          {...guard.disabledProps}
+          onClick={guard.wrap(startScan)}
+          className="touch-target flex w-full items-center justify-center gap-2 rounded-lg border-2 py-3 font-bold aria-disabled:opacity-50"
           style={{
             borderColor: 'var(--primary)',
             color: 'var(--primary)',
