@@ -2,7 +2,8 @@ import type { ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useI18n } from '../../../i18n';
 import { ROUTES } from '../../../routes';
-import { OfflineIndicator } from '../OfflineIndicator';
+import { ConnectionBanner } from '../ConnectionBanner';
+import { useLiveStore } from '../../../store/useLiveStore';
 import {
   ChartIcon,
   HistoryIcon,
@@ -41,9 +42,21 @@ export function Shell({ children }: ShellProps) {
   const { t } = useI18n();
   const location = useLocation();
   const isMatch = location.pathname === ROUTES.match;
+  const liveRole = useLiveStore(s => s.role);
+
+  // SUR L'ÉCRAN DE PARTIE, LE SILENCE EST LA BONNE RÉPONSE — sauf une fois.
+  // Le score d'une partie de Mölkky est intégralement local (`useMatchStore`,
+  // zustand + localStorage) : sans réseau, il ne se passe rigoureusement rien.
+  // Interrompre quelqu'un au milieu d'une manche pour lui signaler une panne
+  // qui ne le concerne pas, c'est du bruit. D'où le `!isMatch` d'origine, qui
+  // était juste — mais avait un angle mort : quand la partie est DIFFUSÉE en
+  // direct, chaque lancer est poussé vers Supabase et l'échec est avalé
+  // (`useLiveStore`). Les spectateurs se figent sans que l'hôte le sache.
+  const showConnection = !isMatch || liveRole === 'host';
 
   return (
     <div className="flex min-h-dvh flex-col">
+      {showConnection && <ConnectionBanner />}
       <main className="flex-1 pb-24 sm:pb-28">{children}</main>
       <nav
         className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t backdrop-blur-md"
@@ -78,7 +91,6 @@ export function Shell({ children }: ShellProps) {
           ))}
         </ul>
       </nav>
-      {!isMatch && <OfflineIndicator />}
     </div>
   );
 }
