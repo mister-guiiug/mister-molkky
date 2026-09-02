@@ -1,0 +1,20 @@
+# Anti-pause Supabase Free — caller planifié.
+# Copier dans <projet>/.github/workflows/supabase-keepalive.yml (UN par projet
+# Supabase ; décaler le `cron` entre dépôts). Requiert les secrets
+# VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY et la table keep_alive
+# (cf. templates/supabase/keep-alive.sql).
+name: Supabase keep-alive
+
+on:
+  schedule:
+    - cron: '47 4 */3 * *' # ~tous les 3 jours (< 7 j) — décaler par dépôt
+  workflow_dispatch:
+
+jobs:
+  keepalive:
+    uses: mister-guiiug/dev-wpa-config/.github/workflows/pwa-supabase-keepalive.yml@v3
+    # Nommés, pas hérités : le workflow déclare exactement ces deux secrets.
+    # `inherit` lui donnerait accès à tout le trousseau du dépôt.
+    secrets:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
