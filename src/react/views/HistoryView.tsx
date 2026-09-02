@@ -6,7 +6,7 @@ import { useMatchStore } from '../../store/useMatchStore';
 import { PageContainer } from '../components/layout/PageContainer';
 import { PullIndicator } from '../components/PullIndicator';
 import { PlayIcon, TrashIcon, TrophyIcon } from '../components/icons';
-import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { usePullToRefresh } from '@mister-guiiug/dev-wpa-config/react/use-pull-to-refresh';
 import { MatchReplay } from '../components/MatchReplay';
 import type { FinishedMatch, RuleVariant } from '../../schemas';
 
