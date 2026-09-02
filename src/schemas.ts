@@ -3,10 +3,10 @@ import { z } from 'zod';
 export const PlayerIdSchema = z.string().min(1).brand<'PlayerId'>();
 export type PlayerId = z.infer<typeof PlayerIdSchema>;
 
-export const MatchIdSchema = z.string().min(1).brand<'MatchId'>();
+const MatchIdSchema = z.string().min(1).brand<'MatchId'>();
 export type MatchId = z.infer<typeof MatchIdSchema>;
 
-export const HexColorSchema = z
+const HexColorSchema = z
   .string()
   .regex(/^#[0-9a-fA-F]{6}$/, 'Expected #rrggbb');
 
@@ -19,17 +19,17 @@ export const PlayerSchema = z.object({
 });
 export type Player = z.infer<typeof PlayerSchema>;
 
-export const TargetScoreSchema = z.union([
+const TargetScoreSchema = z.union([
   z.literal(25),
   z.literal(50),
   z.literal(100),
 ]);
 export type TargetScore = z.infer<typeof TargetScoreSchema>;
 
-export const TeamModeSchema = z.enum(['solo', 'duo', 'trio']);
+const TeamModeSchema = z.enum(['solo', 'duo', 'trio']);
 export type TeamMode = z.infer<typeof TeamModeSchema>;
 
-export const TeamSchema = z.object({
+const TeamSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1).max(30),
   color: HexColorSchema,
@@ -37,7 +37,7 @@ export const TeamSchema = z.object({
 });
 export type Team = z.infer<typeof TeamSchema>;
 
-export const RuleVariantSchema = z.enum(['classic', 'inverse', 'free']);
+const RuleVariantSchema = z.enum(['classic', 'inverse', 'free']);
 export type RuleVariant = z.infer<typeof RuleVariantSchema>;
 
 /**
@@ -49,7 +49,7 @@ export type RuleVariant = z.infer<typeof RuleVariantSchema>;
  * - 'none':                          the streak counter still increments visually
  *                                    but never triggers anything (casual mode)
  */
-export const MissSanctionSchema = z.enum(['elimination', 'reset', 'none']);
+const MissSanctionSchema = z.enum(['elimination', 'reset', 'none']);
 export type MissSanction = z.infer<typeof MissSanctionSchema>;
 
 export const MatchConfigSchema = z.object({
@@ -85,7 +85,7 @@ export const ThrowSchema = z.object({
 });
 export type Throw = z.infer<typeof ThrowSchema>;
 
-export const RankingEntrySchema = z.object({
+const RankingEntrySchema = z.object({
   playerId: PlayerIdSchema,
   finalScore: z.number().int(),
   eliminated: z.boolean(),
@@ -157,7 +157,7 @@ export const ExportBundleSchema = z.object({
 });
 export type ExportBundle = z.infer<typeof ExportBundleSchema>;
 
-export const LocaleSchema = z.enum(['fr', 'en']);
+const LocaleSchema = z.enum(['fr', 'en']);
 export type Locale = z.infer<typeof LocaleSchema>;
 
 export const SettingsSchema = z.object({

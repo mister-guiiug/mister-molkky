@@ -37,7 +37,7 @@ const TABLE = 'user_data';
  * session already exists. Falls back to the existing session if anon
  * sign-up is disabled at the project level (the call throws there).
  */
-export async function ensureSyncSession(): Promise<string | null> {
+async function ensureSyncSession(): Promise<string | null> {
   if (!isSupabaseConfigured()) return null;
   const client = await getSupabase();
   if (!client) return null;

@@ -35,7 +35,6 @@ import {
   Lightbulb,
   Shuffle,
   Star,
-  StarOff,
   MousePointerClick,
   Target,
   Trash2,
@@ -105,14 +104,10 @@ export const AlertIcon = wrap(TriangleAlert as IconComponent, 'AlertIcon');
 export const UserXIcon = wrap(UserX as IconComponent, 'UserXIcon');
 export const LightbulbIcon = wrap(Lightbulb as IconComponent, 'LightbulbIcon');
 export const StarIcon = wrap(Star as IconComponent, 'StarIcon');
-export const StarOffIcon = wrap(StarOff as IconComponent, 'StarOffIcon');
-export const FlameIcon = wrap(Flame as IconComponent, 'FlameIcon');
-export const ZapIcon = wrap(Zap as IconComponent, 'ZapIcon');
-export const MedalIcon = wrap(Medal as IconComponent, 'MedalIcon');
-export const TrendingUpIcon = wrap(
-  TrendingUp as IconComponent,
-  'TrendingUpIcon'
-);
+const FlameIcon = wrap(Flame as IconComponent, 'FlameIcon');
+const ZapIcon = wrap(Zap as IconComponent, 'ZapIcon');
+const MedalIcon = wrap(Medal as IconComponent, 'MedalIcon');
+const TrendingUpIcon = wrap(TrendingUp as IconComponent, 'TrendingUpIcon');
 
 /**
  * Lookup map from an achievement's symbolic icon name (kept React-free

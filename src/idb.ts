@@ -35,48 +35,6 @@ function tx(
   return db.transaction(store, mode).objectStore(store);
 }
 
-export async function idbGet<T>(key: string): Promise<T | undefined> {
-  const db = await openDb();
-  if (!db) return undefined;
-  return new Promise<T | undefined>(resolve => {
-    try {
-      const req = tx(db, STORE_KV, 'readonly').get(key);
-      req.onsuccess = () => resolve(req.result as T | undefined);
-      req.onerror = () => resolve(undefined);
-    } catch {
-      resolve(undefined);
-    }
-  });
-}
-
-export async function idbSet<T>(key: string, value: T): Promise<boolean> {
-  const db = await openDb();
-  if (!db) return false;
-  return new Promise<boolean>(resolve => {
-    try {
-      const req = tx(db, STORE_KV, 'readwrite').put(value, key);
-      req.onsuccess = () => resolve(true);
-      req.onerror = () => resolve(false);
-    } catch {
-      resolve(false);
-    }
-  });
-}
-
-export async function idbDel(key: string): Promise<boolean> {
-  const db = await openDb();
-  if (!db) return false;
-  return new Promise<boolean>(resolve => {
-    try {
-      const req = tx(db, STORE_KV, 'readwrite').delete(key);
-      req.onsuccess = () => resolve(true);
-      req.onerror = () => resolve(false);
-    } catch {
-      resolve(false);
-    }
-  });
-}
-
 export async function idbPutBlob(key: string, blob: Blob): Promise<boolean> {
   const db = await openDb();
   if (!db) return false;

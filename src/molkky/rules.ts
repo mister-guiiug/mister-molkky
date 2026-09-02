@@ -9,9 +9,9 @@
  * throw and recompute. It also keeps the rules unit-testable in isolation.
  */
 
-export const DEFAULT_TARGET_SCORE = 50;
-export const DEFAULT_OVERSHOOT_PENALTY = 25;
-export const DEFAULT_MAX_MISSES = 3;
+const DEFAULT_TARGET_SCORE = 50;
+const DEFAULT_OVERSHOOT_PENALTY = 25;
+const DEFAULT_MAX_MISSES = 3;
 
 export type RuleVariant = 'classic' | 'inverse' | 'free';
 
