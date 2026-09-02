@@ -1,4 +1,4 @@
-import type { PlayerProgress, MatchOutcome } from './rules';
+import type { MatchOutcome } from './rules';
 
 export interface RankingEntry {
   readonly playerId: string;
@@ -45,13 +45,4 @@ export function buildRanking(
     hasWon: e.hasWon,
     rank: i + 1,
   }));
-}
-
-export function extractProgressList(
-  playerIds: readonly string[],
-  outcome: MatchOutcome
-): PlayerProgress[] {
-  return playerIds
-    .map(id => outcome.progress.get(id))
-    .filter((p): p is PlayerProgress => Boolean(p));
 }

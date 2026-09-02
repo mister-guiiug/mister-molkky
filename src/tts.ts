@@ -47,7 +47,7 @@ interface SpeakOptions {
  * some configurations). Keeps the rest of the app a strict superset
  * of TTS-free behaviour.
  */
-export function speak({
+function speak({
   text,
   locale = 'fr',
   rate = 1,
@@ -83,12 +83,6 @@ export function speak({
 export function announceTurn(playerName: string, locale: Locale): void {
   const text =
     locale === 'fr' ? `À toi ${playerName}` : `Your turn, ${playerName}`;
-  speak({ text, locale });
-}
-
-/** Convenience helper for the score after a throw. */
-export function announceScore(score: number, locale: Locale): void {
-  const text = locale === 'fr' ? `${score} points` : `${score} points`;
   speak({ text, locale });
 }
 

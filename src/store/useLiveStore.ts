@@ -8,6 +8,9 @@ import {
   type LiveSubscription,
 } from '../live/liveMatch';
 import type { CurrentMatchState, Throw } from '../schemas';
+import { createLogger } from '@mister-guiiug/dev-wpa-config/logger';
+
+const log = createLogger('store');
 
 export type LiveRole = 'none' | 'host' | 'viewer';
 
@@ -84,7 +87,7 @@ export const useLiveStore = create<LiveState>()((set, get) => ({
     try {
       await pushLiveState(matchId, { throws });
     } catch (err) {
-      console.warn('[live] pushThrows failed:', err);
+      log.warn('[live] pushThrows failed:', { error: err });
       set({ error: (err as Error).message });
     }
   },
@@ -101,7 +104,7 @@ export const useLiveStore = create<LiveState>()((set, get) => ({
         finished_at: new Date().toISOString(),
       });
     } catch (err) {
-      console.warn('[live] pushFinish failed:', err);
+      log.warn('[live] pushFinish failed:', { error: err });
       set({ error: (err as Error).message });
     }
   },

@@ -75,10 +75,6 @@ const DEFS: AchievementDef[] = [
   },
 ];
 
-export function listAchievementDefs(): readonly AchievementDef[] {
-  return DEFS;
-}
-
 /**
  * Walk the player's match history and return the badges they have unlocked.
  * Each detector is pure: same history → same achievements list.

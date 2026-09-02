@@ -124,7 +124,7 @@ export function extractScannedCode(data: string): string | null {
   return normalized.length === CODE_LENGTH ? normalized : null;
 }
 
-export class LiveBackendUnavailableError extends Error {
+class LiveBackendUnavailableError extends Error {
   constructor() {
     super(
       'Supabase is not configured (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY missing)'

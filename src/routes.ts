@@ -36,12 +36,3 @@ export const LEGACY_REDIRECTS: Record<string, string> = {
  * redirige explicitement, et l'extraction de scan l'accepte encore.
  */
 export const LEGACY_SPECTATOR_PATH = '/direct';
-
-export const ROUTE_TITLES: Record<RouteKey, string> = {
-  home: 'Mister Mölkky',
-  match: 'Match in progress',
-  history: 'History',
-  stats: 'Statistics',
-  players: 'Players',
-  settings: 'Settings',
-};

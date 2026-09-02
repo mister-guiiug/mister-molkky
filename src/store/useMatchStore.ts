@@ -25,6 +25,9 @@ import {
   type RuleSettings,
 } from '../molkky/rules';
 import { buildRanking, type RankingEntry } from '../molkky/ranking';
+import { createLogger } from '@mister-guiiug/dev-wpa-config/logger';
+
+const log = createLogger('store');
 
 export type FeedbackEvent = 'throw' | 'overshoot' | 'elimination' | 'victory';
 
@@ -269,7 +272,7 @@ export const useMatchStore = create<MatchStoreState>()(
             // Surface the error in the console so a bad ranking
             // computation doesn't silently freeze the victory flow.
 
-            console.error('[match] finishMatch failed:', err);
+            log.error('[match] finishMatch failed:', { error: err });
           }
         }
 
@@ -435,7 +438,9 @@ export const useMatchStore = create<MatchStoreState>()(
           try {
             get().finishMatch();
           } catch (err) {
-            console.error('[match] finishMatch after forfeit failed:', err);
+            log.error('[match] finishMatch after forfeit failed:', {
+              error: err,
+            });
           }
         }
       },
