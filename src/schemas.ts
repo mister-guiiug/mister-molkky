@@ -187,12 +187,11 @@ export function makeMatchId(raw: string): MatchId {
   return MatchIdSchema.parse(raw);
 }
 
-export function newId(): string {
-  if (
-    typeof globalThis.crypto !== 'undefined' &&
-    'randomUUID' in globalThis.crypto
-  ) {
-    return globalThis.crypto.randomUUID();
-  }
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
-}
+/**
+ * Identifiant d'entité — DU SOCLE (`@mister-guiiug/dev-wpa-config/id`).
+ *
+ * Le repli maison rendait `1a2b3c4d5e6f`, qui n'est PAS un UUID : deux formats
+ * d'identifiant coexistaient donc selon le navigateur, et rien ne le disait.
+ * `createUuid` retombe sur un v4 correct (PARC.md, chantier 3).
+ */
+export { createUuid as newId } from '@mister-guiiug/dev-wpa-config/id';
