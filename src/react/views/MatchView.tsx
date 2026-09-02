@@ -32,7 +32,7 @@ import { Chrono } from '../components/Chrono';
 import { SituationPhoto } from '../components/SituationPhoto';
 import { useLiveStore } from '../../store/useLiveStore';
 import { useFeedback } from '../hooks/useFeedback';
-import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useKeyboardShortcuts } from '@mister-guiiug/dev-wpa-config/react/use-keyboard-shortcuts';
 import { useSwipeDown } from '../hooks/useSwipeDown';
 import {
   announceElimination,
