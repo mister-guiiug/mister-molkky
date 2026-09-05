@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ALPHABETS } from '@mister-guiiug/dev-wpa-config/pairing';
+import { ALPHABETS } from '@mister-guiiug/dev-pwa-config/pairing';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { CurrentMatchState } from '../schemas';
 import { getSupabase } from '../supabase';

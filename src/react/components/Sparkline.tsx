@@ -1,4 +1,4 @@
-import { Sparkline as SocleSparkline } from '@mister-guiiug/dev-wpa-config/react/sparkline';
+import { Sparkline as SocleSparkline } from '@mister-guiiug/dev-pwa-config/react/sparkline';
 
 interface SparklineProps {
   values: readonly number[];

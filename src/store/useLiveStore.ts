@@ -8,7 +8,7 @@ import {
   type LiveSubscription,
 } from '../live/liveMatch';
 import type { CurrentMatchState, Throw } from '../schemas';
-import { createLogger } from '@mister-guiiug/dev-wpa-config/logger';
+import { createLogger } from '@mister-guiiug/dev-pwa-config/logger';
 
 const log = createLogger('store');
 

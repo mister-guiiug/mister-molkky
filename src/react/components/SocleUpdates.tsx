@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { registerSW } from 'virtual:pwa-register';
-import { AppUpdates } from '@mister-guiiug/dev-wpa-config/react/app-updates';
-import { unregisterServiceWorkers } from '@mister-guiiug/dev-wpa-config/sw-update';
+import { AppUpdates } from '@mister-guiiug/dev-pwa-config/react/app-updates';
+import { unregisterServiceWorkers } from '@mister-guiiug/dev-pwa-config/sw-update';
 
 /**
  * Enregistrement du service worker et bandeau « Mise à jour disponible ».

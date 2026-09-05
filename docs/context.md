@@ -14,7 +14,7 @@ with Rive animations, per-pin heatmaps and shareable match exports.
 
 ## Tech
 
-- Vite 7 + React 19 + TypeScript (`@mister-guiiug/dev-wpa-config`)
+- Vite 7 + React 19 + TypeScript (`@mister-guiiug/dev-pwa-config`)
 - Tailwind 4, Zustand 5 (`persist`), Zod 3
 - vite-plugin-pwa (Workbox, prompt registration)
 - @rive-app/react-canvas 4 with React/SVG fallbacks

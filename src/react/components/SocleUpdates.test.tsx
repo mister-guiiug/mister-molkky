@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 /**
  * LE `vi.unmock` EST INDISPENSABLE, et il n'est pas décoratif.
  *
- * `@mister-guiiug/dev-wpa-config/vitest-setup` — chargé par `baseTestOptions`
+ * `@mister-guiiug/dev-pwa-config/vitest-setup` — chargé par `baseTestOptions`
  * pour TOUS les fichiers de test — pose un
  * `vi.mock('virtual:pwa-register', () => ({ registerSW: () => () => {} }))`.
  * Ce mock est résolu à travers le `resolve.alias` de `vitest.config.ts` : il
@@ -16,8 +16,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  */
 vi.unmock('virtual:pwa-register');
 
-import { swStub } from '@mister-guiiug/dev-wpa-config/testing/pwa-register';
-import { LabelsProvider } from '@mister-guiiug/dev-wpa-config/react/labels';
+import { swStub } from '@mister-guiiug/dev-pwa-config/testing/pwa-register';
+import { LabelsProvider } from '@mister-guiiug/dev-pwa-config/react/labels';
 import { SocleUpdates } from './SocleUpdates';
 
 function renderApp(locale: 'fr' | 'en' = 'fr') {

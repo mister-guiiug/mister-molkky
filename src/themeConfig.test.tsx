@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import { ThemeProvider } from '@mister-guiiug/dev-wpa-config/react';
+import { ThemeProvider } from '@mister-guiiug/dev-pwa-config/react';
 // `?raw` plutôt que `node:fs` : le projet TypeScript de l'app n'embarque pas
 // les types Node, et cet import-là est déjà typé par `vite/client`.
 import viteConfigSource from '../vite.config.ts?raw';

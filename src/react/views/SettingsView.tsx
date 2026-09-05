@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { useActionGuard } from '@mister-guiiug/dev-wpa-config/react/use-action-guard';
+import { useActionGuard } from '@mister-guiiug/dev-pwa-config/react/use-action-guard';
 import { useI18n } from '../../i18n';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { CoffeeIcon, RefreshIcon } from '../components/icons';
@@ -9,16 +9,16 @@ import { usePlayersStore } from '../../store/usePlayersStore';
 import {
   useThemeContext,
   type ThemePreference,
-} from '@mister-guiiug/dev-wpa-config/react';
+} from '@mister-guiiug/dev-pwa-config/react';
 import { ExportBundleSchema, type Locale } from '../../schemas';
 import { PageContainer } from '../components/layout/PageContainer';
-import { ConfirmDialog } from '@mister-guiiug/dev-wpa-config/react/confirm-dialog';
+import { ConfirmDialog } from '@mister-guiiug/dev-pwa-config/react/confirm-dialog';
 import { isSupabaseConfigured } from '../../supabase';
-import { applyUpdate } from '@mister-guiiug/dev-wpa-config/sw-update';
+import { applyUpdate } from '@mister-guiiug/dev-pwa-config/sw-update';
 import { AppFooter } from '../components/layout/AppFooter';
 import { useSyncStore } from '../../store/useSyncStore';
-import { dateSlug, downloadJson } from '@mister-guiiug/dev-wpa-config/download';
-import { FamilyApps } from '@mister-guiiug/dev-wpa-config/react';
+import { dateSlug, downloadJson } from '@mister-guiiug/dev-pwa-config/download';
+import { FamilyApps } from '@mister-guiiug/dev-pwa-config/react';
 
 declare const __APP_VERSION__: string | undefined;
 

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { LabelsProvider } from '@mister-guiiug/dev-wpa-config/react/labels';
+import { LabelsProvider } from '@mister-guiiug/dev-pwa-config/react/labels';
 import { I18nProvider } from '../../i18n';
 import { useLiveStore } from '../../store/useLiveStore';
 import { useMatchStore } from '../../store/useMatchStore';

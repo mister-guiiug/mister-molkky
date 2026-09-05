@@ -211,7 +211,7 @@ src/
 
 | Projet                                | Rôle                                                              |
 | ------------------------------------- | ----------------------------------------------------------------- |
-| [`dev-wpa-config`](../dev-wpa-config) | Configs partagées (ESLint, Prettier, TS, Vitest, Tailwind preset) |
+| [`dev-pwa-config`](../dev-pwa-config) | Configs partagées (ESLint, Prettier, TS, Vitest, Tailwind preset) |
 | [`miss-badminton`](../miss-badminton) | Squelette de référence pour les PWA `mister-*` / `miss-*`         |
 | [`mister-molkky`](.)                  | **Ce projet**                                                     |
 

@@ -113,7 +113,7 @@ html[data-theme='dark'] {
 }
 
 /*
- * Contrat des composants partagés (@mister-guiiug/dev-wpa-config) : les
+ * Contrat des composants partagés (@mister-guiiug/dev-pwa-config) : les
  * quinze jetons `--dwc-*` sont branchés UNE fois sur les tokens Mölkky.
  * Ceux qui pointent vers une variable de l'app suivent le thème sombre tout
  * seuls (la redéfinition sous html[data-theme='dark'] se propage à la
