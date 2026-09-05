@@ -188,10 +188,10 @@ export function makeMatchId(raw: string): MatchId {
 }
 
 /**
- * Identifiant d'entité — DU SOCLE (`@mister-guiiug/dev-wpa-config/id`).
+ * Identifiant d'entité — DU SOCLE (`@mister-guiiug/dev-pwa-config/id`).
  *
  * Le repli maison rendait `1a2b3c4d5e6f`, qui n'est PAS un UUID : deux formats
  * d'identifiant coexistaient donc selon le navigateur, et rien ne le disait.
  * `createUuid` retombe sur un v4 correct (PARC.md, chantier 3).
  */
-export { createUuid as newId } from '@mister-guiiug/dev-wpa-config/id';
+export { createUuid as newId } from '@mister-guiiug/dev-pwa-config/id';

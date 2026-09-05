@@ -13,7 +13,7 @@ import { PageContainer } from '../components/layout/PageContainer';
 import { PlayerCard } from '../components/PlayerCard';
 import { Sparkline } from '../components/Sparkline';
 import { PullIndicator } from '../components/PullIndicator';
-import { usePullToRefresh } from '@mister-guiiug/dev-wpa-config/react/use-pull-to-refresh';
+import { usePullToRefresh } from '@mister-guiiug/dev-pwa-config/react/use-pull-to-refresh';
 import {
   notifyLiveEvent,
   requestNotificationPermission,

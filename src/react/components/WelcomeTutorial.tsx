@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sheet } from '@mister-guiiug/dev-wpa-config/react/sheet';
+import { Sheet } from '@mister-guiiug/dev-pwa-config/react/sheet';
 import { useI18n } from '../../i18n';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { AlertIcon, PointerClickIcon, TargetIcon, UserXIcon } from './icons';

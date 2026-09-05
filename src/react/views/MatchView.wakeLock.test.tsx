@@ -19,7 +19,7 @@ import { HomeView } from './HomeView';
  * Usage du verrou d'écran, pas sa mécanique : la ré-acquisition au retour au
  * premier plan, le silence quand l'API manque et la course « demande aboutie
  * après le démontage » appartiennent au socle
- * (`@mister-guiiug/dev-wpa-config/react/use-wake-lock`). Ce qui est propre à
+ * (`@mister-guiiug/dev-pwa-config/react/use-wake-lock`). Ce qui est propre à
  * Mölkky, c'est *quand* le verrou est demandé : partie en cours **et** réglage
  * « Garder l'écran allumé en partie » activé.
  */

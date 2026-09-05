@@ -8,13 +8,13 @@ import {
   ErrorBoundary,
   IconsProvider,
   ThemeProvider,
-} from '@mister-guiiug/dev-wpa-config/react';
-import { lucideIconSet } from '@mister-guiiug/dev-wpa-config/react/icons-lucide';
+} from '@mister-guiiug/dev-pwa-config/react';
+import { lucideIconSet } from '@mister-guiiug/dev-pwa-config/react/icons-lucide';
 import {
   installErrorReporter,
   initSentry,
   recordError,
-} from '@mister-guiiug/dev-wpa-config/react/observability';
+} from '@mister-guiiug/dev-pwa-config/react/observability';
 import { App } from './react/AppRouter';
 import { I18nProvider } from './i18n';
 import { LocaleSync } from './i18n/LocaleSync';

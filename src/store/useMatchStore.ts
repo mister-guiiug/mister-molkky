@@ -25,7 +25,7 @@ import {
   type RuleSettings,
 } from '../molkky/rules';
 import { buildRanking, type RankingEntry } from '../molkky/ranking';
-import { createLogger } from '@mister-guiiug/dev-wpa-config/logger';
+import { createLogger } from '@mister-guiiug/dev-pwa-config/logger';
 
 const log = createLogger('store');
 

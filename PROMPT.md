@@ -37,7 +37,7 @@ joueurs / équipes. L'app doit :
 
 ## 2. Stack imposée (famille `mister-guiiug`)
 
-Reprendre **strictement** la stack de `dev-wpa-config@^1.2.0` et le squelette
+Reprendre **strictement** la stack de `dev-pwa-config@^1.2.0` et le squelette
 de `miss-badminton/` :
 
 | Couche          | Choix                                                                            |
@@ -54,7 +54,7 @@ de `miss-badminton/` :
 | Animations      | **@rive-app/react-canvas 4** (cf. § 8)                                           |
 | Tests unitaires | **Vitest 3** (jsdom + globals)                                                   |
 | Tests E2E       | **Playwright** (smoke + critical + a11y)                                         |
-| Lint / Format   | ESLint 9 flat + Prettier 3.6 (via `dev-wpa-config`)                              |
+| Lint / Format   | ESLint 9 flat + Prettier 3.6 (via `dev-pwa-config`)                              |
 | Hooks Git       | Husky + lint-staged + commitlint (Conventional Commits)                          |
 | i18n            | provider maison `I18nProvider` (cf. `miss-badminton/src/i18n/`)                  |
 | Déploiement     | GitHub Pages via reusable workflow `pwa-deploy.yml`                              |
@@ -63,7 +63,7 @@ de `miss-badminton/` :
 
 ```jsonc
 // package.json — devDependencies
-"@mister-guiiug/dev-wpa-config": "^1.2.0"
+"@mister-guiiug/dev-pwa-config": "^1.2.0"
 ```
 
 Et dans la racine du projet, créer `.npmrc` :
@@ -81,7 +81,7 @@ Consommer **tous** les exports utiles :
 - `vitest.config.ts` → consommer `vitest-base`
 - `playwright.config.ts` → consommer `playwright-base`
 - `commitlint.config.js` + `lint-staged.config.js` → ré-exporter
-- `src/index.css` → importer `@mister-guiiug/dev-wpa-config/tailwind-preset.css`
+- `src/index.css` → importer `@mister-guiiug/dev-pwa-config/tailwind-preset.css`
 
 ### 2.2. Squelette à dupliquer depuis `miss-badminton/`
 
@@ -614,9 +614,9 @@ réseau externe : tout est local.
 Reprendre les fichiers `.github/workflows/` de `miss-badminton`, en utilisant
 les reusable workflows famille :
 
-- `.github/workflows/ci.yml` → consomme `mister-guiiug/dev-wpa-config/.github/workflows/pwa-ci.yml@v1`
+- `.github/workflows/ci.yml` → consomme `mister-guiiug/dev-pwa-config/.github/workflows/pwa-ci.yml@v1`
 - `.github/workflows/deploy.yml` → consomme
-  `mister-guiiug/dev-wpa-config/.github/workflows/pwa-deploy.yml@v1`
+  `mister-guiiug/dev-pwa-config/.github/workflows/pwa-deploy.yml@v1`
 - ⚠ **Permissions** au niveau du caller (`packages: read`, et pour deploy
   `pages: write` + `id-token: write`).
 - ⚠ Pas de `concurrency: pages` côté caller (déjà géré par le reusable).
@@ -637,7 +637,7 @@ les reusable workflows famille :
 - Pas de `console.log` en prod : passer par `error-reporter.ts`.
 - Pas de `any`, pas de `as` sans commentaire justifiant la coercition.
 - Tailwind : ordonner les classes (recommandé via `prettier-plugin-tailwindcss`
-  si déjà dans `dev-wpa-config`).
+  si déjà dans `dev-pwa-config`).
 
 ---
 
@@ -705,5 +705,5 @@ les reusable workflows famille :
   - <https://play.google.com/store/apps/details?id=com.tacticgames.molkkyscoretracker>
   - <https://play.google.com/store/apps/details?id=io.github.vinceglb.molkky>
 - Squelette PWA famille : `C:\Src\GithubMister\miss-badminton`
-- Configs partagées : `C:\Src\GithubMister\dev-wpa-config\README.md`
+- Configs partagées : `C:\Src\GithubMister\dev-pwa-config\README.md`
 - Runtime Rive : <https://rive.app/community/runtimes/react/>

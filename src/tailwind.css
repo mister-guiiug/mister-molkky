@@ -1,14 +1,14 @@
 @import 'tailwindcss';
-@import '@mister-guiiug/dev-wpa-config/tailwind-preset.css';
+@import '@mister-guiiug/dev-pwa-config/tailwind-preset.css';
 /* Habillage partagé des composants [data-dwc] (Sheet, ConfirmDialog,
    Skeleton, Sparkline, FamilyApps…). Tout est en `@layer components` : le CSS
    non layered de l'app (styles.css, tokens.css) garde le dernier mot. Le
    contrat de couleurs `--dwc-*` est branché sur nos jetons dans tokens.css. */
-@import '@mister-guiiug/dev-wpa-config/components.css';
+@import '@mister-guiiug/dev-pwa-config/components.css';
 
 /*
  * The fluid type/spacing scales, the safe-area helpers and `touch-target` now
- * come from the shared preset (@mister-guiiug/dev-wpa-config); only the
+ * come from the shared preset (@mister-guiiug/dev-pwa-config); only the
  * molkky-specific scale token stays here. The semantic colour/surface/theme
  * tokens live in ./tokens.css — keep the two files in sync when adding new
  * design tokens.

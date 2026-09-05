@@ -7,8 +7,8 @@ import {
   useLocation,
   useParams,
 } from 'react-router-dom';
-import { LabelsProvider } from '@mister-guiiug/dev-wpa-config/react/labels';
-import { IconsProvider } from '@mister-guiiug/dev-wpa-config/react/icons-context';
+import { LabelsProvider } from '@mister-guiiug/dev-pwa-config/react/labels';
+import { IconsProvider } from '@mister-guiiug/dev-pwa-config/react/icons-context';
 import { Shell } from './components/layout/Shell';
 import { HomeView } from './views/HomeView';
 import { ViewSkeleton } from './components/Skeleton';

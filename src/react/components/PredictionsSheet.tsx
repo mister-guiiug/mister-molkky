@@ -1,4 +1,4 @@
-import { Sheet } from '@mister-guiiug/dev-wpa-config/react/sheet';
+import { Sheet } from '@mister-guiiug/dev-pwa-config/react/sheet';
 import { useI18n } from '../../i18n';
 import { useMatchStore } from '../../store/useMatchStore';
 

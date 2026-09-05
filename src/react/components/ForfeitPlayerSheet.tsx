@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Sheet } from '@mister-guiiug/dev-wpa-config/react/sheet';
-import { ConfirmDialog } from '@mister-guiiug/dev-wpa-config/react/confirm-dialog';
+import { Sheet } from '@mister-guiiug/dev-pwa-config/react/sheet';
+import { ConfirmDialog } from '@mister-guiiug/dev-pwa-config/react/confirm-dialog';
 import { useI18n } from '../../i18n';
 import { useMatchStore, useScores } from '../../store/useMatchStore';
 import { ForfeitIcon } from './icons';

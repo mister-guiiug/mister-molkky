@@ -4,10 +4,10 @@ import react from '@vitejs/plugin-react';
 import {
   baseTestOptions,
   coveragePreset,
-} from '@mister-guiiug/dev-wpa-config/vitest-base';
+} from '@mister-guiiug/dev-pwa-config/vitest-base';
 
 const pwaRegisterDouble = fileURLToPath(
-  import.meta.resolve('@mister-guiiug/dev-wpa-config/testing/pwa-register')
+  import.meta.resolve('@mister-guiiug/dev-pwa-config/testing/pwa-register')
 );
 
 export default defineConfig({

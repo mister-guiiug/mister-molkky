@@ -4,7 +4,7 @@
  * L'état, la persistance, l'écoute de `prefers-color-scheme`, l'écriture de
  * `data-theme` et la resynchronisation de `<meta name="theme-color">` sont
  * désormais assurées par `ThemeProvider` / `useTheme`
- * (`@mister-guiiug/dev-wpa-config`). `src/theme.ts` faisait tout cela à la
+ * (`@mister-guiiug/dev-pwa-config`). `src/theme.ts` faisait tout cela à la
  * main — plus un jeu d'abonnés que personne n'écoutait.
  *
  * Ne subsistent que les deux valeurs que le socle ne peut pas deviner.

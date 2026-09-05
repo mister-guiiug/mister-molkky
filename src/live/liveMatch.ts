@@ -4,7 +4,7 @@ import {
   generateCode,
   normalizeCode as normalizePairingCode,
   type PairingAlphabet,
-} from '@mister-guiiug/dev-wpa-config/pairing';
+} from '@mister-guiiug/dev-pwa-config/pairing';
 import { LEGACY_SPECTATOR_PATH, ROUTES } from '../routes';
 import { getSupabase } from '../supabase';
 import type { CurrentMatchState, MatchConfig, Throw } from '../schemas';

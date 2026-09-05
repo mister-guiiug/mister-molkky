@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useI18n } from '../../i18n';
 import { usePlayersStore, pickNextColor } from '../../store/usePlayersStore';
 import type { Player, PlayerId } from '../../schemas';
-import { ConfirmDialog } from '@mister-guiiug/dev-wpa-config/react/confirm-dialog';
+import { ConfirmDialog } from '@mister-guiiug/dev-pwa-config/react/confirm-dialog';
 import { PageContainer } from '../components/layout/PageContainer';
 import { Modal } from '../components/Modal';
 import { PlusIcon, TrashIcon } from '../components/icons';

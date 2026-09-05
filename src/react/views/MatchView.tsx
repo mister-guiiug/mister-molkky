@@ -11,9 +11,9 @@ import { useAvatarUrls } from '../../store/usePlayersStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { ALL_PIN_NUMBERS } from '../../molkky/pins-layout';
 import { ROUTES } from '../../routes';
-import { Sheet } from '@mister-guiiug/dev-wpa-config/react/sheet';
-import { ConfirmDialog } from '@mister-guiiug/dev-wpa-config/react/confirm-dialog';
-import { useWakeLock } from '@mister-guiiug/dev-wpa-config/react/use-wake-lock';
+import { Sheet } from '@mister-guiiug/dev-pwa-config/react/sheet';
+import { ConfirmDialog } from '@mister-guiiug/dev-pwa-config/react/confirm-dialog';
+import { useWakeLock } from '@mister-guiiug/dev-pwa-config/react/use-wake-lock';
 import { PageContainer } from '../components/layout/PageContainer';
 import { PinsBoard } from '../components/PinsBoard';
 import { ScoreTicker } from '../components/ScoreTicker';
@@ -32,7 +32,7 @@ import { Chrono } from '../components/Chrono';
 import { SituationPhoto } from '../components/SituationPhoto';
 import { useLiveStore } from '../../store/useLiveStore';
 import { useFeedback } from '../hooks/useFeedback';
-import { useKeyboardShortcuts } from '@mister-guiiug/dev-wpa-config/react/use-keyboard-shortcuts';
+import { useKeyboardShortcuts } from '@mister-guiiug/dev-pwa-config/react/use-keyboard-shortcuts';
 import { useSwipeDown } from '../hooks/useSwipeDown';
 import {
   announceElimination,

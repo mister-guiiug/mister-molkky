@@ -1,12 +1,12 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Sheet } from '@mister-guiiug/dev-wpa-config/react/sheet';
-import { ConfirmDialog } from '@mister-guiiug/dev-wpa-config/react/confirm-dialog';
+import { Sheet } from '@mister-guiiug/dev-pwa-config/react/sheet';
+import { ConfirmDialog } from '@mister-guiiug/dev-pwa-config/react/confirm-dialog';
 import { useI18n } from '../../i18n';
 import { useMatchStore } from '../../store/useMatchStore';
 import { PageContainer } from '../components/layout/PageContainer';
 import { PullIndicator } from '../components/PullIndicator';
 import { PlayIcon, TrashIcon, TrophyIcon } from '../components/icons';
-import { usePullToRefresh } from '@mister-guiiug/dev-wpa-config/react/use-pull-to-refresh';
+import { usePullToRefresh } from '@mister-guiiug/dev-pwa-config/react/use-pull-to-refresh';
 import { MatchReplay } from '../components/MatchReplay';
 import type { FinishedMatch, RuleVariant } from '../../schemas';
 

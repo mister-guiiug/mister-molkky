@@ -1,5 +1,5 @@
-import { AppFooter as SocleAppFooter } from '@mister-guiiug/dev-wpa-config/react';
-import { repoUrl } from '@mister-guiiug/dev-wpa-config/apps-catalog';
+import { AppFooter as SocleAppFooter } from '@mister-guiiug/dev-pwa-config/react';
+import { repoUrl } from '@mister-guiiug/dev-pwa-config/apps-catalog';
 
 /**
  * Pied de page de l'app : les deux liens viennent du socle, la mention de
