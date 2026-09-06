@@ -18,3 +18,16 @@ jobs:
     with:
       run-doctor: true # la checklist du parc, lue sur le dépôt et sur dist/ (AMELIORATIONS.md, T2)
       run-e2e: false
+      # Des VITE_* FACTICES — jamais les vraies clés, qui ne servent à rien ici.
+      # Sans elles, `import.meta.env.VITE_SUPABASE_URL` vaut `undefined` au
+      # build : le repli `cached = null` de `getSupabase()` devient
+      # inconditionnel, le `await import('@supabase/supabase-js')` inatteignable,
+      # et Rolldown élimine le SDK EN ENTIER. La CI mesurait alors un bundle
+      # amputé de 49,7 kB gzip — un cinquième du total — et déclarait le budget
+      # tenu pendant que le build de `deploy.yml`, qui reçoit les secrets,
+      # dépassait la borne de 35 kB.
+      # Leur seul rôle est d'être NON VIDES : la forme suffit à garder le SDK
+      # dans le graphe, la valeur n'est jamais appelée (aucun test ne réseaute).
+      build-env: |
+        VITE_SUPABASE_URL=https://ci-factice.supabase.co
+        VITE_SUPABASE_ANON_KEY=ci-factice
