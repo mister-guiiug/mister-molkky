@@ -16,5 +16,14 @@ export default defineConfig(
     port: 4173,
     command:
       'cross-env VITE_BASE_PATH=/ npm run build && cross-env VITE_BASE_PATH=/ vite preview --port 4173 --strictPort',
+    // LA LANGUE DU NAVIGATEUR EST FIXÉE, PAS SUBIE. Les specs sont écrites en
+    // français (« Nouvelle partie », « Joueurs »…) et l'app suit
+    // `navigator.language` : lancée depuis un poste ou un runner en `en-US`,
+    // elle rend « New match » et quatre tests sur neuf échouent sur un
+    // « element(s) not found » qui ne dit rien de la cause. Personne ne le
+    // voyait — `.github/workflows/ci.yml` passe `run-e2e: false`.
+    // `overrides` FUSIONNE `use` (socle ≥ 3.x) : le `baseURL` calculé par la
+    // fabrique survit.
+    overrides: { use: { locale: 'fr-FR' } },
   })
 );
