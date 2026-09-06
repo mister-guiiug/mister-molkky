@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { safeLocalStorage } from '../storage';
+import { persist } from 'zustand/middleware';
+import { keepValid, STORE_KEYS, versionedPersistStorage } from './persistence';
 import {
   PlayerSchema,
   newId,
@@ -114,9 +114,23 @@ export const usePlayersStore = create<PlayersState>()(
       },
     }),
     {
-      name: 'mm_players',
-      storage: createJSONStorage(() => safeLocalStorage()),
-      version: 1,
+      name: STORE_KEYS.players,
+      // `version: 1` sans `migrate` : c'est exactement la configuration qui
+      // fait qu'un jour de bascule de modèle, `zustand/persist` hydrate
+      // l'état INITIAL et laisse le premier `set` réécrire la clé. Le roster
+      // passe donc par le magasin versionné du socle, qui valide et met de
+      // côté avant toute perte (voir src/store/persistence.ts).
+      storage: versionedPersistStorage<{ players: Player[] }>({
+        name: STORE_KEYS.players,
+        validate: (data, reject) => {
+          if (data === null || typeof data !== 'object') {
+            throw new Error('mm_players: forme inattendue');
+          }
+          const s = data as { players?: unknown };
+          return { players: keepValid(PlayerSchema, s.players, reject) };
+        },
+      }),
+      partialize: state => ({ players: state.players }),
     }
   )
 );

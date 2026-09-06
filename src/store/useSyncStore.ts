@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { safeLocalStorage } from '../storage';
+import { persist } from 'zustand/middleware';
+import { z } from 'zod';
+import { STORE_KEYS, versionedPersistStorage } from './persistence';
 import { pullSync, pushSync, type SyncPayload } from '../cloudSync';
 import { usePlayersStore } from './usePlayersStore';
 import { useMatchStore } from './useMatchStore';
@@ -8,6 +9,12 @@ import { useTemplatesStore } from './useTemplatesStore';
 import { useSettingsStore } from './useSettingsStore';
 
 type SyncStatus = 'idle' | 'syncing' | 'ok' | 'error';
+
+/** Ce qui survit à un rechargement : le choix de l'utilisateur, pas l'état d'un appel. */
+const PersistedSyncSchema = z.object({
+  enabled: z.boolean().default(false),
+  lastSyncAt: z.string().nullable().default(null),
+});
 
 interface SyncStoreState {
   /** When true, the next push/pull will run; toggle via toggleEnabled. */
@@ -139,9 +146,19 @@ export const useSyncStore = create<SyncStoreState>()(
       },
     }),
     {
-      name: 'mm_sync',
-      storage: createJSONStorage(() => safeLocalStorage()),
-      version: 1,
+      name: STORE_KEYS.sync,
+      storage: versionedPersistStorage<z.infer<typeof PersistedSyncSchema>>({
+        name: STORE_KEYS.sync,
+        validate: (data, reject) => {
+          if (data === null || typeof data !== 'object') {
+            throw new Error('mm_sync: forme inattendue');
+          }
+          const parsed = PersistedSyncSchema.safeParse(data);
+          if (parsed.success) return parsed.data;
+          reject(data);
+          return { enabled: false, lastSyncAt: null };
+        },
+      }),
       // Only persist user choice — status/error are transient.
       partialize: state => ({
         enabled: state.enabled,

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { safeLocalStorage } from '../storage';
+import { persist } from 'zustand/middleware';
+import { keepValid, STORE_KEYS, versionedPersistStorage } from './persistence';
 import {
   MatchTemplateSchema,
   newId,
@@ -52,9 +52,20 @@ export const useTemplatesStore = create<TemplatesState>()(
         })),
     }),
     {
-      name: 'mm_templates',
-      storage: createJSONStorage(() => safeLocalStorage()),
-      version: 1,
+      name: STORE_KEYS.templates,
+      storage: versionedPersistStorage<{ templates: MatchTemplate[] }>({
+        name: STORE_KEYS.templates,
+        validate: (data, reject) => {
+          if (data === null || typeof data !== 'object') {
+            throw new Error('mm_templates: forme inattendue');
+          }
+          const s = data as { templates?: unknown };
+          return {
+            templates: keepValid(MatchTemplateSchema, s.templates, reject),
+          };
+        },
+      }),
+      partialize: state => ({ templates: state.templates }),
     }
   )
 );

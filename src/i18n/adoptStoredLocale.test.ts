@@ -38,6 +38,19 @@ describe('reprise du choix de langue', () => {
     expect(localStorage.getItem(LOCALE_KEY)).toBe('en');
   });
 
+  it('recopie la langue sous l’enveloppe du magasin versionné', async () => {
+    // Ce que le magasin du socle écrit dès la première lecture qui suit la
+    // mise à jour : l'enveloppe change, la reprise doit tenir quand même.
+    localStorage.setItem(
+      SETTINGS_KEY,
+      JSON.stringify({ v: 1, data: { locale: 'en' } })
+    );
+
+    await loadI18nModule();
+
+    expect(localStorage.getItem(LOCALE_KEY)).toBe('en');
+  });
+
   it("n'écrase pas un choix déjà exprimé sous la nouvelle clé", async () => {
     localStorage.setItem(LOCALE_KEY, 'en');
     localStorage.setItem(

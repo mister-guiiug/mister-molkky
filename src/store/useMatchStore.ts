@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { safeLocalStorage } from '../storage';
+import { persist } from 'zustand/middleware';
+import { keepValid, STORE_KEYS, versionedPersistStorage } from './persistence';
 import {
   CurrentMatchStateSchema,
   FinishedMatchSchema,
@@ -141,6 +141,64 @@ function rankingToSchema(entries: RankingEntry[]) {
     eliminated: e.eliminated,
     rank: e.rank,
   }));
+}
+
+/** Ce que ce magasin écrit sur le disque (voir `partialize`). */
+interface PersistedMatch {
+  current: CurrentMatchState | null;
+  history: FinishedMatch[];
+}
+
+/**
+ * L'ANCIENNE chaîne de migrations de `zustand/persist` (v0 → v3), devenue le
+ * `legacy` du magasin versionné.
+ *
+ * Elle rétro-remplit les champs ajoutés au fil des fonctionnalités :
+ * `forfeitedActorIds` / `highlightedThrowIds` / `predictions` (v2), puis
+ * `pausedAt` / `pausedTotalMs` (v3). Elle est IDEMPOTENTE — chaque champ n'est
+ * posé que s'il manque — donc la rejouer sur une donnée déjà à jour ne coûte
+ * rien, et c'est ce qui permet de l'appliquer sans consulter le numéro.
+ *
+ * Le `_migratedFrom: version` qu'elle ajoutait à l'état a disparu : personne ne
+ * l'a jamais lu, et la validation par schéma le retirerait de toute façon.
+ */
+function backfillMatchFields(persistedState: unknown): unknown {
+  if (!persistedState || typeof persistedState !== 'object') {
+    return persistedState;
+  }
+  const s = persistedState as {
+    current?: Record<string, unknown> | null;
+    history?: Record<string, unknown>[];
+  };
+  const fillCurrent = (m: Record<string, unknown> | null | undefined) => {
+    if (!m) return m ?? null;
+    return {
+      ...m,
+      forfeitedActorIds: Array.isArray(m.forfeitedActorIds)
+        ? m.forfeitedActorIds
+        : [],
+      highlightedThrowIds: Array.isArray(m.highlightedThrowIds)
+        ? m.highlightedThrowIds
+        : [],
+      predictions:
+        m.predictions && typeof m.predictions === 'object' ? m.predictions : {},
+      pausedAt: typeof m.pausedAt === 'number' ? m.pausedAt : null,
+      pausedTotalMs: typeof m.pausedTotalMs === 'number' ? m.pausedTotalMs : 0,
+    };
+  };
+  const fillFinished = (m: Record<string, unknown>) => ({
+    ...m,
+    highlightedThrowIds: Array.isArray(m.highlightedThrowIds)
+      ? m.highlightedThrowIds
+      : [],
+    predictions:
+      m.predictions && typeof m.predictions === 'object' ? m.predictions : {},
+  });
+  return {
+    ...s,
+    current: fillCurrent(s.current),
+    history: Array.isArray(s.history) ? s.history.map(fillFinished) : [],
+  };
 }
 
 export const useMatchStore = create<MatchStoreState>()(
@@ -545,58 +603,32 @@ export const useMatchStore = create<MatchStoreState>()(
       },
     }),
     {
-      name: 'mm_match',
-      storage: createJSONStorage(() => safeLocalStorage()),
-      // Bumped to 3 across feature additions — earlier persisted matches
-      // don't carry forfeitedActorIds / highlightedThrowIds / predictions
-      // (v2) nor pausedAt / pausedTotalMs (v3). The migrate() below
-      // backfills them so accessing the fields in the UI never crashes a
-      // rehydrated match.
-      version: 3,
-      migrate: (persistedState: unknown, version) => {
-        if (!persistedState || typeof persistedState !== 'object') {
-          return persistedState as never;
-        }
-        const s = persistedState as {
-          current?: Record<string, unknown> | null;
-          history?: Record<string, unknown>[];
-        };
-        const fillCurrent = (m: Record<string, unknown> | null | undefined) => {
-          if (!m) return m ?? null;
+      name: STORE_KEYS.match,
+      // Un seul compteur : celui de l'enveloppe du socle (voir
+      // src/store/persistence.ts). `version` / `migrate` de `zustand/persist`
+      // ne sont plus posés ici — l'ancienne chaîne 0→3 vit dans `legacy`.
+      storage: versionedPersistStorage<PersistedMatch>({
+        name: STORE_KEYS.match,
+        legacy: backfillMatchFields,
+        validate: (data, reject) => {
+          if (data === null || typeof data !== 'object') {
+            throw new Error('mm_match: forme inattendue');
+          }
+          const s = data as { current?: unknown; history?: unknown };
+          let current: CurrentMatchState | null = null;
+          if (s.current !== null && s.current !== undefined) {
+            const parsed = CurrentMatchStateSchema.safeParse(s.current);
+            if (parsed.success) current = parsed.data;
+            else reject(s.current);
+          }
           return {
-            ...m,
-            forfeitedActorIds: Array.isArray(m.forfeitedActorIds)
-              ? m.forfeitedActorIds
-              : [],
-            highlightedThrowIds: Array.isArray(m.highlightedThrowIds)
-              ? m.highlightedThrowIds
-              : [],
-            predictions:
-              m.predictions && typeof m.predictions === 'object'
-                ? m.predictions
-                : {},
-            pausedAt: typeof m.pausedAt === 'number' ? m.pausedAt : null,
-            pausedTotalMs:
-              typeof m.pausedTotalMs === 'number' ? m.pausedTotalMs : 0,
+            current,
+            // Élément par élément : une partie mal formée ne coûte pas les
+            // cent quatre-vingt-dix-neuf autres.
+            history: keepValid(FinishedMatchSchema, s.history, reject),
           };
-        };
-        const fillFinished = (m: Record<string, unknown>) => ({
-          ...m,
-          highlightedThrowIds: Array.isArray(m.highlightedThrowIds)
-            ? m.highlightedThrowIds
-            : [],
-          predictions:
-            m.predictions && typeof m.predictions === 'object'
-              ? m.predictions
-              : {},
-        });
-        return {
-          ...s,
-          current: fillCurrent(s.current),
-          history: Array.isArray(s.history) ? s.history.map(fillFinished) : [],
-          _migratedFrom: version,
-        } as never;
-      },
+        },
+      }),
       partialize: state => ({
         current: state.current,
         history: state.history,

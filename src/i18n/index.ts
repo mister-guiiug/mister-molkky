@@ -15,8 +15,29 @@ export type { Locale, Messages } from './messages';
  */
 export const LOCALE_STORAGE_KEY = 'mm_locale';
 
-/** Clé du blob `zustand/persist` où la langue vivait jusqu'ici. */
+/** Clé du blob des réglages, où la langue vivait jusqu'ici. */
 const SETTINGS_STORAGE_KEY = 'mm_settings';
+
+/**
+ * La langue, quelle que soit l'enveloppe qui l'entoure.
+ *
+ * TROIS FORMES COEXISTENT sur les appareils, et c'est la conséquence directe
+ * du versionnage du magasin : `{ state, version }` est ce qu'écrivait
+ * `zustand/persist` ; `{ v, data }` est l'enveloppe du magasin versionné du
+ * socle, posée dès la première lecture qui suit la mise à jour ; l'objet nu
+ * couvre le reste. Ne lire que la première — ce que faisait ce fichier —
+ * remettrait en français, une seule fois et sans erreur, l'utilisateur qui
+ * avait choisi l'anglais et qui n'a pas rouvert l'app depuis longtemps.
+ */
+function readStoredLocale(parsed: unknown): unknown {
+  if (parsed === null || typeof parsed !== 'object') return undefined;
+  const envelope = parsed as {
+    state?: { locale?: unknown };
+    data?: { locale?: unknown };
+    locale?: unknown;
+  };
+  return envelope.state?.locale ?? envelope.data?.locale ?? envelope.locale;
+}
 
 /**
  * Reprise du choix déjà stocké, une fois.
@@ -34,9 +55,7 @@ function adoptStoredLocale(): void {
     if (localStorage.getItem(LOCALE_STORAGE_KEY)) return;
     const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
     if (!raw) return;
-    const parsed: unknown = JSON.parse(raw);
-    const stored = (parsed as { state?: { locale?: unknown } } | null)?.state
-      ?.locale;
+    const stored = readStoredLocale(JSON.parse(raw));
     if (stored === 'fr' || stored === 'en') {
       localStorage.setItem(LOCALE_STORAGE_KEY, stored);
     }
