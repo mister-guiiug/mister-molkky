@@ -47,7 +47,11 @@ export const useTemplatesStore = create<TemplatesState>()(
       rename: (id, name) =>
         set(state => ({
           templates: state.templates.map(t =>
-            t.id === id ? { ...t, name: name.trim() || t.name } : t
+            t.id === id
+              ? // `updatedAt` : la fusion cloud ne peut pas départager deux
+                // renommages du même modèle sur `createdAt`, qui ne bouge pas.
+                { ...t, name: name.trim() || t.name, updatedAt: Date.now() }
+              : t
           ),
         })),
     }),

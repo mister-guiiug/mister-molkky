@@ -111,8 +111,10 @@ Sanction configurable après X ratés : **élimination** (officiel), **remise à
 <summary><strong>☁️ Sync cloud multi-device (opt-in)</strong></summary>
 
 - Auth anonyme Supabase (pas de compte à créer)
-- Push / pull manuel d'un blob JSON (roster, historique, templates, paramètres)
-- Last-write-wins, conflit minimal
+- Push / pull manuel : les joueurs, les parties terminées et les modèles de
+  tous vos appareils sont **réunis**, jamais remplacés
+- Fusion par identifiant ; à identifiant égal, le plus récent gagne
+- La partie **en cours** reste sur son appareil, et l'écran le dit
 - Voir [`docs/cloud-sync.md`](./docs/cloud-sync.md) pour le SQL à appliquer
 
 </details>

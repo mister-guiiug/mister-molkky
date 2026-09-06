@@ -1,15 +1,28 @@
 /**
- * Cross-device cloud sync via Supabase. Last-write-wins per device.
+ * Synchronisation multi-appareils par Supabase — LE TRANSPORT, ET RIEN D'AUTRE.
  *
- * Strategy: bundle the four persisted Zustand slices (players, history,
- * templates, settings) into one JSON blob keyed by the anonymous
- * Supabase user. Push on demand, pull on demand. Conflict resolution
- * is intentionally simple — the next iteration can add per-array
- * timestamps + merging.
+ * Ce module lit et écrit UNE ligne (`user_data`) portant un blob JSON, sous
+ * l'identité anonyme de l'utilisateur. Il ne décide plus de rien : la règle qui
+ * dit quoi garder vit dans `src/sync/merge.ts`, et `useSyncStore` l'applique
+ * ENTRE le `pullSync` et le `pushSync`.
  *
- * **Requires a one-time SQL migration in Supabase** — see
- * `docs/cloud-sync.md`. Without the `user_data` table this module
- * gracefully no-ops (errors surfaced to the UI).
+ * CE QUI A CHANGÉ, ET POURQUOI. Ce fichier annonçait « last-write-wins per
+ * device » et posait un `upsert` du blob entier : le dernier appareil à envoyer
+ * écrasait ce que l'autre avait écrit. Une partie notée sur le téléphone du
+ * jardin et une autre sur celui de la maison, et l'une des deux disparaissait.
+ * L'`upsert` est resté — c'est la bonne opération pour écrire une ligne dont on
+ * est le propriétaire — mais ce qu'il écrit est désormais l'UNION, calculée
+ * juste avant l'appel.
+ *
+ * LE FORMAT DE LA LIGNE NE CHANGE PAS (`v: 1`). Les enregistrements peuvent
+ * porter un `updatedAt` de plus, que les versions antérieures de l'app
+ * ignorent : un appareil resté sur l'ancienne version continue de lire ce blob.
+ * Il continue aussi de l'ÉCRASER en entier quand il envoie — la fusion ne
+ * protège une donnée que si les deux appareils ont la version qui fusionne.
+ *
+ * **Demande une migration SQL unique dans Supabase** — voir
+ * `docs/cloud-sync.md`. Sans la table `user_data`, ce module ne fait rien
+ * (l'erreur remonte à l'écran).
  */
 
 import { getSupabase, isSupabaseConfigured } from './supabase';

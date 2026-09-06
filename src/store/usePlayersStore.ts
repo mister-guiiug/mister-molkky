@@ -72,6 +72,10 @@ export const usePlayersStore = create<PlayersState>()(
                   ...patch,
                   id: p.id,
                   createdAt: p.createdAt,
+                  // Sans cette date, la fusion cloud ne peut pas savoir
+                  // laquelle des deux versions du joueur est la bonne :
+                  // `createdAt` est identique des deux côtés.
+                  updatedAt: Date.now(),
                 })
               : p
           ),
@@ -92,7 +96,9 @@ export const usePlayersStore = create<PlayersState>()(
         }
         set(state => ({
           players: state.players.map(p =>
-            p.id === id ? { ...p, avatarBlobKey: key } : p
+            p.id === id
+              ? { ...p, avatarBlobKey: key, updatedAt: Date.now() }
+              : p
           ),
         }));
       },
@@ -101,7 +107,9 @@ export const usePlayersStore = create<PlayersState>()(
         if (current?.avatarBlobKey) await idbDelBlob(current.avatarBlobKey);
         set(state => ({
           players: state.players.map(p =>
-            p.id === id ? { ...p, avatarBlobKey: undefined } : p
+            p.id === id
+              ? { ...p, avatarBlobKey: undefined, updatedAt: Date.now() }
+              : p
           ),
         }));
       },

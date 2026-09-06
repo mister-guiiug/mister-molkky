@@ -282,6 +282,10 @@ export interface Messages {
     cloudPull: string;
     cloudSyncing: string;
     cloudLastSync: string;
+    cloudMerged: string;
+    cloudMergedNothing: string;
+    cloudCurrentMatchKept: string;
+    cloudSettingsNote: string;
     export: string;
     import: string;
     importFailed: string;
@@ -671,11 +675,18 @@ const fr: Messages = {
       'Lit à voix haute le joueur à jouer et les ratés/dépassements (mains libres).',
     cloudSync: 'Sync cloud (multi-appareils)',
     cloudSyncHint:
-      'Sauvegarde / récupère ton roster, ton historique et tes templates sur tous tes appareils. Last-write-wins, voir docs/cloud-sync.md.',
+      'Réunit les joueurs, les parties terminées et les modèles de tous tes appareils : rien n’est remplacé, tout est ajouté. Une partie modifiée des deux côtés garde la version la plus récente.',
     cloudPush: 'Envoyer vers le cloud',
     cloudPull: 'Récupérer du cloud',
     cloudSyncing: 'Synchronisation…',
     cloudLastSync: 'Dernière sync : {date}',
+    cloudMerged:
+      'Réunis : {matches} partie(s), {players} joueur(s), {templates} modèle(s).',
+    cloudMergedNothing: 'Rien de neuf : les deux appareils étaient d’accord.',
+    cloudCurrentMatchKept:
+      'La partie EN COURS n’est pas synchronisée : elle reste sur cet appareil.',
+    cloudSettingsNote:
+      'Les réglages ne se réunissent pas : « Envoyer » impose ceux de cet appareil, « Récupérer » applique ceux du cloud.',
     export: 'Exporter mes données (JSON)',
     import: 'Importer un fichier',
     importFailed: 'Import impossible',
@@ -1067,11 +1078,18 @@ const en: Messages = {
       'Reads out the player to throw and miss/overshoot events (hands-free).',
     cloudSync: 'Cloud sync (multi-device)',
     cloudSyncHint:
-      'Push / pull your roster, history and templates across devices. Last-write-wins; see docs/cloud-sync.md.',
+      'Brings together the players, finished matches and templates from all your devices: nothing is replaced, everything is added. When the same record changed on both sides, the most recent one wins.',
     cloudPush: 'Push to cloud',
     cloudPull: 'Pull from cloud',
     cloudSyncing: 'Syncing…',
     cloudLastSync: 'Last sync: {date}',
+    cloudMerged:
+      'Brought together: {matches} match(es), {players} player(s), {templates} template(s).',
+    cloudMergedNothing: 'Nothing new: both devices already agreed.',
+    cloudCurrentMatchKept:
+      'The match IN PROGRESS is not synced: it stays on this device.',
+    cloudSettingsNote:
+      'Settings are not merged: “Push” imposes this device’s, “Pull” applies the cloud’s.',
     export: 'Export my data (JSON)',
     import: 'Import a file',
     importFailed: 'Import failed',
