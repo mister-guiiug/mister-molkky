@@ -25,6 +25,7 @@ import {
   type RuleSettings,
 } from '../molkky/rules';
 import { buildRanking, type RankingEntry } from '../molkky/ranking';
+import { mergeById } from '../sync/merge';
 import { createLogger } from '@mister-guiiug/dev-pwa-config/logger';
 
 const log = createLogger('store');
@@ -81,6 +82,17 @@ interface MatchStoreState {
 
   removeFromHistory: (id: string) => void;
   clearHistory: () => void;
+  /**
+   * Remet dans l'historique des parties qui viennent d'en sortir — c'est le
+   * versant « Annuler » de `removeFromHistory` et de `clearHistory`.
+   *
+   * IDEMPOTENT PAR IDENTIFIANT, et c'est nécessaire : le bouton « Annuler »
+   * d'une notification peut être cliqué deux fois, et la synchro peut avoir
+   * remis la partie entre-temps. La réinsertion réutilise la fusion du nuage
+   * (`mergeById`) — même règle, un seul endroit à éprouver — puis retrie du
+   * plus récent au plus ancien et applique le plafond de deux cents.
+   */
+  restoreHistory: (matches: FinishedMatch[]) => void;
   importBundle: (raw: unknown) => {
     ok: boolean;
     error?: string;
@@ -582,6 +594,18 @@ export const useMatchStore = create<MatchStoreState>()(
         set(s => ({ history: s.history.filter(m => m.id !== id) })),
 
       clearHistory: () => set({ history: [] }),
+
+      restoreHistory: matches =>
+        set(s => ({
+          history: mergeById(
+            s.history,
+            matches,
+            m => m.id,
+            m => m.finishedAt
+          )
+            .merged.sort((a, b) => b.finishedAt - a.finishedAt)
+            .slice(0, 200),
+        })),
 
       importBundle: raw => {
         try {

@@ -9,6 +9,7 @@ import {
 } from 'react-router-dom';
 import { LabelsProvider } from '@mister-guiiug/dev-pwa-config/react/labels';
 import { IconsProvider } from '@mister-guiiug/dev-pwa-config/react/icons-context';
+import { ToastProvider } from '@mister-guiiug/dev-pwa-config/react/toast';
 import { Shell } from './components/layout/Shell';
 import { HomeView } from './views/HomeView';
 import { ViewSkeleton } from './components/Skeleton';
@@ -143,9 +144,24 @@ export function App() {
     // rester sur le français par défaut du paquet.
     <LabelsProvider locale={locale}>
       <IconsProvider icons={SOCLE_ICONS}>
-        <BrowserRouter basename={basename}>
-          <AppRoutes />
-        </BrowserRouter>
+        {/*
+          La pile de notifications du socle — montée ICI, au-dessus du routeur,
+          parce qu'une notification doit SURVIVRE au changement d'écran : celle
+          qui propose d'annuler une suppression perdrait tout son sens si
+          quitter l'historique l'emportait avec lui.
+
+          `duration: 8000` et non les 5 000 ms du socle : c'est le délai que
+          `docs/cloud-sync.md` annonce, et huit secondes sont ce qu'il faut
+          pour lire « Partie supprimée », comprendre que ce n'était pas la
+          bonne, et viser un bouton sur un téléphone. Le compte à rebours est
+          suspendu tant que le pointeur ou le focus est sur la pile (le socle
+          s'en charge, WCAG 2.2.1).
+        */}
+        <ToastProvider duration={8000}>
+          <BrowserRouter basename={basename}>
+            <AppRoutes />
+          </BrowserRouter>
+        </ToastProvider>
       </IconsProvider>
     </LabelsProvider>
   );

@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Sheet } from '@mister-guiiug/dev-pwa-config/react/sheet';
 import { ConfirmDialog } from '@mister-guiiug/dev-pwa-config/react/confirm-dialog';
+import { useToast } from '@mister-guiiug/dev-pwa-config/react/toast';
 import { useI18n } from '../../i18n';
 import { useMatchStore } from '../../store/useMatchStore';
 import { PageContainer } from '../components/layout/PageContainer';
@@ -34,6 +35,8 @@ export function HistoryView() {
   const history = useMatchStore(s => s.history);
   const remove = useMatchStore(s => s.removeFromHistory);
   const clear = useMatchStore(s => s.clearHistory);
+  const restore = useMatchStore(s => s.restoreHistory);
+  const toast = useToast();
   const [search, setSearch] = useState('');
   const [variant, setVariant] = useState<VariantFilter>('all');
   const [size, setSize] = useState<SizeFilter>('all');
@@ -42,9 +45,6 @@ export function HistoryView() {
   const [selected, setSelected] = useState<FinishedMatch | null>(null);
   const [replayMatch, setReplayMatch] = useState<FinishedMatch | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
-  const [confirmRemove, setConfirmRemove] = useState<FinishedMatch | null>(
-    null
-  );
   const [refreshNonce, setRefreshNonce] = useState(0);
   const onPullRefresh = useCallback(async () => {
     // Local data is already current — bump a nonce so the user sees the
@@ -54,6 +54,44 @@ export function HistoryView() {
   }, []);
   const pull = usePullToRefresh({ onRefresh: onPullRefresh });
   void refreshNonce;
+
+  /**
+   * SUPPRIMER, PUIS POUVOIR REVENIR — le geste de V12.
+   *
+   * Ce qui existait : un `ConfirmDialog` avant chaque suppression. Une question
+   * posée d'avance ne rattrape rien — on répond « oui » par réflexe, et la
+   * partie est perdue quand même — et elle coûte un geste à chaque fois qu'on
+   * supprime volontairement. Ce qui la remplace : la suppression a lieu tout
+   * de suite, et une notification propose de la défaire pendant huit secondes.
+   *
+   * L'IDENTIFIANT DE NOTIFICATION EST UNIQUE, à dessein : supprimer deux
+   * parties de suite doit laisser DEUX annulations possibles, chacune sur sa
+   * partie. Un identifiant stable en aurait remplacé une par l'autre, et la
+   * première serait devenue irrattrapable — ce que la pile bornée du socle
+   * (quatre au plus, le plus ancien cède) rend visible plutôt que silencieux.
+   */
+  const deleteWithUndo = (message: string, removed: FinishedMatch[]) => {
+    let toastId: string | null = null;
+    const undo = () => {
+      restore(removed);
+      if (toastId) toast.dismiss(toastId);
+      toast.success(t('toast.undo'), { duration: 4000 });
+    };
+    toastId = toast.show(
+      <span className="flex items-center gap-3">
+        <span>{message}</span>
+        <button
+          type="button"
+          onClick={undo}
+          aria-label={t('toast.undoDelete')}
+          className="touch-target rounded-lg border-2 px-3 text-sm font-bold"
+          style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
+        >
+          {t('toast.undoAction')}
+        </button>
+      </span>
+    );
+  };
 
   /**
    * Apply name search + advanced filters. Pure derivation from the
@@ -314,7 +352,11 @@ export function HistoryView() {
               </button>
               <button
                 type="button"
-                onClick={() => setConfirmRemove(selected)}
+                onClick={() => {
+                  remove(selected.id);
+                  setSelected(null);
+                  deleteWithUndo(t('history.deleted'), [selected]);
+                }}
                 className="touch-target rounded-lg border px-4 text-sm font-semibold"
                 style={{ borderColor: 'var(--danger)', color: 'var(--danger)' }}
               >
@@ -325,26 +367,28 @@ export function HistoryView() {
         </Sheet>
       )}
 
+      {/*
+        LA QUESTION RESTE ICI, ET SEULEMENT ICI. « Tout effacer » emporte
+        jusqu'à deux cents parties d'un coup : c'est le seul geste de cet écran
+        dont l'ampleur justifie encore qu'on la demande avant. L'annulation s'y
+        ajoute — elle ne la remplace pas —, parce qu'un « oui » réflexe sur ce
+        bouton-là coûte tout l'historique.
+      */}
       <ConfirmDialog
         open={confirmClear}
         title={t('history.deleteAllConfirm')}
         destructive
         onConfirm={() => {
+          const removed = history;
           clear();
           setConfirmClear(false);
+          setSelected(null);
+          deleteWithUndo(
+            t('history.deletedAll', { n: removed.length }),
+            removed
+          );
         }}
         onCancel={() => setConfirmClear(false)}
-      />
-      <ConfirmDialog
-        open={Boolean(confirmRemove)}
-        title={t('history.deleteOne')}
-        destructive
-        onConfirm={() => {
-          if (confirmRemove) remove(confirmRemove.id);
-          setConfirmRemove(null);
-          setSelected(null);
-        }}
-        onCancel={() => setConfirmRemove(null)}
       />
 
       {replayMatch && (

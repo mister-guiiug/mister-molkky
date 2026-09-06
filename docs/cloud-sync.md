@@ -67,6 +67,13 @@ c'est-à-dire un modèle de données différent. C'est assumé : entre une
 suppression qui revient et une partie qui disparaît, le second est une perte,
 le premier une gêne.
 
+Et la gêne est bornée du bon côté : sur l'écran **Historique**, supprimer une
+partie ne demande plus de confirmation — la suppression a lieu, et une
+notification propose de la **défaire pendant huit secondes**
+(`src/react/views/HistoryView.tsx`, éprouvé dans
+`HistoryView.undo.test.tsx`). « Tout effacer », lui, garde sa question _et_
+gagne l'annulation : le geste emporte jusqu'à deux cents parties.
+
 ## Plafonds
 
 La fusion respecte les plafonds de l'app : **200 parties** et **50 modèles**,

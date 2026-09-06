@@ -98,6 +98,7 @@ Sanction configurable après X ratés : **élimination** (officiel), **remise à
 <summary><strong>📊 Après la partie</strong></summary>
 
 - Historique des parties avec filtres (variante, taille, durée, recherche par nom)
+- Suppression **annulable 8 secondes** au lieu d'une confirmation préalable
 - **Replay animé** : scrubable, play/pause, frame-by-frame
 - Carte résultat partageable en image (Web Share API → Insta / WhatsApp / etc.)
 - Stats par joueur : matches, victoires, taux, podiums, précision, séries

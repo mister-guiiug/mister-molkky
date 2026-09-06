@@ -189,7 +189,8 @@ export interface Messages {
     searchPlaceholder: string;
     deleteAll: string;
     deleteAllConfirm: string;
-    deleteOne: string;
+    deleted: string;
+    deletedAll: string;
     durationLabel: string;
     throwsLabel: string;
     won: string;
@@ -368,7 +369,17 @@ export interface Messages {
     skip: string;
   };
   toast: {
+    /** Le message qui SUIT l'annulation. */
     undo: string;
+    /** Le libellé du BOUTON qui annule, dans la notification elle-même. */
+    undoAction: string;
+    /**
+     * Le nom accessible de ce bouton. « Annuler » seul est ambigu au lecteur
+     * d'écran — c'est aussi le mot du bouton qui referme un dialogue — et il
+     * arrive ici hors de tout contexte visuel. Contient le libellé visible,
+     * comme l'exige WCAG 2.5.3.
+     */
+    undoDelete: string;
     saved: string;
     copied: string;
     shared: string;
@@ -582,7 +593,8 @@ const fr: Messages = {
     searchPlaceholder: 'Nom de joueur…',
     deleteAll: 'Tout effacer',
     deleteAllConfirm: 'Effacer tout l’historique ?',
-    deleteOne: 'Supprimer cette partie',
+    deleted: 'Partie supprimée',
+    deletedAll: '{n} partie(s) supprimée(s)',
     durationLabel: 'Durée',
     throwsLabel: 'Lancers',
     won: 'gagne',
@@ -777,6 +789,8 @@ const fr: Messages = {
   },
   toast: {
     undo: 'Action annulée',
+    undoAction: 'Annuler',
+    undoDelete: 'Annuler la suppression',
     saved: 'Enregistré',
     copied: 'Copié dans le presse-papiers',
     shared: 'Partagé',
@@ -986,7 +1000,8 @@ const en: Messages = {
     searchPlaceholder: 'Player name…',
     deleteAll: 'Delete all',
     deleteAllConfirm: 'Erase all history?',
-    deleteOne: 'Delete this match',
+    deleted: 'Match deleted',
+    deletedAll: '{n} match(es) deleted',
     durationLabel: 'Duration',
     throwsLabel: 'Throws',
     won: 'wins',
@@ -1178,6 +1193,8 @@ const en: Messages = {
   },
   toast: {
     undo: 'Action undone',
+    undoAction: 'Undo',
+    undoDelete: 'Undo the deletion',
     saved: 'Saved',
     copied: 'Copied to clipboard',
     shared: 'Shared',
