@@ -12,6 +12,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { pwaSeoPlugin } from '@mister-guiiug/dev-pwa-config/vite-pwa-base';
 import { cspPlugin } from '@mister-guiiug/dev-pwa-config/vite-csp';
 import { visualizer } from 'rollup-plugin-visualizer';
+import { versionPlugin } from '@mister-guiiug/dev-pwa-config/vite-version';
 
 const analyze = process.env.ANALYZE === '1';
 
@@ -83,6 +84,9 @@ export default defineConfig(({ command }) => {
       },
     },
     plugins: [
+      // AVANT cspPlugin : il pose un script inline dans le <head>, que la
+      // CSP doit hacher après coup ; et il écrit version.json au build.
+      versionPlugin({ manifest: true }),
       react(),
       tailwindcss(),
       // SEO partagé famille : canonical/OG via placeholders index.html +
