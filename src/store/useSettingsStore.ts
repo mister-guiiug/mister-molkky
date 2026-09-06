@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { safeLocalStorage } from '../storage';
+import { persist } from 'zustand/middleware';
+import { STORE_KEYS, versionedPersistStorage } from './persistence';
 import { SettingsSchema, type Locale, type Settings } from '../schemas';
 
 interface SettingsState extends Settings {
@@ -37,9 +37,24 @@ export const useSettingsStore = create<SettingsState>()(
       reset: () => set({ ...DEFAULTS }),
     }),
     {
-      name: 'mm_settings',
-      storage: createJSONStorage(() => safeLocalStorage()),
-      version: 1,
+      name: STORE_KEYS.settings,
+      storage: versionedPersistStorage<Settings>({
+        name: STORE_KEYS.settings,
+        validate: (data, reject) => {
+          if (data === null || typeof data !== 'object') {
+            throw new Error('mm_settings: forme inattendue');
+          }
+          // Le schéma porte un défaut par champ : un objet partiel — celui
+          // d'une version antérieure — traverse donc sans migration, et c'est
+          // ce qui rend cette clé sûre à faire évoluer. Un objet dont UNE
+          // valeur est aberrante (`locale: 'de'`) est mis de côté en entier :
+          // dix préférences valent moins que la certitude de les retrouver.
+          const parsed = SettingsSchema.safeParse(data);
+          if (parsed.success) return parsed.data;
+          reject(data);
+          return DEFAULTS;
+        },
+      }),
     }
   )
 );

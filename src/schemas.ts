@@ -16,6 +16,17 @@ export const PlayerSchema = z.object({
   color: HexColorSchema,
   avatarBlobKey: z.string().optional(),
   createdAt: z.number().int(),
+  /**
+   * Dernière modification du joueur (nom, couleur, avatar). SERT À LA FUSION
+   * CLOUD : `createdAt` ne bouge jamais, donc sans cette seconde date deux
+   * versions du même joueur sur deux appareils sont indiscernables et la
+   * synchro n'a aucun moyen de choisir.
+   *
+   * OPTIONNEL, ET SANS MIGRATION : un joueur enregistré avant ce champ n'en a
+   * pas, et `updatedAt ?? createdAt` le date exactement — il n'a jamais été
+   * modifié. Rien à rétro-remplir, donc rien à migrer.
+   */
+  updatedAt: z.number().int().optional(),
 });
 export type Player = z.infer<typeof PlayerSchema>;
 
@@ -145,6 +156,8 @@ export const MatchTemplateSchema = z.object({
   teamMode: TeamModeSchema.default('solo'),
   playerIds: z.array(PlayerIdSchema).default([]),
   createdAt: z.number().int(),
+  /** Dernier renommage. Même rôle et même raison que sur `Player`. */
+  updatedAt: z.number().int().optional(),
 });
 export type MatchTemplate = z.infer<typeof MatchTemplateSchema>;
 

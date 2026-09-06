@@ -189,7 +189,8 @@ export interface Messages {
     searchPlaceholder: string;
     deleteAll: string;
     deleteAllConfirm: string;
-    deleteOne: string;
+    deleted: string;
+    deletedAll: string;
     durationLabel: string;
     throwsLabel: string;
     won: string;
@@ -282,6 +283,10 @@ export interface Messages {
     cloudPull: string;
     cloudSyncing: string;
     cloudLastSync: string;
+    cloudMerged: string;
+    cloudMergedNothing: string;
+    cloudCurrentMatchKept: string;
+    cloudSettingsNote: string;
     export: string;
     import: string;
     importFailed: string;
@@ -364,7 +369,17 @@ export interface Messages {
     skip: string;
   };
   toast: {
+    /** Le message qui SUIT l'annulation. */
     undo: string;
+    /** Le libellé du BOUTON qui annule, dans la notification elle-même. */
+    undoAction: string;
+    /**
+     * Le nom accessible de ce bouton. « Annuler » seul est ambigu au lecteur
+     * d'écran — c'est aussi le mot du bouton qui referme un dialogue — et il
+     * arrive ici hors de tout contexte visuel. Contient le libellé visible,
+     * comme l'exige WCAG 2.5.3.
+     */
+    undoDelete: string;
     saved: string;
     copied: string;
     shared: string;
@@ -578,7 +593,8 @@ const fr: Messages = {
     searchPlaceholder: 'Nom de joueur…',
     deleteAll: 'Tout effacer',
     deleteAllConfirm: 'Effacer tout l’historique ?',
-    deleteOne: 'Supprimer cette partie',
+    deleted: 'Partie supprimée',
+    deletedAll: '{n} partie(s) supprimée(s)',
     durationLabel: 'Durée',
     throwsLabel: 'Lancers',
     won: 'gagne',
@@ -671,11 +687,18 @@ const fr: Messages = {
       'Lit à voix haute le joueur à jouer et les ratés/dépassements (mains libres).',
     cloudSync: 'Sync cloud (multi-appareils)',
     cloudSyncHint:
-      'Sauvegarde / récupère ton roster, ton historique et tes templates sur tous tes appareils. Last-write-wins, voir docs/cloud-sync.md.',
+      'Réunit les joueurs, les parties terminées et les modèles de tous tes appareils : rien n’est remplacé, tout est ajouté. Une partie modifiée des deux côtés garde la version la plus récente.',
     cloudPush: 'Envoyer vers le cloud',
     cloudPull: 'Récupérer du cloud',
     cloudSyncing: 'Synchronisation…',
     cloudLastSync: 'Dernière sync : {date}',
+    cloudMerged:
+      'Réunis : {matches} partie(s), {players} joueur(s), {templates} modèle(s).',
+    cloudMergedNothing: 'Rien de neuf : les deux appareils étaient d’accord.',
+    cloudCurrentMatchKept:
+      'La partie EN COURS n’est pas synchronisée : elle reste sur cet appareil.',
+    cloudSettingsNote:
+      'Les réglages ne se réunissent pas : « Envoyer » impose ceux de cet appareil, « Récupérer » applique ceux du cloud.',
     export: 'Exporter mes données (JSON)',
     import: 'Importer un fichier',
     importFailed: 'Import impossible',
@@ -766,6 +789,8 @@ const fr: Messages = {
   },
   toast: {
     undo: 'Action annulée',
+    undoAction: 'Annuler',
+    undoDelete: 'Annuler la suppression',
     saved: 'Enregistré',
     copied: 'Copié dans le presse-papiers',
     shared: 'Partagé',
@@ -975,7 +1000,8 @@ const en: Messages = {
     searchPlaceholder: 'Player name…',
     deleteAll: 'Delete all',
     deleteAllConfirm: 'Erase all history?',
-    deleteOne: 'Delete this match',
+    deleted: 'Match deleted',
+    deletedAll: '{n} match(es) deleted',
     durationLabel: 'Duration',
     throwsLabel: 'Throws',
     won: 'wins',
@@ -1067,11 +1093,18 @@ const en: Messages = {
       'Reads out the player to throw and miss/overshoot events (hands-free).',
     cloudSync: 'Cloud sync (multi-device)',
     cloudSyncHint:
-      'Push / pull your roster, history and templates across devices. Last-write-wins; see docs/cloud-sync.md.',
+      'Brings together the players, finished matches and templates from all your devices: nothing is replaced, everything is added. When the same record changed on both sides, the most recent one wins.',
     cloudPush: 'Push to cloud',
     cloudPull: 'Pull from cloud',
     cloudSyncing: 'Syncing…',
     cloudLastSync: 'Last sync: {date}',
+    cloudMerged:
+      'Brought together: {matches} match(es), {players} player(s), {templates} template(s).',
+    cloudMergedNothing: 'Nothing new: both devices already agreed.',
+    cloudCurrentMatchKept:
+      'The match IN PROGRESS is not synced: it stays on this device.',
+    cloudSettingsNote:
+      'Settings are not merged: “Push” imposes this device’s, “Pull” applies the cloud’s.',
     export: 'Export my data (JSON)',
     import: 'Import a file',
     importFailed: 'Import failed',
@@ -1160,6 +1193,8 @@ const en: Messages = {
   },
   toast: {
     undo: 'Action undone',
+    undoAction: 'Undo',
+    undoDelete: 'Undo the deletion',
     saved: 'Saved',
     copied: 'Copied to clipboard',
     shared: 'Shared',

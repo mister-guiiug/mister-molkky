@@ -17,6 +17,7 @@ import { isSupabaseConfigured } from '../../supabase';
 import { applyUpdate } from '@mister-guiiug/dev-pwa-config/sw-update';
 import { AppFooter } from '../components/layout/AppFooter';
 import { useSyncStore } from '../../store/useSyncStore';
+import type { MergeReport, MergeStats } from '../../sync/merge';
 import { dateSlug, downloadJson } from '@mister-guiiug/dev-pwa-config/download';
 import { FamilyApps } from '@mister-guiiug/dev-pwa-config/react';
 
@@ -442,6 +443,7 @@ function CloudSyncSection() {
   const toggleEnabled = useSyncStore(s => s.toggleEnabled);
   const pushNow = useSyncStore(s => s.pushNow);
   const pullNow = useSyncStore(s => s.pullNow);
+  const lastOutcome = useSyncStore(s => s.lastOutcome);
   // Envoyer/récupérer parlent à Supabase (connexion anonyme + une requête) :
   // rien de tout cela n'aboutit hors ligne. Le BASCULE, lui, n'est pas gardée —
   // c'est un simple drapeau local, on peut l'armer sans réseau pour plus tard.
@@ -507,6 +509,38 @@ function CloudSyncSection() {
                 })}
               </p>
             )}
+            {status === 'ok' && lastOutcome && (
+              <p
+                role="status"
+                className="m-0 text-xs"
+                style={{ color: 'var(--muted)' }}
+              >
+                {mergedCount(lastOutcome.report) === 0
+                  ? t('settings.cloudMergedNothing')
+                  : t('settings.cloudMerged', {
+                      matches: countOf(lastOutcome.report.history),
+                      players: countOf(lastOutcome.report.players),
+                      templates: countOf(lastOutcome.report.templates),
+                    })}
+              </p>
+            )}
+            {/* CE QUI NE SE FUSIONNE PAS, DIT À L'ÉCRAN. Une partie en cours
+                reste sur son appareil : deux suites de lancers dans la même
+                partie ne se réunissent pas, et l'envoyer réintroduirait
+                l'écrasement que la fusion vient de retirer. Le taire serait
+                pire que la limite elle-même. */}
+            {status === 'ok' && lastOutcome?.currentMatchKept && (
+              <p
+                role="status"
+                className="m-0 text-xs"
+                style={{ color: 'var(--muted)' }}
+              >
+                {t('settings.cloudCurrentMatchKept')}
+              </p>
+            )}
+            <p className="m-0 text-xs" style={{ color: 'var(--muted)' }}>
+              {t('settings.cloudSettingsNote')}
+            </p>
             {status === 'error' && error && (
               <p className="m-0 text-xs" style={{ color: 'var(--danger)' }}>
                 {error}
@@ -516,6 +550,19 @@ function CloudSyncSection() {
         )}
       </div>
     </Section>
+  );
+}
+
+/** Ce qu'une collection a reçu de l'autre appareil : ajouts et remplacements. */
+function countOf(stats: MergeStats): number {
+  return stats.added + stats.updated;
+}
+
+function mergedCount(report: MergeReport): number {
+  return (
+    countOf(report.players) +
+    countOf(report.history) +
+    countOf(report.templates)
   );
 }
 
