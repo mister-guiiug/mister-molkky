@@ -27,12 +27,13 @@
     "prepare": "husky"
   },
   "bundleBudget": {
-    "totalGzipKb": 225
+    "_pourquoi": "Relevé de 225 à 275 le 06/09/2026, parce que 225 n'a JAMAIS été confronté au bundle de production. Deux angles morts empilés. (1) `pwa-bundle-budget` sortait MUET en CI derrière le lien de node_modules/.bin et rendait 0 (dev-pwa-config#219, corrigé en 4.5.0). (2) La CI ne passait aucun `build-env`, donc `import.meta.env.VITE_SUPABASE_URL` valait `undefined` au build : le repli `cached = null` de `getSupabase()` devenait inconditionnel, le `await import('@supabase/supabase-js')` inatteignable, et Rolldown éliminait le SDK EN ENTIER — 49,7 kB gzip, un cinquième du total, absents d'une mesure censée décrire ce que l'utilisateur télécharge. MESURÉ SUR LE SITE DÉPLOYÉ, pas sur un build local : les 23 fichiers JS du precache de https://mister-guiiug.github.io/mister-molkky/sw.js pèsent 260,1 kB gzip, dont `supabase-BKf4Ckmc.js` à 49,7 kB. La production dépassait donc 225 de 35,1 kB — 15,6 % au-dessus — en silence, depuis que la borne existe. C'est le plus gros écart du parc. 275 rend ~6 % de marge, le rapport retenu par mister-puzzle et mister-miss-koh. LE COMMENTAIRE DE `deploy.yml` DIT VRAI — les secrets Supabase sont facultatifs — MAIS ILS SONT POSÉS (VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY, 02/09/2026) : c'est donc bien le gros build qui part sur Pages, et c'est lui que la borne doit tenir. ATTENTION À LA MESURE : `pwa-bundle-budget` compte en Kio (÷ 1024) avec son propre gzip, le tableau de `vite build` compte en ko (÷ 1000) et annonce quelques kB de plus POUR LE MÊME BUILD. LE LEVIER, le jour où la borne doit redescendre : le SDK est déjà derrière un `import()` paresseux et ne pèse sur personne avant le premier usage multi-appareils — mais le budget compte TOUT le JS émis, pas le chemin critique.",
+    "totalGzipKb": 275
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
     "@eslint/js": "^9.39.4",
-    "@mister-guiiug/dev-pwa-config": "^4.4.1",
+    "@mister-guiiug/dev-pwa-config": "^4.5.1",
     "@playwright/test": "^1.49.1",
     "@tailwindcss/vite": "^4.3.0",
     "@testing-library/jest-dom": "^6.6.3",
