@@ -190,18 +190,29 @@ export default defineConfig(({ command }) => {
           scope: basePath,
           lang: 'fr',
           categories: ['games', 'sports', 'utilities'],
+          // UNE IMAGE PAR USAGE. Les deux PNG étaient déclarés
+          // `any maskable` : la MÊME image servait au navigateur, qui la
+          // montre telle quelle, et à Android, qui la rogne à son masque.
+          // `logo.png` est une tuile arrondie sur fond gris clair — le
+          // masque lui coupait les coins, et le fond clair faisait liseré.
           icons: [
             {
               src: 'icons/icon-192.png',
               sizes: '192x192',
               type: 'image/png',
-              purpose: 'any maskable',
+              purpose: 'any',
             },
             {
               src: 'icons/icon-512.png',
               sizes: '512x512',
               type: 'image/png',
-              purpose: 'any maskable',
+              purpose: 'any',
+            },
+            {
+              src: 'icons/icon-maskable.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable',
             },
           ],
           screenshots: [
