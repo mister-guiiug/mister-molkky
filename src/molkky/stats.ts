@@ -105,7 +105,7 @@ export function computeStats(
         stats.pinFrequency[pin] = (stats.pinFrequency[pin] ?? 0) + 1;
       }
       const prev = runningScores.get(t.playerId) ?? 0;
-      let delta = 0;
+      let delta: number;
       if (t.fallenPins.length === 0) delta = 0;
       else if (t.fallenPins.length === 1) delta = t.fallenPins[0]!;
       else delta = t.fallenPins.length;
