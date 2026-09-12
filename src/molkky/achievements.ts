@@ -6,12 +6,7 @@ import type { FinishedMatch } from '../schemas';
  * any React dependency. See `react/components/icons.tsx`.
  */
 export type AchievementIconName =
-  | 'target'
-  | 'flame'
-  | 'zap'
-  | 'trophy'
-  | 'medal'
-  | 'trending-up';
+  'target' | 'flame' | 'zap' | 'trophy' | 'medal' | 'trending-up';
 
 export interface AchievementDef {
   readonly id: string;

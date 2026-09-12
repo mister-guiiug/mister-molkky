@@ -11,12 +11,7 @@ export const ROUTES = {
 } as const;
 
 export type RouteKey =
-  | 'home'
-  | 'match'
-  | 'history'
-  | 'stats'
-  | 'players'
-  | 'settings';
+  'home' | 'match' | 'history' | 'stats' | 'players' | 'settings';
 
 export const LEGACY_REDIRECTS: Record<string, string> = {
   '/partie': ROUTES.match,
