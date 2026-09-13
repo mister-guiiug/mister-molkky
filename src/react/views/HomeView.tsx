@@ -12,7 +12,7 @@ import { Logo } from '../components/Logo';
 import { Modal } from '../components/Modal';
 import { MatchSetupWizard } from '../components/MatchSetupWizard';
 import { WelcomeTutorial } from '../components/WelcomeTutorial';
-import { PwaInstallPrompt } from '../components/PwaInstallPrompt';
+import { PwaInstallPrompt } from '@mister-guiiug/dev-pwa-config/react/pwa-install-prompt';
 import { ConfirmDialog } from '@mister-guiiug/dev-pwa-config/react/confirm-dialog';
 import { LiveIcon, PlayIcon, TargetIcon, TrashIcon } from '../components/icons';
 import { isSupabaseConfigured } from '../../supabase';
@@ -236,7 +236,11 @@ export function HomeView() {
       <AppFooter />
 
       {!hasSeenWelcome && <WelcomeTutorial />}
-      <PwaInstallPrompt />
+      {/* `dismissKey` REPREND LA CLÉ DU BANDEAU MAISON : le socle la lit comme
+          un refus d'avant sa cadence et le traduit en report d'un mois, au lieu
+          de reproposer l'installation à qui l'avait déjà écartée. Sans elle, la
+          clé serait neuve et le refus passé perdu. */}
+      <PwaInstallPrompt dismissKey="mm_install_dismissed" />
     </PageContainer>
   );
 }
