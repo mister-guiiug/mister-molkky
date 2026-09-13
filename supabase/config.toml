@@ -26,10 +26,11 @@ major_version = 17
 [db.migrations]
 enabled = true
 
-# Le direct (`live_matches`) n'est pas encore décrit en migration, donc la pile
-# locale n'a rien à répliquer. À rouvrir quand il le sera.
+# Rouvert avec `0002_live_matches.sql` : le direct repose entièrement sur la
+# réplication (`postgres_changes`), et une pile locale qui la coupe ferait passer
+# pour un bug de l'application ce qui n'est qu'un service éteint.
 [realtime]
-enabled = false
+enabled = true
 
 # Mister Mölkky n'a ni compte, ni fichier : rien à démarrer de ce côté, et
 # chaque service en moins est une pile locale qui démarre.
