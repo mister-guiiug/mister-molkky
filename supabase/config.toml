@@ -1,0 +1,43 @@
+# Configuration de la CLI Supabase pour ce dépôt.
+#
+# POURQUOI CE FICHIER EXISTE, ALORS QUE L'APPLICATION EST HORS LIGNE PAR DÉFAUT.
+# La CLI ne se reconnaît « dans un projet » que par la présence de
+# `supabase/config.toml` : sans lui, `supabase link` et `supabase db push`
+# refusent de démarrer. Mister Mölkky n'en avait aucun, et c'est la cause de
+# fond de la panne du 13/09/2026 : sa base était restée VIDE depuis la création
+# du projet le 02/09, parce qu'il n'existait aucun chemin — ni manuel ni
+# automatisé — pour lui appliquer du SQL. Le SQL du direct vivait dans
+# `docs/live-supabase.md`, à copier-coller dans l'éditeur du tableau de bord.
+#
+# Ce fichier ne décrit QUE la pile locale (`supabase start`, `supabase db reset`).
+# Le projet hébergé se configure par son tableau de bord ; les seules choses
+# qu'il partage avec ce fichier sont le dossier des migrations et la majeure de
+# Postgres.
+project_id = "mister-molkky"
+
+[db]
+port = 54322
+shadow_port = 54320
+# Doit rester alignée sur la majeure du projet hébergé (`show server_version;`,
+# 17.6 au 13/09/2026) : une migration validée sur une autre majeure peut passer
+# en local et échouer en ligne.
+major_version = 17
+
+[db.migrations]
+enabled = true
+
+# Le direct (`live_matches`) n'est pas encore décrit en migration, donc la pile
+# locale n'a rien à répliquer. À rouvrir quand il le sera.
+[realtime]
+enabled = false
+
+# Mister Mölkky n'a ni compte, ni fichier : rien à démarrer de ce côté, et
+# chaque service en moins est une pile locale qui démarre.
+[auth]
+enabled = false
+
+[storage]
+enabled = false
+
+[studio]
+enabled = false
