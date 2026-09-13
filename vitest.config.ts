@@ -48,11 +48,26 @@ export default defineConfig({
       include: ['src/molkky/**'],
       // A regression FLOOR set just below current coverage — ratchet these
       // up as new tests land; never lower them to make a red run green.
+      //
+      // Ces planchers n'étaient VÉRIFIÉS NULLE PART jusqu'au 13/09/2026 : la
+      // CI lance `npm run test`, sans `--coverage`, donc Vitest ne mesurait
+      // rien et ne comparait rien. Le dépôt était à 61,34 / 53,59 / 60,86 /
+      // 66,22 — trois des quatre enfoncés — et `achievements.ts`, cent
+      // soixante-dix-sept lignes de règles pures, n'avait AUCUN test.
+      // Mesure du jour, une fois achievements, ranking et stats couverts :
+      // 94,11 / 85,25 / 100 / 97,01.
+      //
+      // Les seuils sont posés deux points SOUS la mesure, et non à la mesure
+      // exacte. `mister-footcoach` cale les siens au centième : sa CI est
+      // passée au rouge sans qu'une ligne bouge, un Rolldown plus récent
+      // ayant fait sortir du rapport des sous-arbres entièrement couverts.
+      // Deux points absorbent ce bruit d'outillage sans rien laisser passer
+      // d'une vraie régression.
       thresholds: {
-        statements: 65,
-        branches: 80,
-        functions: 70,
-        lines: 65,
+        statements: 92,
+        branches: 83,
+        functions: 98,
+        lines: 95,
       },
     },
   },
