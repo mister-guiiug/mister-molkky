@@ -1,13 +1,22 @@
 /**
  * Génère les PNG PWA à partir de public/logo.png (logo de marque haute résolution).
- * Réduction par moyenne de blocs (box filter) avec pré-multiplication alpha
- * pour un rendu net sans dépendance native.
  * Exécuter : npm run icons
+ *
+ * SHARP PLUTÔT QUE PNGJS. Le dépôt portait DEUX bibliothèques d'images pour un
+ * seul travail : `sharp`, exigé par `pwa-icons` du socle, et `pngjs`, que ce
+ * script était seul à employer. L'en-tête d'alors s'en justifiait par « aucune
+ * dépendance native » — ce qui a cessé d'être vrai le jour où le socle est
+ * entré. Restait le coût : `pngjs` n'a plus rien publié depuis février 2023 et
+ * figurait, à ce titre, parmi les librairies dormantes du parc.
+ *
+ * Le dessin, lui, ne change pas de main : la reprise du fond (plus bas) reste
+ * du JavaScript sur les pixels bruts, faute de remplissage par propagation
+ * dans sharp.
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PNG } from 'pngjs';
+import sharp from 'sharp';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -15,53 +24,30 @@ const input = join(root, 'public', 'logo.png');
 const outDir = join(root, 'public', 'icons');
 
 await mkdir(outDir, { recursive: true });
-const src = PNG.sync.read(await readFile(input));
 
-/** Réduction box-filter sur canal alpha pré-multiplié. */
-function resize(image, dstW, dstH) {
-  const { width: sw, height: sh, data: sd } = image;
-  const out = new PNG({ width: dstW, height: dstH });
-  const od = out.data;
+// `ensureAlpha` : le canal est ici une certitude, pas une supposition — la
+// suite indexe les pixels par blocs de quatre octets.
+const { data: src, info } = await sharp(await readFile(input))
+  .ensureAlpha()
+  .raw()
+  .toBuffer({ resolveWithObject: true });
+const raw = { width: info.width, height: info.height, channels: 4 };
 
-  for (let dy = 0; dy < dstH; dy++) {
-    const sy0 = Math.floor((dy * sh) / dstH);
-    const sy1 = Math.max(sy0 + 1, Math.floor(((dy + 1) * sh) / dstH));
-    for (let dx = 0; dx < dstW; dx++) {
-      const sx0 = Math.floor((dx * sw) / dstW);
-      const sx1 = Math.max(sx0 + 1, Math.floor(((dx + 1) * sw) / dstW));
+/**
+ * Niveau 9 et filtrage adaptatif : les défauts de sharp (niveau 6, filtre
+ * fixe) rendent des fichiers PLUS LOURDS que pngjs, qui compresse au maximum —
+ * 312 ko pour le 512, là où pngjs en produit 275 des mêmes pixels. Ainsi
+ * réglé, sharp repasse dessous, à 252.
+ */
+const PNG_OPTIONS = { compressionLevel: 9, adaptiveFiltering: true };
 
-      let r = 0;
-      let g = 0;
-      let b = 0;
-      let a = 0;
-      let n = 0;
-      for (let sy = sy0; sy < sy1; sy++) {
-        for (let sx = sx0; sx < sx1; sx++) {
-          const i = (sy * sw + sx) << 2;
-          const sa = sd[i + 3] / 255;
-          r += sd[i] * sa;
-          g += sd[i + 1] * sa;
-          b += sd[i + 2] * sa;
-          a += sd[i + 3];
-          n++;
-        }
-      }
-
-      const alpha = a / n;
-      const o = (dy * dstW + dx) << 2;
-      if (alpha === 0) {
-        od[o] = od[o + 1] = od[o + 2] = od[o + 3] = 0;
-      } else {
-        const sumA = a / 255;
-        od[o] = Math.round(r / sumA);
-        od[o + 1] = Math.round(g / sumA);
-        od[o + 2] = Math.round(b / sumA);
-        od[o + 3] = Math.round(alpha);
-      }
-    }
-  }
-  return out;
-}
+/**
+ * `lanczos3`, le noyau par défaut de sharp, à la place de la moyenne de blocs
+ * qui tenait ici. Il rend le mot « MOLKKY » plus net aux petites tailles ;
+ * l'écart moyen sur l'ancienne sortie est de 2 niveaux sur 255, donc invisible
+ * ailleurs.
+ */
+const KERNEL = 'lanczos3';
 
 /**
  * LE MASKABLE EST UNE AUTRE IMAGE, PAS LA MÊME EN PLUS PETIT.
@@ -85,9 +71,9 @@ function resize(image, dstW, dstH) {
  *      de la toile. Le mot « MOLKKY » est ce qui s'en approche le plus : il
  *      atteignait le rayon 0,402 — dehors, de peu. À 88 % il tombe à 0,354.
  */
-function renderMaskable(image, size) {
-  const { width: w, height: h, data: d } = image;
-  const lire = i => [d[i << 2], d[(i << 2) + 1], d[(i << 2) + 2]];
+function fondEtMasque() {
+  const { width: w, height: h } = info;
+  const lire = i => [src[i << 2], src[(i << 2) + 1], src[(i << 2) + 2]];
   const clair = i => {
     const [r, g, b] = lire(i);
     const max = Math.max(r, g, b);
@@ -152,27 +138,39 @@ function renderMaskable(image, size) {
     }
   }
   const fond = n ? [sr / n, sg / n, sb / n].map(Math.round) : [45, 95, 62];
+  return { dehors, fond };
+}
 
-  // — l'illustration à 88 %, le pourtour de la même teinte
-  const out = new PNG({ width: size, height: size });
-  const od = out.data;
-  const echelle = 0.88;
-  const marge = (size * (1 - echelle)) / 2;
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const oi = (y * size + x) << 2;
-      const sx = Math.round(((x - marge) / (size * echelle)) * w);
-      const sy = Math.round(((y - marge) / (size * echelle)) * h);
-      const hors = sx < 0 || sy < 0 || sx >= w || sy >= h;
-      const si = hors ? -1 : sy * w + sx;
-      const c = hors || dehors[si] ? fond : lire(si);
-      od[oi] = c[0];
-      od[oi + 1] = c[1];
-      od[oi + 2] = c[2];
-      od[oi + 3] = 255;
-    }
+async function renderMaskable(size) {
+  const { dehors, fond } = fondEtMasque();
+
+  // Le fond clair est repeint AVANT la réduction : repeindre après laisserait
+  // sharp mélanger le gris au vert sur le pourtour, et le liseré reviendrait
+  // par la petite porte.
+  const repeint = Buffer.from(src);
+  for (let i = 0; i < dehors.length; i++) {
+    if (!dehors[i]) continue;
+    const o = i << 2;
+    repeint[o] = fond[0];
+    repeint[o + 1] = fond[1];
+    repeint[o + 2] = fond[2];
+    repeint[o + 3] = 255;
   }
-  return out;
+
+  const inner = Math.round(size * 0.88);
+  const marge = Math.floor((size - inner) / 2);
+  const background = { r: fond[0], g: fond[1], b: fond[2], alpha: 1 };
+  return sharp(repeint, { raw })
+    .resize(inner, inner, { kernel: KERNEL })
+    .extend({
+      top: marge,
+      bottom: size - inner - marge,
+      left: marge,
+      right: size - inner - marge,
+      background,
+    })
+    .png(PNG_OPTIONS)
+    .toBuffer();
 }
 
 const sizes = [
@@ -184,14 +182,13 @@ const sizes = [
 ];
 
 for (const { w, h, name } of sizes) {
-  const resized = resize(src, w, h);
-  await writeFile(join(outDir, name), PNG.sync.write(resized));
+  await sharp(src, { raw })
+    .resize(w, h, { kernel: KERNEL })
+    .png(PNG_OPTIONS)
+    .toFile(join(outDir, name));
 }
 
-await writeFile(
-  join(outDir, 'icon-maskable.png'),
-  PNG.sync.write(renderMaskable(src, 512))
-);
+await writeFile(join(outDir, 'icon-maskable.png'), await renderMaskable(512));
 
 console.log(
   'Icônes écrites dans public/icons/ (192, 512, apple-touch 180, logo 128, favicon 64, maskable 512).'
