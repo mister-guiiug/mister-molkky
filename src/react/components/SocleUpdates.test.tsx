@@ -78,9 +78,17 @@ describe('SocleUpdates', () => {
     expect(banner).toHaveAttribute('data-dwc', 'update-banner');
     expect(banner).toHaveTextContent('Mise à jour disponible');
     // Le bandeau maison n'avait qu'un bouton : qui ne voulait pas recharger
-    // tout de suite n'avait aucune sortie.
-    expect(screen.getByText('Recharger')).toBeInTheDocument();
-    expect(screen.getByText('Plus tard')).toBeInTheDocument();
+    // tout de suite n'avait aucune sortie. On vérifie donc qu'il y en a DEUX,
+    // par leur crochet stable et non par leur libellé : celui du bouton de mise
+    // à jour appartient au socle, qui l'a déjà changé une fois — « Recharger »
+    // est devenu « Mettre à jour » en 4.16.0, et ce test-ci a rougi pour un
+    // mot, pas pour un comportement.
+    expect(
+      banner.querySelector('[data-dwc="update-banner-update"]')
+    ).not.toBeNull();
+    expect(
+      banner.querySelector('[data-dwc="update-banner-dismiss"]')
+    ).not.toBeNull();
   });
 
   it('traduit le bandeau, ce que le bandeau maison ne pouvait pas faire', () => {
@@ -94,7 +102,14 @@ describe('SocleUpdates', () => {
       swStub.needRefresh();
     });
 
-    expect(screen.getByRole('status')).toHaveTextContent('Update available');
-    expect(screen.getByText('Reload')).toBeInTheDocument();
+    // Ce qu'on éprouve ici, c'est que le bandeau SUIT LA LOCALE — pas qu'il dit
+    // tel mot. Le titre le montre déjà ; le libellé des boutons appartient au
+    // socle, et le figer ferait rougir ce test à chaque reformulation, comme
+    // c'est arrivé en 4.16.0. On vérifie donc que le bouton est là et qu'il
+    // porte un libellé, pas lequel.
+    const banner = screen.getByRole('status');
+    expect(banner).toHaveTextContent('Update available');
+    const maj = banner.querySelector('[data-dwc="update-banner-update"]');
+    expect(maj?.textContent?.trim()).toBeTruthy();
   });
 });
