@@ -48,9 +48,14 @@ export function LiveShareSheet({ open, onClose }: LiveShareSheetProps) {
       return;
     }
     let cancelled = false;
-    // Le module socle `/qr` charge sa peer `qrcode` (~50 ko) paresseusement
-    // — le poids n'est téléchargé que si la feuille de partage s'ouvre,
-    // exactement l'ancien `import('qrcode')` local.
+    // Le module socle `/qr` charge sa peer `uqr` paresseusement — le poids
+    // n'est téléchargé que si la feuille de partage s'ouvre, exactement
+    // l'ancien `import('qrcode')` local.
+    //
+    // La peer était `qrcode` jusqu'au socle 4.16.0 : 4,1 ko gzip au lieu de
+    // 9,5, et plus aucune dépendance transitive. `qrToDataUrl` rend depuis une
+    // data-URL SVG et non plus PNG — elle va dans un `<img src>` ci-dessous,
+    // où les deux marchent, et le SVG y est plus net.
     void qrToDataUrl(shareUrl, {
       margin: 1,
       width: 240,
