@@ -15,6 +15,8 @@ import { HomeView } from './views/HomeView';
 import { ViewSkeleton } from './components/Skeleton';
 import { CloseIcon } from './components/icons';
 import { useI18n } from '../i18n';
+import { ConsentBanner } from '@mister-guiiug/dev-pwa-config/react/consent-banner';
+import { usePageViews } from '@mister-guiiug/dev-pwa-config/react/use-page-views';
 import {
   LEGACY_REDIRECTS,
   LEGACY_SPECTATOR_PATH,
@@ -56,6 +58,17 @@ const PracticeView = lazy(() =>
 
 function DocumentTitle() {
   const location = useLocation();
+
+  /*
+   * LA VUE DE PAGE VIT ICI, avec le titre du document : ce composant est déjà
+   * celui qui écoute la route et ne rend rien. GA4 n'envoie `page_view` qu'au
+   * chargement du document, et `initAnalytics` pose en plus
+   * `send_page_view: false` pour que la première vue passe par ce hook comme
+   * les autres — sinon l'écran d'entrée serait compté deux fois.
+   *
+   * Ne fait rien tant que le consentement n'est pas accordé.
+   */
+  usePageViews(location.pathname);
   const { t, locale } = useI18n();
 
   useEffect(() => {
@@ -131,6 +144,10 @@ function AppRoutes() {
           </Routes>
         </div>
       </Suspense>
+      {/* Une `region`, pas une boîte modale : elle ne recouvre rien et ne
+          piège pas le focus. Ne rend RIEN tant que `VITE_GA_MEASUREMENT_ID`
+          n'est pas posée — sans identifiant, il n'y a rien à demander. */}
+      <ConsentBanner gaMeasurementId={import.meta.env.VITE_GA_MEASUREMENT_ID} />
     </Shell>
   );
 }
