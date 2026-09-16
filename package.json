@@ -28,12 +28,14 @@
   },
   "bundleBudget": {
     "_pourquoi": "Relevé de 225 à 275 le 06/09/2026, parce que 225 n'a JAMAIS été confronté au bundle de production. Deux angles morts empilés. (1) `pwa-bundle-budget` sortait MUET en CI derrière le lien de node_modules/.bin et rendait 0 (dev-pwa-config#219, corrigé en 4.5.0). (2) La CI ne passait aucun `build-env`, donc `import.meta.env.VITE_SUPABASE_URL` valait `undefined` au build : le repli `cached = null` de `getSupabase()` devenait inconditionnel, le `await import('@supabase/supabase-js')` inatteignable, et Rolldown éliminait le SDK EN ENTIER — 49,7 kB gzip, un cinquième du total, absents d'une mesure censée décrire ce que l'utilisateur télécharge. MESURÉ SUR LE SITE DÉPLOYÉ, pas sur un build local : les 23 fichiers JS du precache de https://mister-guiiug.github.io/mister-molkky/sw.js pèsent 260,1 kB gzip, dont `supabase-BKf4Ckmc.js` à 49,7 kB. La production dépassait donc 225 de 35,1 kB — 15,6 % au-dessus — en silence, depuis que la borne existe. C'est le plus gros écart du parc. 275 rend ~6 % de marge, le rapport retenu par mister-puzzle et mister-miss-koh. LE COMMENTAIRE DE `deploy.yml` DIT VRAI — les secrets Supabase sont facultatifs — MAIS ILS SONT POSÉS (VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY, 02/09/2026) : c'est donc bien le gros build qui part sur Pages, et c'est lui que la borne doit tenir. ATTENTION À LA MESURE : `pwa-bundle-budget` compte en Kio (÷ 1024) avec son propre gzip, le tableau de `vite build` compte en ko (÷ 1000) et annonce quelques kB de plus POUR LE MÊME BUILD. LE LEVIER, le jour où la borne doit redescendre : le SDK est déjà derrière un `import()` paresseux et ne pèse sur personne avant le premier usage multi-appareils — mais le budget compte TOUT le JS émis, pas le chemin critique. RELEVÉ DE 275 À 310 LE 13/09/2026, à la montée de librairies — et l'angle mort décrit ci-dessus a mordu UNE SECONDE FOIS, sur moi. Le build LOCAL rendait 264,1 Kio et passait sous 275 ; la CI, elle, rendait 281,8 et a refusé le déploiement. Même cause qu'en septembre : sans `VITE_SUPABASE_*` dans l'environnement, `getSupabase()` retombe sur `cached = null`, l'`import()` du SDK devient inatteignable et Rolldown l'élimine — la mesure locale décrit donc un bundle que personne ne télécharge. RÈGLE : sur ce dépôt, ne JAMAIS caler une borne sur un `npm run build` de poste ; prendre le chiffre du job de déploiement. 310 rend ~10 % de marge sur la mesure de CI.",
-    "totalGzipKb": 310
+    "totalGzipKb": 417,
+    "preloadGzipKb": 227,
+    "_pourquoiPreload": "Posé le 16/09/2026 avec Sentry, socle 4.18.0. Le total compte les morceaux ASYNCHRONES : il monte de 310 à 417 kB par la seule installation du SDK, alors que le chemin critique ne bouge pas. Sans cette seconde borne, ~151 kB de mou couvriraient toute régression. Mesuré 205.5 kB, budget à +10 %."
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^10.0.1",
-    "@mister-guiiug/dev-pwa-config": "^4.17.1",
+    "@mister-guiiug/dev-pwa-config": "^4.18.0",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.1",
@@ -61,6 +63,7 @@
   },
   "dependencies": {
     "@rive-app/react-canvas": "^4.34.2",
+    "@sentry/react": "^10.75.0",
     "@supabase/supabase-js": "^2.116.0",
     "lucide-react": "^1.45.0",
     "qr-scanner": "^1.4.2",
