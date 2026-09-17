@@ -21,8 +21,6 @@ import type { MergeReport, MergeStats } from '../../sync/merge';
 import { dateSlug, downloadJson } from '@mister-guiiug/dev-pwa-config/download';
 import { FamilyApps } from '@mister-guiiug/dev-pwa-config/react';
 
-declare const __APP_VERSION__: string | undefined;
-
 const REPO_URL = 'https://github.com/mister-guiiug/mister-molkky';
 const BMAC_URL = 'https://buymeacoffee.com/mister.guiiug';
 
@@ -317,13 +315,7 @@ export function SettingsView() {
       <Section label={t('settings.about')}>
         <div className="flex flex-col items-center gap-3 text-center">
           <Logo size={56} />
-          <div>
-            <p className="m-0 text-base font-black">Mister Mölkky</p>
-            <p className="m-0 text-xs" style={{ color: 'var(--muted)' }}>
-              {t('settings.version')}{' '}
-              {typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.1.0'}
-            </p>
-          </div>
+          <p className="m-0 text-base font-black">Mister Mölkky</p>
           <p
             className="m-0 text-sm leading-relaxed"
             style={{ color: 'var(--muted)' }}
