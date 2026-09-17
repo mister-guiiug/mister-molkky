@@ -4,11 +4,14 @@ import { I18nProvider, LOCALE_STORAGE_KEY } from '../../../i18n';
 import { AppFooter } from './AppFooter';
 
 /**
- * Le pied de page doit offrir une PORTE DE SORTIE : dire quelle version tourne
- * et emmener vers `issues/new` avec le gabarit du compte déjà rempli. Les deux
- * props existaient dans le socle depuis la 4.4.0 sans que cette app les pose —
- * c'est exactement ce qu'un test attrape, et ce qu'aucun `npm run build` ne
- * pouvait signaler.
+ * Le pied de page doit offrir une PORTE DE SORTIE : emmener vers `issues/new`
+ * avec le gabarit du compte déjà rempli — version et commit compris. La prop
+ * existait dans le socle depuis la 4.4.0 sans que cette app la pose ; c'est
+ * exactement ce qu'un test attrape, et ce qu'aucun `npm run build` ne pouvait
+ * signaler.
+ *
+ * Le numéro, LUI, ne s'affiche plus nulle part : il portait un lien vers
+ * `…/releases/tag/vX.Y.Z` et aucune app du parc ne crée de tag git.
  */
 /** La seule porte par laquelle le socle lit le build (`version.js`). */
 const buildGlobal = globalThis as { __DWC_BUILD__?: unknown };
@@ -52,13 +55,20 @@ describe('AppFooter', () => {
     expect(href.searchParams.get('environnement')).toContain('écran');
   });
 
-  it('affiche le numéro de version du build', () => {
-    render(
+  it("n'affiche AUCUN numéro de version, même quand le build en pose un", () => {
+    // Le pied de page en affichait un, lié vers `…/releases/tag/vX.Y.Z` :
+    // aucune app du parc ne crée de tag git, et ce lien répondait 404. Le
+    // build est toujours lu — le test ci-dessus le vérifie dans l'URL du
+    // rapport de bug — il n'est simplement plus MONTRÉ.
+    const { container } = render(
       <I18nProvider>
         <AppFooter />
       </I18nProvider>
     );
 
-    expect(screen.getByText(/1\.4\.2/)).toBeInTheDocument();
+    expect(screen.queryByText(/1\.4\.2/)).not.toBeInTheDocument();
+    expect(
+      container.querySelector('[data-dwc="app-version-value"]')
+    ).toBeNull();
   });
 });

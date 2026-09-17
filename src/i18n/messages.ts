@@ -298,7 +298,6 @@ export interface Messages {
     forceUpdateInProgress: string;
     about: string;
     aboutText: string;
-    version: string;
     sourceCode: string;
     buyCoffee: string;
   };
@@ -713,7 +712,6 @@ const fr: Messages = {
     about: 'À propos',
     aboutText:
       'Application offline — vos données restent sur votre appareil et ne sont jamais partagées.',
-    version: 'v',
     sourceCode: 'Code source',
     buyCoffee: 'Buy me a coffee',
   },
@@ -1118,7 +1116,6 @@ const en: Messages = {
     about: 'About',
     aboutText:
       'Offline app — your data stays on your device and is never shared.',
-    version: 'v',
     sourceCode: 'Source code',
     buyCoffee: 'Buy me a coffee',
   },
