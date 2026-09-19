@@ -12,6 +12,7 @@ import { useSettingsStore } from '../../store/useSettingsStore';
 import { ALL_PIN_NUMBERS } from '../../molkky/pins-layout';
 import { ROUTES } from '../../routes';
 import { Sheet } from '@mister-guiiug/dev-pwa-config/react/sheet';
+import { GESTES, trackEvent } from '@mister-guiiug/dev-pwa-config/analytics';
 import { ConfirmDialog } from '@mister-guiiug/dev-pwa-config/react/confirm-dialog';
 import { useWakeLock } from '@mister-guiiug/dev-pwa-config/react/use-wake-lock';
 import { PageContainer } from '../components/layout/PageContainer';
@@ -222,6 +223,28 @@ export function MatchView() {
     lastFinishedRef.current = lastFinished.id;
     void pushLiveFinish(String(lastFinished.winnerId));
   }, [liveRole, lastFinished, pushLiveFinish]);
+
+  /*
+   * LA FIN DE PARTIE — avec SON PROPRE garde, et non celui d'à côté.
+   *
+   * `lastFinishedRef` ci-dessus ne se pose que si `liveRole === 'host'` : s'y
+   * adosser ne compterait que les parties diffusées en direct, c'est-à-dire
+   * une minorité, sans que le chiffre n'ait l'air faux. Un identifiant de
+   * partie mémorisé à part est la seule façon de compter chaque fin UNE fois,
+   * quel que soit le mode.
+   *
+   * Ni le vainqueur, ni les scores, ni les pronostics : ce sont des personnes.
+   */
+  const finMesureeRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!lastFinished) return;
+    if (lastFinished.id === finMesureeRef.current) return;
+    finMesureeRef.current = lastFinished.id;
+    trackEvent(GESTES.PARTIE, {
+      etape: 'terminee',
+      direct: liveRole === 'host',
+    });
+  }, [lastFinished, liveRole]);
 
   const togglePin = (pin: number) => {
     setFallen(prev => {
