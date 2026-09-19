@@ -19,12 +19,31 @@ jobs:
     # secrets du dépôt à un workflow qui n'en demande pas un seul.
     with:
       run-doctor: true # la checklist du parc, lue sur le dépôt et sur dist/ (AMELIORATIONS.md, T2)
+      # `doctor-strict` reste à `false`, et voici pourquoi. Relevé du 19/09/2026 :
+      # le docteur rend « 0 défaut(s) » ici, mais pas « 0 dette(s) » — et
+      # `--strict` échoue sur une dette (pwa-doctor.mjs:1631). Ce qui bloque,
+      # cette PR appliquée :
+      #   · déploiement Pages écrit à la main : ni repli SPA 404.html, ni required-env, ni base path
+      #   · VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY en secret alors que Vite les copie dans le bundle
+      # Le mode strict s'active quand cette liste est vide. Pas avant : une CI
+      # rouge sur une dette connue et non traitée n'apprend rien à personne.
       # Les seuils de `vitest.config.ts` ne sont VÉRIFIÉS que si la CI
       # joue `--coverage` : sans cette entrée Vitest ne mesure rien,
       # donc ne compare rien, et le job sort vert. Relevé du 13/09/2026 :
       # six dépôts déclaraient des seuils, UN SEUL les jouait.
       run-coverage: true
-      run-e2e: false
+      # La suite existait et ne tournait nulle part : le docteur le disait en
+      # dette (« les e2e ne tournent pas en CI »), et rien ne peut échouer sur
+      # une dette. Mesuré le 19/09/2026 avec la commande exacte du
+      # réutilisable : 9 tests, 11 s, tous verts.
+      #
+      # `.*` et non le défaut du socle : sous `@critical|@a11y`, TROIS fichiers
+      # sur cinq restent entièrement dehors (feedback, home, stats) et le job
+      # sortirait vert sans les avoir joués — 2 tests au lieu de 9. Ce que le
+      # filtre ferait gagner : quelques secondes. Un filtre qui coûte de la
+      # couverture et ne rend rien, on ne le garde pas (cf. miss-badminton).
+      run-e2e: true
+      e2e-grep: '.*'
       # Des VITE_* FACTICES — jamais les vraies clés, qui ne servent à rien ici.
       # Sans elles, `import.meta.env.VITE_SUPABASE_URL` vaut `undefined` au
       # build : le repli `cached = null` de `getSupabase()` devient
