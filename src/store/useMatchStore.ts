@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { GESTES, trackEvent } from '@mister-guiiug/dev-pwa-config/analytics';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { keepValid, STORE_KEYS, versionedPersistStorage } from './persistence';
@@ -236,6 +237,24 @@ export const useMatchStore = create<MatchStoreState>()(
           predictions: {},
         });
         set({ current, pendingFeedback: null });
+        /*
+         * POSÉ DANS LE STORE, ET C'EST UNE EXCEPTION ASSUMÉE.
+         *
+         * La règle du parc est d'instrumenter le handler, parce qu'un store est
+         * aussi appelé par un import ou une reprise de sauvegarde. Ici, non :
+         * `startMatch` n'a que trois appelants, tous des gestes d'utilisateur
+         * — l'accueil, et deux « rejouer » depuis l'écran de match. La
+         * réhydratation passe par `persist`, pas par cette action. Le poser aux
+         * trois endroits ne dirait rien de plus et pourrait diverger.
+         *
+         * `joueurs` est un NOMBRE, pas un nom : savoir si l'app sert en duo ou
+         * à huit change ce qu'on met à l'écran. Les noms des joueurs, eux, sont
+         * saisis et ne partent pas.
+         */
+        trackEvent(GESTES.PARTIE, {
+          etape: 'demarree',
+          joueurs: players.length,
+        });
       },
 
       recordThrow: (fallenPins, options) => {
