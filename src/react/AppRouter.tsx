@@ -17,6 +17,7 @@ import { CloseIcon } from './components/icons';
 import { useI18n } from '../i18n';
 import { ConsentBanner } from '@mister-guiiug/dev-pwa-config/react/consent-banner';
 import { usePageViews } from '@mister-guiiug/dev-pwa-config/react/use-page-views';
+import { useIdlePrefetch } from '@mister-guiiug/dev-pwa-config/react/use-prefetch';
 import {
   LEGACY_REDIRECTS,
   LEGACY_SPECTATOR_PATH,
@@ -33,7 +34,7 @@ const SOCLE_ICONS = { close: CloseIcon };
 
 // CHAQUE IMPORT DE VUE DU MENU EST NOMMÉ, parce qu'il sert DEUX FOIS : à
 // `lazy` ci-dessous, et au préchargement à l'inactivité de
-// `usePrechargeLesVuesDuMenu`. Deux `import()` du même spécificateur ne
+// `CHARGE_LES_VUES_DU_MENU`. Deux `import()` du même spécificateur ne
 // téléchargent qu'une fois — le registre de modules dédoublonne — mais encore
 // faut-il que ce soit LITTÉRALEMENT le même spécificateur, sinon le bundler
 // émet deux morceaux et le préchargement ne sert plus à rien.
@@ -84,9 +85,6 @@ const PracticeView = lazy(() =>
   import('./views/PracticeView').then(m => ({ default: m.PracticeView }))
 );
 
-/** `navigator.connection` n'est pas dans les types du DOM : il reste un brouillon. */
-type NavigateurEconome = Navigator & { connection?: { saveData?: boolean } };
-
 /**
  * PRÉCHARGE LES VUES DU MENU DÈS QUE LE FIL PRINCIPAL SOUFFLE.
  *
@@ -102,39 +100,22 @@ type NavigateurEconome = Navigator & { connection?: { saveData?: boolean } };
  * pendant que le visiteur regarde l'accueil, elles ne coûtent rien de
  * perceptible — et elles n'entrent PAS dans `bundleBudget.preloadGzipKb`, qui
  * ne mesure que ce qui est `modulepreload` dans le document.
+ *
+ * LE QUAND EST AU SOCLE (`useIdlePrefetch`) : `requestIdleCallback` plafonné,
+ * repli minuté là où il manque (Safari), rien du tout quand le visiteur épargne
+ * son forfait (`saveData`) ou traîne en 2G, et un échec avalé — au clic, `lazy`
+ * redemandera le morceau et c'est LUI qui portera l'erreur.
+ *
+ * `allSettled`, pas `all` : un morceau qui échoue n'empêche pas les quatre
+ * autres d'arriver.
+ *
+ * UNE CONSTANTE DE MODULE, PAS UNE FLÈCHE DANS LE COMPOSANT : le socle ne
+ * lance un chargeur qu'une fois et le reconnaît à son IDENTITÉ. Écrit dans le
+ * composant, il serait neuf à chaque montage, et la garantie « une fois »
+ * tomberait avec lui.
  */
-function usePrechargeLesVuesDuMenu() {
-  useEffect(() => {
-    // `saveData` : le visiteur a demandé qu'on épargne son forfait. On ne
-    // télécharge alors que ce qu'il demande vraiment — et c'est précisément
-    // pour ce cas-là que le menu, lui, sait désormais dire qu'il charge.
-    if ((navigator as NavigateurEconome).connection?.saveData) return;
-
-    let annule = false;
-    const precharge = () => {
-      if (annule) return;
-      // Un échec ici est sans conséquence : au clic, `lazy` redemandera le
-      // morceau et c'est LUI qui portera l'erreur, dans son propre `Suspense`.
-      for (const charge of CHARGEURS_DU_MENU) void charge().catch(() => {});
-    };
-
-    // `requestIdleCallback` manque encore à Safari avant la 17 ; le repli
-    // minuté vaut mieux que rien. Le `timeout` borne l'attente sur un appareil
-    // qui n'est jamais vraiment inactif.
-    if (typeof window.requestIdleCallback === 'function') {
-      const id = window.requestIdleCallback(precharge, { timeout: 3000 });
-      return () => {
-        annule = true;
-        window.cancelIdleCallback?.(id);
-      };
-    }
-    const id = window.setTimeout(precharge, 1200);
-    return () => {
-      annule = true;
-      window.clearTimeout(id);
-    };
-  }, []);
-}
+const CHARGE_LES_VUES_DU_MENU = () =>
+  Promise.allSettled(CHARGEURS_DU_MENU.map(charge => charge()));
 
 function DocumentTitle() {
   const location = useLocation();
@@ -201,7 +182,7 @@ function LegacySpectatorRedirect() {
 }
 
 function AppRoutes() {
-  usePrechargeLesVuesDuMenu();
+  useIdlePrefetch(CHARGE_LES_VUES_DU_MENU);
   const location = useLocation();
   return (
     <Shell>
