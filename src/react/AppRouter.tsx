@@ -31,20 +31,48 @@ import {
  */
 const SOCLE_ICONS = { close: CloseIcon };
 
+// CHAQUE IMPORT DE VUE DU MENU EST NOMMÉ, parce qu'il sert DEUX FOIS : à
+// `lazy` ci-dessous, et au préchargement à l'inactivité de
+// `usePrechargeLesVuesDuMenu`. Deux `import()` du même spécificateur ne
+// téléchargent qu'une fois — le registre de modules dédoublonne — mais encore
+// faut-il que ce soit LITTÉRALEMENT le même spécificateur, sinon le bundler
+// émet deux morceaux et le préchargement ne sert plus à rien.
+const chargeMatch = () => import('./views/MatchView');
+const chargePlayers = () => import('./views/PlayersView');
+const chargeStats = () => import('./views/StatsView');
+const chargeHistory = () => import('./views/HistoryView');
+const chargeSettings = () => import('./views/SettingsView');
+
+/**
+ * Les cinq vues qu'une entrée du menu peut atteindre — et elles seules.
+ *
+ * `JoinLiveView`, `SpectatorView` et `PracticeView` restent hors de la liste :
+ * on n'y arrive pas d'un clic dans la barre basse mais par un lien de partage,
+ * un QR code ou l'accueil. Les précharger ferait payer à tout le monde ce que
+ * presque personne n'ouvre.
+ */
+const CHARGEURS_DU_MENU = [
+  chargeMatch,
+  chargePlayers,
+  chargeStats,
+  chargeHistory,
+  chargeSettings,
+];
+
 const MatchView = lazy(() =>
-  import('./views/MatchView').then(m => ({ default: m.MatchView }))
+  chargeMatch().then(m => ({ default: m.MatchView }))
 );
 const HistoryView = lazy(() =>
-  import('./views/HistoryView').then(m => ({ default: m.HistoryView }))
+  chargeHistory().then(m => ({ default: m.HistoryView }))
 );
 const StatsView = lazy(() =>
-  import('./views/StatsView').then(m => ({ default: m.StatsView }))
+  chargeStats().then(m => ({ default: m.StatsView }))
 );
 const PlayersView = lazy(() =>
-  import('./views/PlayersView').then(m => ({ default: m.PlayersView }))
+  chargePlayers().then(m => ({ default: m.PlayersView }))
 );
 const SettingsView = lazy(() =>
-  import('./views/SettingsView').then(m => ({ default: m.SettingsView }))
+  chargeSettings().then(m => ({ default: m.SettingsView }))
 );
 const JoinLiveView = lazy(() =>
   import('./views/JoinLiveView').then(m => ({ default: m.JoinLiveView }))
@@ -55,6 +83,58 @@ const SpectatorView = lazy(() =>
 const PracticeView = lazy(() =>
   import('./views/PracticeView').then(m => ({ default: m.PracticeView }))
 );
+
+/** `navigator.connection` n'est pas dans les types du DOM : il reste un brouillon. */
+type NavigateurEconome = Navigator & { connection?: { saveData?: boolean } };
+
+/**
+ * PRÉCHARGE LES VUES DU MENU DÈS QUE LE FIL PRINCIPAL SOUFFLE.
+ *
+ * LE DÉFAUT QUE CECI CORRIGE. Sans préchargement, le morceau d'une vue n'est
+ * demandé qu'AU CLIC. Relevé le 20/09/2026 sur https://mister-guiiug.github.io/mister-molkky/,
+ * première visite, service worker pas encore installé : le clic sur « Joueurs »
+ * demande `PlayersView`, 2 039 octets — et coûte pourtant 161 ms, parce que ce
+ * n'est pas du poids mais un aller-retour réseau complet, payé au pire moment.
+ * Pendant ces 161 ms, l'URL indiquait déjà `/players` et l'écran affichait
+ * encore l'accueil, sans rien pour le dire (voir `RouteFallback`).
+ *
+ * Les cinq vues du menu pèsent ensemble 23,2 Kio compressés. Téléchargées
+ * pendant que le visiteur regarde l'accueil, elles ne coûtent rien de
+ * perceptible — et elles n'entrent PAS dans `bundleBudget.preloadGzipKb`, qui
+ * ne mesure que ce qui est `modulepreload` dans le document.
+ */
+function usePrechargeLesVuesDuMenu() {
+  useEffect(() => {
+    // `saveData` : le visiteur a demandé qu'on épargne son forfait. On ne
+    // télécharge alors que ce qu'il demande vraiment — et c'est précisément
+    // pour ce cas-là que le menu, lui, sait désormais dire qu'il charge.
+    if ((navigator as NavigateurEconome).connection?.saveData) return;
+
+    let annule = false;
+    const precharge = () => {
+      if (annule) return;
+      // Un échec ici est sans conséquence : au clic, `lazy` redemandera le
+      // morceau et c'est LUI qui portera l'erreur, dans son propre `Suspense`.
+      for (const charge of CHARGEURS_DU_MENU) void charge().catch(() => {});
+    };
+
+    // `requestIdleCallback` manque encore à Safari avant la 17 ; le repli
+    // minuté vaut mieux que rien. Le `timeout` borne l'attente sur un appareil
+    // qui n'est jamais vraiment inactif.
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(precharge, { timeout: 3000 });
+      return () => {
+        annule = true;
+        window.cancelIdleCallback?.(id);
+      };
+    }
+    const id = window.setTimeout(precharge, 1200);
+    return () => {
+      annule = true;
+      window.clearTimeout(id);
+    };
+  }, []);
+}
 
 function DocumentTitle() {
   const location = useLocation();
@@ -88,6 +168,23 @@ function DocumentTitle() {
   return null;
 }
 
+/**
+ * CE REPLI NE SE VOIT QUE SUR UN ATTERRISSAGE DIRECT, et il faut le savoir
+ * avant d'essayer de l'améliorer : react-router 7 enveloppe tout changement
+ * d'URL dans `startTransition` (littéralement, dans son `BrowserRouter`), et
+ * React 19 garde délibérément l'écran déjà affiché plutôt que de le remplacer
+ * par un repli. Sur un CLIC dans l'application, il ne paraît donc JAMAIS.
+ *
+ * Mesuré le 20/09/2026 sur le site publié, première visite, 188 échantillons du
+ * DOM toutes les 16 ms : `aria-busy` est resté faux d'un bout à l'autre et le
+ * nombre d'éléments `[role="status"]` n'a jamais quitté 1 — le `ViewSkeleton`
+ * ci-dessous n'a pas été monté une seule fois, pendant que l'URL disait déjà
+ * `/players` et que l'écran montrait encore l'accueil.
+ *
+ * C'est donc la barre de navigation qui dit qu'elle charge (voir `Shell`) ; ce
+ * repli-ci ne couvre que l'arrivée de plain-pied sur une URL, où rien n'est
+ * encore à l'écran.
+ */
 function RouteFallback() {
   // Le rôle `status` + aria-busy est porté par le SkeletonGroup du socle,
   // à l'intérieur de ViewSkeleton — plus besoin d'un conteneur annoncé ici.
@@ -104,6 +201,7 @@ function LegacySpectatorRedirect() {
 }
 
 function AppRoutes() {
+  usePrechargeLesVuesDuMenu();
   const location = useLocation();
   return (
     <Shell>

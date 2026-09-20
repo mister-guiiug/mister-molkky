@@ -10,6 +10,8 @@ export interface Messages {
     stats: string;
     players: string;
     settings: string;
+    /** Annoncé par la barre basse tant que le morceau de la vue n'est pas là. */
+    loading: string;
   };
   documentTitle: {
     home: string;
@@ -404,6 +406,7 @@ const fr: Messages = {
     stats: 'Statistiques',
     players: 'Joueurs',
     settings: 'Paramètres',
+    loading: 'Chargement…',
   },
   documentTitle: {
     home: 'Mister Mölkky',
@@ -814,6 +817,7 @@ const en: Messages = {
     stats: 'Stats',
     players: 'Players',
     settings: 'Settings',
+    loading: 'Loading…',
   },
   documentTitle: {
     home: 'Mister Mölkky',
