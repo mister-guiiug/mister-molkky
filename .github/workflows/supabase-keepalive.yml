@@ -14,7 +14,9 @@ jobs:
   keepalive:
     uses: mister-guiiug/dev-pwa-config/.github/workflows/pwa-supabase-keepalive.yml@v6
     # Nommés, pas hérités : le workflow déclare exactement ces deux secrets.
+    # Leur VALEUR vient de variables — une URL de projet et une clé anonyme
+    # partent dans le bundle, ce ne sont pas des pouvoirs.
     # `inherit` lui donnerait accès à tout le trousseau du dépôt.
     secrets:
-      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
