@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { I18nProvider } from '../../i18n';
 import { Shell } from './layout/Shell';
@@ -70,9 +70,12 @@ describe('bandeau hors connexion', () => {
     // localement »), pas le défaut du socle (« Hors ligne — reconnexion… ») :
     // ici, la nuance est tout le message. La locale de jsdom n'est pas
     // garantie, d'où les deux formulations.
-    expect(screen.getByRole('status')).toHaveTextContent(
-      /sauvegardées localement|saved locally/
-    );
+    //
+    // ON INTERROGE LE BANDEAU, PAS « LE » `role="status"` DE LA PAGE — ce que
+    // le commentaire de `banner()` annonçait déjà. La barre basse en porte un
+    // second depuis qu'elle sait dire qu'elle charge une vue, et un
+    // `getByRole('status')` global lève alors « found multiple elements ».
+    expect(banner()).toHaveTextContent(/sauvegardées localement|saved locally/);
   });
 
   it('disparaît immédiatement au retour du réseau', () => {
