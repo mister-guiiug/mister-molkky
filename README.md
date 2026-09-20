@@ -189,7 +189,7 @@ src/
 ├── tts.ts               # Voice announcer (Web Speech API)
 ├── shareCard.ts         # Canvas → PNG export
 ├── cloudSync.ts         # Supabase Auth + sync blob
-└── sounds.ts            # Web Audio API synth (sans assets audio)
+└── sounds.ts            # Table des sons (le synthé Web Audio est au socle : `audio`)
 ```
 
 **Principe directeur** : le moteur de règles dans `src/molkky/` est 100 % pur — zéro dépendance React, zéro state, zéro I/O. Le store recompose tout l'état dérivé (scores, classement, joueur courant) à partir de la seule liste ordonnée de lancers. Conséquences :
