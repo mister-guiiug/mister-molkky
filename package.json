@@ -24,6 +24,7 @@
     "test:all": "npm run test && npm run test:e2e",
     "icons": "node scripts/generate-pwa-icons.mjs",
     "type-check": "tsc -b",
+    "type-check:7": "pwa-typecheck-7",
     "prepare": "husky"
   },
   "bundleBudget": {
@@ -56,6 +57,7 @@
     "prettier": "^3.9.8",
     "rollup-plugin-visualizer": "^7.1.1",
     "typescript": "~6.0.3",
+    "typescript-7": "npm:typescript@~7.0.2",
     "typescript-eslint": "^8.70.0",
     "vite": "^8.3.0",
     "vite-plugin-pwa": "^1.3.0",
