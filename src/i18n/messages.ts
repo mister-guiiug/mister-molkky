@@ -279,6 +279,11 @@ export interface Messages {
     coachHint: string;
     voiceAnnouncer: string;
     voiceAnnouncerHint: string;
+    /** Nom de la voix choisie ; vide = choix automatique du socle. */
+    voiceName: string;
+    voiceNameHint: string;
+    voiceNameAuto: string;
+    voiceNameTry: string;
     cloudSync: string;
     cloudSyncHint: string;
     cloudPush: string;
@@ -687,6 +692,11 @@ const fr: Messages = {
     voiceAnnouncer: 'Annonceur vocal',
     voiceAnnouncerHint:
       'Lit à voix haute le joueur à jouer et les ratés/dépassements (mains libres).',
+    voiceName: 'Voix de l’annonceur',
+    voiceNameHint:
+      'Certaines voix prononcent mal les prénoms. Écoute, et changes-en si besoin.',
+    voiceNameAuto: 'Automatique',
+    voiceNameTry: 'Écouter',
     cloudSync: 'Sync cloud (multi-appareils)',
     cloudSyncHint:
       'Réunit les joueurs, les parties terminées et les modèles de tous tes appareils : rien n’est remplacé, tout est ajouté. Une partie modifiée des deux côtés garde la version la plus récente.',
@@ -1093,6 +1103,11 @@ const en: Messages = {
     voiceAnnouncer: 'Voice announcer',
     voiceAnnouncerHint:
       'Reads out the player to throw and miss/overshoot events (hands-free).',
+    voiceName: 'Announcer voice',
+    voiceNameHint:
+      'Some voices mispronounce names. Have a listen, and switch if needed.',
+    voiceNameAuto: 'Automatic',
+    voiceNameTry: 'Listen',
     cloudSync: 'Cloud sync (multi-device)',
     cloudSyncHint:
       'Brings together the players, finished matches and templates from all your devices: nothing is replaced, everything is added. When the same record changed on both sides, the most recent one wins.',

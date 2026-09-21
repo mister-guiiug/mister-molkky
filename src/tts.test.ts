@@ -7,8 +7,8 @@ import type { Locale } from './schemas';
  * The Web Speech plumbing — keeping a reference so the utterance survives the
  * garbage collector, never calling `speak()` in the same tick as `cancel()`,
  * picking a voice for the locale — lives in the socle
- * (`@mister-guiiug/dev-pwa-config/speech`) and is tested there, nine tests
- * with counter-proofs. Re-testing it here would test the mock.
+ * (`@mister-guiiug/dev-pwa-config/speech`) and is tested there, with
+ * counter-proofs. Re-testing it here would test the mock.
  *
  * What belongs to molkky is the WORDING: which sentence for which event, in
  * which language, and the full stop that closes it. That last one is not
@@ -27,6 +27,9 @@ const { announceElimination, announceOvershoot, announceTurn } =
 const dernierTexte = () => speak.mock.calls.at(-1)?.[0] as string;
 /** The locale handed to the socle on the last call. */
 const derniereLocale = () => speak.mock.calls.at(-1)?.[1] as Locale;
+/** The options handed to the socle on the last call. */
+const dernieresOptions = () =>
+  speak.mock.calls.at(-1)?.[2] as { voiceName?: string } | undefined;
 
 beforeEach(() => {
   speak.mockClear();
@@ -100,5 +103,43 @@ describe('voice announcer', () => {
     announceTurn('Marc', 'fr');
     expect(derniereLocale()).toBe('fr');
     expect(derniereLocale()).not.toBe('fr-FR');
+  });
+
+  /**
+   * THE CHOSEN VOICE HAS TO TRAVEL, whichever helper. Nothing in the Web Speech
+   * API says how well a voice articulates — measured 21/09/2026, the first
+   * French voice on Windows mangles words after punctuation while its two
+   * neighbours do not — so the user's pick is the only way out, and dropping it
+   * on one helper out of three would look like a voice that fails "sometimes".
+   */
+  it('carries the chosen voice through, whatever the helper', () => {
+    const appels: Array<[string, (v?: string) => void]> = [
+      ['announceTurn', v => announceTurn('Marc', 'fr', v)],
+      ['announceOvershoot', v => announceOvershoot('fr', v)],
+      ['announceElimination', v => announceElimination('Marc', 'fr', v)],
+    ];
+
+    for (const [nom, appel] of appels) {
+      appel('Microsoft Paul - French (France)');
+      expect(dernieresOptions(), nom).toEqual({
+        voiceName: 'Microsoft Paul - French (France)',
+      });
+    }
+  });
+
+  /**
+   * THE REAL "no choice" IS THE EMPTY STRING, not `undefined`: that is what the
+   * settings store holds by default and what `MatchView` forwards. Both mean
+   * "no preference" to the socle, and either way the announcement still goes
+   * out — an unset setting must never silence the announcer.
+   */
+  it('announces anyway when no voice is chosen', () => {
+    announceTurn('Marc', 'fr', '');
+    expect(dernieresOptions()).toEqual({ voiceName: '' });
+    expect(dernierTexte()).toBe('À toi Marc.');
+
+    announceTurn('Marc', 'fr');
+    expect(dernieresOptions()).toEqual({ voiceName: undefined });
+    expect(dernierTexte()).toBe('À toi Marc.');
   });
 });

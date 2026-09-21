@@ -12,6 +12,7 @@ interface SettingsState extends Settings {
   toggleColorblind: () => void;
   toggleCoach: () => void;
   toggleVoiceAnnouncer: () => void;
+  setVoiceName: (name: string) => void;
   markWelcomeSeen: () => void;
   markMatchOnboardingSeen: () => void;
   reset: () => void;
@@ -32,6 +33,7 @@ export const useSettingsStore = create<SettingsState>()(
       toggleCoach: () => set(s => ({ coach: !s.coach })),
       toggleVoiceAnnouncer: () =>
         set(s => ({ voiceAnnouncer: !s.voiceAnnouncer })),
+      setVoiceName: name => set({ voiceName: name }),
       markWelcomeSeen: () => set({ hasSeenWelcome: true }),
       markMatchOnboardingSeen: () => set({ hasSeenMatchOnboarding: true }),
       reset: () => set({ ...DEFAULTS }),

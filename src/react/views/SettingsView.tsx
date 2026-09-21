@@ -6,6 +6,8 @@ import { CoffeeIcon, RefreshIcon } from '../components/icons';
 import { Logo } from '../components/Logo';
 import { useMatchStore } from '../../store/useMatchStore';
 import { usePlayersStore } from '../../store/usePlayersStore';
+import { useVoices } from '../hooks/useVoices';
+import { announceOvershoot, announceTurn } from '../../tts';
 import {
   useThemeContext,
   type ThemePreference,
@@ -28,6 +30,7 @@ export function SettingsView() {
   const { t, locale, setLocale } = useI18n();
   const settings = useSettingsStore();
   const players = usePlayersStore(s => s.players);
+  const voices = useVoices(locale);
   const history = useMatchStore(s => s.history);
   const importBundle = useMatchStore(s => s.importBundle);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -196,6 +199,62 @@ export function SettingsView() {
           label={t('settings.voiceAnnouncer')}
           hint={t('settings.voiceAnnouncerHint')}
         />
+
+        {/*
+          Voice picker — inside the announcer's own section, and only when the
+          announcer is on AND there is an actual choice to make.
+
+          THE LISTEN BUTTON IS PART OF THE SETTING, not decoration: nothing in
+          `SpeechSynthesisVoice` tells you how well a voice articulates, so the
+          ear is the only judge. It speaks a REAL announcement — the first
+          player's name when there is one, since a mangled name is exactly what
+          would bother you here, and the overshoot call otherwise, which needs
+          no name at all rather than an invented one.
+        */}
+        {settings.voiceAnnouncer && voices.length > 1 && (
+          <div
+            className="mt-3 border-t pt-3"
+            style={{ borderColor: 'var(--border)' }}
+          >
+            <label htmlFor="voice-name" className="block font-semibold">
+              {t('settings.voiceName')}
+            </label>
+            <span
+              className="mb-2 block text-xs"
+              style={{ color: 'var(--muted)' }}
+            >
+              {t('settings.voiceNameHint')}
+            </span>
+            <div className="flex items-center gap-2">
+              <select
+                id="voice-name"
+                value={settings.voiceName}
+                onChange={event => settings.setVoiceName(event.target.value)}
+                className="touch-target min-w-0 flex-1 rounded-lg border px-3 text-sm"
+                style={{ borderColor: 'var(--border)' }}
+              >
+                <option value="">{t('settings.voiceNameAuto')}</option>
+                {voices.map(voice => (
+                  <option key={voice.name} value={voice.name}>
+                    {voice.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => {
+                  const name = players[0]?.name;
+                  if (name) announceTurn(name, locale, settings.voiceName);
+                  else announceOvershoot(locale, settings.voiceName);
+                }}
+                className="touch-target shrink-0 rounded-lg border px-4 text-sm font-bold"
+                style={{ borderColor: 'var(--border)' }}
+              >
+                {t('settings.voiceNameTry')}
+              </button>
+            </div>
+          </div>
+        )}
       </Section>
 
       <Section label={t('settings.export')}>

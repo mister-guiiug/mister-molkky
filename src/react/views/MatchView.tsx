@@ -103,6 +103,7 @@ export function MatchView() {
   const outdoor = useSettingsStore(s => s.outdoor);
   const coachEnabled = useSettingsStore(s => s.coach);
   const voiceEnabled = useSettingsStore(s => s.voiceAnnouncer);
+  const voiceName = useSettingsStore(s => s.voiceName);
   const wakeLockEnabled = useSettingsStore(s => s.wakeLock);
   const toggleHighlight = useMatchStore(s => s.toggleHighlight);
   // Memoise the player list so the inline `?? []` fallback doesn't hand
@@ -158,7 +159,7 @@ export function MatchView() {
         setShake(false);
         setFlash('none');
       }, 600);
-      if (voiceEnabled) announceOvershoot(locale);
+      if (voiceEnabled) announceOvershoot(locale, voiceName);
     } else if (pendingFeedback === 'victory') {
       setFlash('win');
     } else if (
@@ -166,7 +167,7 @@ export function MatchView() {
       voiceEnabled &&
       currentInfo
     ) {
-      announceElimination(currentInfo.player.name, locale);
+      announceElimination(currentInfo.player.name, locale, voiceName);
     }
     clearFeedback();
   }, [
@@ -174,6 +175,7 @@ export function MatchView() {
     playFeedback,
     clearFeedback,
     voiceEnabled,
+    voiceName,
     locale,
     currentInfo,
   ]);
@@ -190,8 +192,8 @@ export function MatchView() {
     }
     if (lastSpokenPlayerRef.current === id) return;
     lastSpokenPlayerRef.current = id;
-    announceTurn(currentInfo.player.name, locale);
-  }, [currentInfo, voiceEnabled, locale]);
+    announceTurn(currentInfo.player.name, locale, voiceName);
+  }, [currentInfo, voiceEnabled, voiceName, locale]);
 
   const history = useMatchStore(s => s.history);
   const lastFinished = useMemo(() => history[0], [history]);
