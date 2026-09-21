@@ -375,6 +375,12 @@ export function SettingsView() {
             currentAppId="mister-molkky"
             showSource={false}
             showSponsor={false}
+            // Les deux réglages que `styles.css` posait en CSS : la Section
+            // fournit déjà son <h2>, et l'app refaisait la grille en flex.
+            showTitle={false}
+            layout="list"
+            // Dix-neuf cartes d'affilée : repliées par catégorie, sept lignes.
+            groupBy="category"
             labels={{
               otherApps: t('family.title'),
               maturity: {
