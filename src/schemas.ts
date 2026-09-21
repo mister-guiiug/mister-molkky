@@ -187,6 +187,17 @@ export const SettingsSchema = z.object({
   // Defaults off because TTS in PWAs is heavy and people may find it
   // intrusive; users opt in from Settings.
   voiceAnnouncer: z.boolean().default(false),
+  // Voice used by the announcer: the `name` of a SpeechSynthesisVoice, empty
+  // meaning "let the socle pick". No API exposes how well a voice articulates,
+  // and some do it badly — measured 21/09/2026, `Microsoft Hortense`, the FIRST
+  // French voice on Windows and therefore the one picked by default, mangles
+  // words that follow punctuation. On Firefox no voice is flagged as the
+  // system default either, so without this setting a user has no way out.
+  //
+  // Stored by NAME, not by `voiceURI`: on one and the same machine Chrome
+  // returns "Microsoft Hortense - French (France)" where Firefox returns
+  // "urn:moz-tts:sapi:…". The name survives a change of browser.
+  voiceName: z.string().default(''),
   hasSeenWelcome: z.boolean().default(false),
   hasSeenMatchOnboarding: z.boolean().default(false),
 });

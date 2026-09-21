@@ -32,30 +32,44 @@ import type { Locale } from './schemas';
  * Announcements end with a full stop on purpose. Without sentence-final
  * punctuation the engine applies no closing cadence and clips the last
  * syllable — and the last word here is the player's name.
+ *
+ * `voiceName` is the voice the user picked in Settings; empty or unknown lets
+ * the socle choose. It travels explicitly, exactly like `locale`: this module
+ * stays free of any store, which is what makes it testable on its own.
  */
-function announce(text: string, locale: Locale): void {
-  speak(`${text}.`, locale);
+function announce(text: string, locale: Locale, voiceName?: string): void {
+  speak(`${text}.`, locale, { voiceName });
 }
 
 /** Convenience helper for the typical "À toi, Marc" announcement. */
-export function announceTurn(playerName: string, locale: Locale): void {
+export function announceTurn(
+  playerName: string,
+  locale: Locale,
+  voiceName?: string
+): void {
   announce(
     locale === 'fr' ? `À toi ${playerName}` : `Your turn, ${playerName}`,
-    locale
+    locale,
+    voiceName
   );
 }
 
 /** Convenience helper for overshoot. */
-export function announceOvershoot(locale: Locale): void {
-  announce(locale === 'fr' ? 'Dépassement' : 'Overshoot', locale);
+export function announceOvershoot(locale: Locale, voiceName?: string): void {
+  announce(locale === 'fr' ? 'Dépassement' : 'Overshoot', locale, voiceName);
 }
 
 /** Convenience helper for elimination. */
-export function announceElimination(playerName: string, locale: Locale): void {
+export function announceElimination(
+  playerName: string,
+  locale: Locale,
+  voiceName?: string
+): void {
   announce(
     locale === 'fr'
       ? `${playerName} est éliminé`
       : `${playerName} is eliminated`,
-    locale
+    locale,
+    voiceName
   );
 }
