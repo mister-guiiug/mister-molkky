@@ -1,106 +1,61 @@
 /**
- * Voice announcer (Web Speech API). Pure browser, offline, no backend.
- * Used when `settings.voiceAnnouncer` is true to read out turn changes
- * and match events for hands-free outdoor play.
+ * Voice announcer — a thin wrapper over the socle's `speech` module.
+ * Used when `settings.voiceAnnouncer` is true to read out turn changes and
+ * match events for hands-free outdoor play.
  *
- * We pick a voice matching the current i18n locale (fallback to the
- * platform default) so the pronunciation is right.
+ * WHY THIS FILE SHRANK. It used to carry its own `speak()` and `pickVoice()`.
+ * Both now live in `@mister-guiiug/dev-pwa-config/speech` (6.6.0), which fixes
+ * two Chrome defects this copy had, and that both cut the END of a sentence —
+ * here, the player's name:
+ *
+ * 1. an utterance nothing references can be garbage-collected *while it is
+ *    speaking*, and the sound stops dead;
+ * 2. `cancel()` is asynchronous, so calling `speak()` in the same tick
+ *    swallows the start — sometimes all — of the new phrase. Markedly worse
+ *    on Android.
+ *
+ * THE VOICE PICKING CAME FROM HERE, and the socle kept it — minus the
+ * fallback. This copy returned `voices[0]` when no voice matched the locale:
+ * the first in the list, whatever language it speaks. That is exactly what
+ * makes French come out with an English accent. The socle returns none and
+ * lets the engine decide from `utterance.lang`, which it does better than an
+ * arbitrary pick.
+ *
+ * The `rate` and `interrupt` options are gone with the local `speak()`: no
+ * call site ever set either of them.
  */
 
+import { speak } from '@mister-guiiug/dev-pwa-config/speech';
 import type { Locale } from './schemas';
 
-const supported = typeof window !== 'undefined' && 'speechSynthesis' in window;
-
-let cachedVoices: SpeechSynthesisVoice[] | null = null;
-
 /**
- * Resolve a voice for the given locale. Lazily caches the voice list
- * (some browsers populate it asynchronously, so callers should retry
- * after the `voiceschanged` event if the first call returns nothing).
+ * Announcements end with a full stop on purpose. Without sentence-final
+ * punctuation the engine applies no closing cadence and clips the last
+ * syllable — and the last word here is the player's name.
  */
-function pickVoice(locale: Locale): SpeechSynthesisVoice | null {
-  if (!supported) return null;
-  if (!cachedVoices || cachedVoices.length === 0) {
-    cachedVoices = window.speechSynthesis.getVoices();
-  }
-  if (cachedVoices.length === 0) return null;
-  const prefix = locale === 'fr' ? 'fr' : 'en';
-  return (
-    cachedVoices.find(v => v.lang.toLowerCase().startsWith(prefix)) ??
-    cachedVoices[0] ??
-    null
-  );
+function announce(text: string, locale: Locale): void {
+  speak(`${text}.`, locale);
 }
 
-interface SpeakOptions {
-  text: string;
-  locale?: Locale;
-  /** 0.5..2 — 1 is default platform rate. */
-  rate?: number;
-  /** Cancels any queued speech first (prevents overlap on rapid events). */
-  interrupt?: boolean;
-}
-
-/**
- * Speak a string out loud. Silently no-ops when the browser doesn't
- * support speechSynthesis (Safari iOS standalone PWA before v17 in
- * some configurations). Keeps the rest of the app a strict superset
- * of TTS-free behaviour.
- */
-function speak({
-  text,
-  locale = 'fr',
-  rate = 1,
-  interrupt = true,
-}: SpeakOptions): void {
-  if (!supported || !text) return;
-  if (interrupt) {
-    try {
-      window.speechSynthesis.cancel();
-    } catch {
-      /* some browsers throw on cancel() in restricted contexts */
-    }
-  }
-  const utterance = new SpeechSynthesisUtterance(text);
-  const voice = pickVoice(locale);
-  if (voice) {
-    utterance.voice = voice;
-    utterance.lang = voice.lang;
-  } else {
-    utterance.lang = locale === 'fr' ? 'fr-FR' : 'en-US';
-  }
-  utterance.rate = Math.max(0.5, Math.min(2, rate));
-  try {
-    window.speechSynthesis.speak(utterance);
-  } catch {
-    /* ignore — best-effort */
-  }
-}
-
-/**
- * Convenience helper for the typical "À toi, Marc" announcement.
- */
+/** Convenience helper for the typical "À toi, Marc" announcement. */
 export function announceTurn(playerName: string, locale: Locale): void {
-  const text =
-    locale === 'fr' ? `À toi ${playerName}` : `Your turn, ${playerName}`;
-  speak({ text, locale });
+  announce(
+    locale === 'fr' ? `À toi ${playerName}` : `Your turn, ${playerName}`,
+    locale
+  );
 }
 
 /** Convenience helper for overshoot. */
 export function announceOvershoot(locale: Locale): void {
-  speak({
-    text: locale === 'fr' ? 'Dépassement' : 'Overshoot',
-    locale,
-  });
+  announce(locale === 'fr' ? 'Dépassement' : 'Overshoot', locale);
 }
 
 /** Convenience helper for elimination. */
 export function announceElimination(playerName: string, locale: Locale): void {
-  speak({
-    text:
-      locale === 'fr'
-        ? `${playerName} est éliminé`
-        : `${playerName} is eliminated`,
-    locale,
-  });
+  announce(
+    locale === 'fr'
+      ? `${playerName} est éliminé`
+      : `${playerName} is eliminated`,
+    locale
+  );
 }
