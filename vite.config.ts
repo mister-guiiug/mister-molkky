@@ -130,7 +130,7 @@ export default defineConfig(({ command }) => {
       pwaSeoPlugin({
         siteName: 'Mister Mölkky',
         basePath,
-        logoPath: '/logo.png',
+        logoPath: '/icons/icon-512.png',
         // Script anti-FOUC engendré par le socle (theme-boot), en remplacement
         // de l'IIFE recopiée dans index.html. `legacyKeys` doit rester aligné
         // sur THEME_LEGACY_KEYS (src/themeConfig.ts) : ce fichier s'exécute
