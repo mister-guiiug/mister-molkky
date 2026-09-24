@@ -21,9 +21,11 @@ permissions:
   id-token: write
   packages: read
 
-concurrency:
-  group: pages
-  cancel-in-progress: true
+# PAS DE `concurrency` AU NIVEAU DU WORKFLOW. Le réutilisable prend déjà le
+# groupe `pages` pour lui-même : un appelant qui le prend aussi attend ce que
+# l'appelé veut obtenir, et GitHub rejette le run au démarrage (« workflow file
+# issue ») — sur `push`, sans même en lister un. C'est ce qui a empêché le
+# premier déploiement par le réutilisable, le 25/09/2026.
 
 jobs:
   deploy:
