@@ -1,3 +1,13 @@
+# Déploiement Pages par le RÉUTILISABLE du socle, et plus à la main.
+#
+# Écrit à la main, ce workflow n'avait ni le repli SPA `404.html`, ni
+# `required-env`, ni la base de chemin calculée — `pwa-doctor` le comptait en
+# dette —, et il construisait sous un Node figé en dur (24.21.0) quand la CI
+# construit sous celui du dépôt. Le réutilisable pose lui-même `VITE_BASE_PATH`
+# et `VITE_PUBLIC_SITE_ORIGIN` ; les autres `VITE_*` passent par `build-env`.
+#
+# Pas de `required-env` : Supabase ne sert ici qu'à la synchronisation dans le
+# nuage, facultative (docs/cloud-sync.md) — le jeu se joue sans.
 name: Deploy to GitHub Pages
 
 on:
@@ -16,53 +26,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-
-      - name: Setup Node
-        uses: actions/setup-node@v7
-        with:
-          node-version: '24.21.0'
-          cache: npm
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@mister-guiiug'
-
-      - name: Install
-        run: npm ci --no-audit --no-fund
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build
-        env:
-          VITE_BASE_PATH: /${{ github.event.repository.name }}/
-          # Optional — set as repository VARIABLES to enable the live (multi-
-          # device) feature on the deployed Pages build. The app builds and
-          # runs fine without them, the "live" UI is just hidden.
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
-          # Le DSN Sentry n'est PAS un secret : il part dans le bundle comme
-          # toute `VITE_*`. Absent, `initSentry` rend `null` avant d'importer.
-          VITE_SENTRY_DSN: ${{ vars.VITE_SENTRY_DSN }}
-          VITE_POSTHOG_KEY: ${{ vars.VITE_POSTHOG_KEY }}
-        run: npm run build
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: dist
-
   deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v5
+    uses: mister-guiiug/dev-pwa-config/.github/workflows/pwa-deploy.yml@v6
+    with:
+      use-base-path: true
+      build-env: |
+        VITE_SUPABASE_URL=${{ vars.VITE_SUPABASE_URL }}
+        VITE_SUPABASE_ANON_KEY=${{ vars.VITE_SUPABASE_ANON_KEY }}
+        VITE_SENTRY_DSN=${{ vars.VITE_SENTRY_DSN }}
+        VITE_POSTHOG_KEY=${{ vars.VITE_POSTHOG_KEY }}
