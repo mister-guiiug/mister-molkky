@@ -2,7 +2,7 @@
 
 # 🎯 Mister Mölkky
 
-**Compteur de scores PWA pour vos parties de Mölkky** — offline-first, multi-device, sans pub, sans tracking.
+**Compteur de scores PWA pour vos parties de Mölkky** : offline-first, multi-device, sans pub. Suivi des erreurs (Sentry) dès l'ouverture, mesure d'audience (PostHog) seulement après votre accord.
 
 [![CI](https://github.com/mister-guiiug/mister-molkky/actions/workflows/ci.yml/badge.svg)](https://github.com/mister-guiiug/mister-molkky/actions/workflows/ci.yml)
 [![Deploy](https://github.com/mister-guiiug/mister-molkky/actions/workflows/deploy.yml/badge.svg)](https://github.com/mister-guiiug/mister-molkky/actions/workflows/deploy.yml)
@@ -11,7 +11,7 @@
 [![Last commit](https://img.shields.io/github/last-commit/mister-guiiug/mister-molkky)](https://github.com/mister-guiiug/mister-molkky/commits/main)
 [![Made with React](https://img.shields.io/badge/React-19-149eca?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-7-646cff?logo=vite)](https://vite.dev/)
+[![Vite](https://img.shields.io/badge/Vite-8-646cff?logo=vite)](https://vite.dev/)
 [![PWA](https://img.shields.io/badge/PWA-installable-5a0fc8?logo=pwa)](https://web.dev/progressive-web-apps/)
 
 ### 🚀 [**Tester la démo en ligne →**](https://mister-guiiug.github.io/mister-molkky/)
@@ -25,7 +25,7 @@
 Parce que compter les scores au Mölkky sur papier finit toujours mal après le 4ᵉ tour. Mister Mölkky vous donne :
 
 - **🎯 Saisie en 2 taps** : tapez sur les quilles tombées, validez. Le score est calculé tout seul (overshoot → 25, victoire pile à 50, élimination après 3 ratés).
-- **📱 100 % offline** : installable comme une app, fonctionne sans internet une fois ouverte la première fois.
+- **📱 Hors ligne** : installable comme une app ; une fois ouverte la première fois, elle compte les points sans internet (le direct et la sync cloud, eux, demandent une connexion).
 - **🌍 Multi-device en temps réel** : un téléphone hôte saisit, les autres suivent via un QR code ou un code à 6 caractères.
 - **📊 Stats par joueur** : taux de victoire, précision, séries, achievements, comparatifs tête-à-tête, tendance temporelle.
 - **🌑 Dark mode** + mode extérieur (gros boutons) + mode daltonien.
@@ -59,14 +59,13 @@ Sanction configurable après X ratés : **élimination** (officiel), **remise à
 - 3 variantes de règles + sanction-après-ratés configurable
 - Handicap par joueur (départ avantagé)
 - Mélange de l'ordre de passage (bouton "Aléatoire")
-- Pronostics pré-match : qui prédit le gagnant ?
 
 </details>
 
 <details>
 <summary><strong>🎲 Pendant la partie</strong></summary>
 
-- Saisie pin-par-pin via PinsBoard HTML/CSS Grid (CSS-only, marche sur tout)
+- Saisie pin-par-pin via PinsBoard : boutons HTML placés en pourcentages (CSS seul, marche sur tout)
 - Coach in-match : quille / combo optimal pour gagner pile
 - Call-your-shot : annonce la quille avant le tir, badge ✓/✗ après
 - Highlights : marque les moments forts d'une étoile
@@ -76,6 +75,7 @@ Sanction configurable après X ratés : **élimination** (officiel), **remise à
 - Photo de la situation (caméra native pour les litiges)
 - Annonceur vocal (TTS) hands-free
 - Forfait individuel d'un joueur (les autres continuent)
+- Pronostics, depuis le menu de la partie : qui prédit le gagnant ?
 - Swipe-down sur le scoreboard → rouvre le throws log
 - Undo + édition rétroactive d'un lancer
 - Toast d'élimination + confetti à la victoire
@@ -86,8 +86,9 @@ Sanction configurable après X ratés : **élimination** (officiel), **remise à
 <summary><strong>📡 Mode direct (multi-device)</strong></summary>
 
 - L'hôte génère un code à 6 caractères + un QR code
-- Les viewers rejoignent via `/rejoindre` ou en scannant le QR
+- Les viewers rejoignent via `/join` (l'ancien `/rejoindre` redirige) ou en scannant le QR
 - Sync temps réel via Supabase Realtime (WebSocket)
+- La partie diffusée n'est pas privée : voir « Vos données »
 - Auto-reconnexion en cas de drop réseau (jusqu'à 5 tentatives)
 - Notifications browser : lancer / élimination / victoire
 - Voir [`docs/live-supabase.md`](./docs/live-supabase.md) pour activer Supabase
@@ -122,15 +123,28 @@ Sanction configurable après X ratés : **élimination** (officiel), **remise à
 
 ---
 
+## Vos données
+
+Joueurs, parties et réglages restent dans le navigateur de l'appareil. Ce qui en sort :
+
+- **Suivi des erreurs (Sentry)** : sur l'app publiée, Sentry (région UE) démarre à l'ouverture, sans consentement, et ne reçoit un rapport technique que lorsqu'une erreur survient.
+- **Mesure d'audience (PostHog, nuage européen)** : rien n'est chargé avant votre accord dans le bandeau. Ensuite : pages vues, parties démarrées et terminées, nombre de joueurs ; jamais les noms ni les scores.
+- **Mode direct** : la partie diffusée, noms des joueurs compris, est lisible par quiconque détient la clé publique Supabase ; le code à 6 caractères ne la protège pas.
+- **Sync cloud** (opt-in) : joueurs, parties terminées, modèles et réglages partent vers Supabase, sous une identité anonyme (sans les avatars ni les photos).
+
+---
+
 ## 🚀 Quickstart
 
 ### En tant qu'utilisateur
 
 Ouvrez la démo : **[mister-guiiug.github.io/mister-molkky](https://mister-guiiug.github.io/mister-molkky/)**
 
-Sur mobile, le navigateur proposera d'installer l'app sur l'écran d'accueil. Elle fonctionne ensuite 100 % offline.
+Sur mobile, le navigateur proposera d'installer l'app sur l'écran d'accueil. Elle fonctionne ensuite hors ligne, sauf le direct et la sync cloud.
 
 ### En tant que développeur
+
+Prérequis : la version de Node de [`.nvmrc`](./.nvmrc), et un jeton GitHub Packages (`read:packages`) exporté en `NODE_AUTH_TOKEN` : le socle `@mister-guiiug/dev-pwa-config` n'est publié que là (voir [`.npmrc`](./.npmrc)).
 
 ```bash
 git clone https://github.com/mister-guiiug/mister-molkky.git
@@ -138,7 +152,7 @@ cd mister-molkky
 npm install
 npm run dev          # vite dev server, http://localhost:5173
 npm run test         # vitest --run
-npm run build        # tsc -b && vite build
+npm run build        # tsc -b && vite build && pwa-bundle-budget
 npm run lint
 ```
 
@@ -150,7 +164,7 @@ VITE_SUPABASE_URL=https://xxx.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJxxx...
 ```
 
-Puis appliquez les migrations SQL dans [`docs/live-supabase.md`](./docs/live-supabase.md) et [`docs/cloud-sync.md`](./docs/cloud-sync.md).
+Puis appliquez les migrations de [`supabase/migrations/`](./supabase/migrations) (`supabase db push`, voir [`supabase/README.md`](./supabase/README.md)) et le SQL de [`docs/cloud-sync.md`](./docs/cloud-sync.md).
 
 ---
 
@@ -158,9 +172,9 @@ Puis appliquez les migrations SQL dans [`docs/live-supabase.md`](./docs/live-sup
 
 | Catégorie      | Technos                                                   |
 | -------------- | --------------------------------------------------------- |
-| **Framework**  | Vite 7 · React 19 · TypeScript strict                     |
+| **Framework**  | Vite 8 · React 19 · TypeScript strict                     |
 | **State**      | Zustand 5 + persist middleware + IndexedDB pour les blobs |
-| **Validation** | Zod 3 (branded types : `PlayerId`, `MatchId`)             |
+| **Validation** | Zod 4 (branded types : `PlayerId`, `MatchId`)             |
 | **Styling**    | Tailwind CSS 4 + CSS variables pour le theming            |
 | **Icons**      | lucide-react (sized + wrapped centralement)               |
 | **PWA**        | vite-plugin-pwa (Workbox precache, prompt registration)   |
@@ -169,7 +183,7 @@ Puis appliquez les migrations SQL dans [`docs/live-supabase.md`](./docs/live-sup
 | **Audio**      | Web Audio API (synth offline) + Web Speech API (TTS)      |
 | **Caméra**     | `<input capture="environment">` (native)                  |
 | **Partage**    | Canvas → Web Share API (avec fallback download)           |
-| **Tests**      | Vitest + jsdom + Testing Library                          |
+| **Tests**      | Vitest + jsdom + Testing Library ; Playwright + axe (e2e) |
 | **CI**         | GitHub Actions (CI + Deploy GH Pages + Lighthouse)        |
 
 ---
@@ -180,11 +194,11 @@ Puis appliquez les migrations SQL dans [`docs/live-supabase.md`](./docs/live-sup
 src/
 ├── molkky/              # Domain pur (TypeScript, zéro React) — rules, ranking, stats, achievements
 ├── schemas.ts           # Zod schemas pour Player, MatchConfig, Throw, etc.
-├── store/               # 5 stores Zustand (match, players, settings, templates, live, sync)
+├── store/               # 6 stores Zustand (match, players, settings, templates, live, sync)
 ├── live/                # Supabase Realtime + notifications browser
 ├── react/
 │   ├── components/      # Composants partagés (PinsBoard, ScoreTicker, Modal, …)
-│   └── views/           # 8 vues (Home, Match, History, Stats, Players, Settings, JoinLive, Spectator, Practice)
+│   └── views/           # 9 vues (Home, Match, History, Stats, Players, Settings, JoinLive, Spectator, Practice)
 ├── i18n/                # FR + EN (templates literals → MessageKey union TS-safe)
 ├── tts.ts               # Voice announcer (Web Speech API)
 ├── shareCard.ts         # Canvas → PNG export
@@ -212,11 +226,11 @@ src/
 
 ## 👨‍👩‍👧 Famille `mister-guiiug`
 
-| Projet                                | Rôle                                                              |
-| ------------------------------------- | ----------------------------------------------------------------- |
-| [`dev-pwa-config`](../dev-pwa-config) | Configs partagées (ESLint, Prettier, TS, Vitest, Tailwind preset) |
-| [`miss-badminton`](../miss-badminton) | Squelette de référence pour les PWA `mister-*` / `miss-*`         |
-| [`mister-molkky`](.)                  | **Ce projet**                                                     |
+| Projet                                                                | Rôle                                                          |
+| --------------------------------------------------------------------- | ------------------------------------------------------------- |
+| [`dev-pwa-config`](https://github.com/mister-guiiug/dev-pwa-config)   | Le socle : configs, composants React, workflows réutilisables |
+| [`pwa-starter-kit`](https://github.com/mister-guiiug/pwa-starter-kit) | Squelette de référence pour les PWA `mister-*` / `miss-*`     |
+| [`mister-molkky`](.)                                                  | **Ce projet**                                                 |
 
 ---
 
