@@ -414,7 +414,9 @@ const fr: Messages = {
     loading: 'Chargement…',
   },
   documentTitle: {
-    home: 'Mister Mölkky',
+    // Titre de l'accueil = titre du HTML servi (≥ 50 caractères) : Google et
+    // Bing indexent le titre après rendu.
+    home: 'Mister Mölkky - compteur de points multi-appareils pour Mölkky',
     match: 'Partie en cours — Mister Mölkky',
     history: 'Historique — Mister Mölkky',
     stats: 'Statistiques — Mister Mölkky',
@@ -830,7 +832,7 @@ const en: Messages = {
     loading: 'Loading…',
   },
   documentTitle: {
-    home: 'Mister Mölkky',
+    home: 'Mister Mölkky - multi-device score counter for Mölkky games',
     match: 'Live match — Mister Mölkky',
     history: 'History — Mister Mölkky',
     stats: 'Stats — Mister Mölkky',

@@ -1,6 +1,9 @@
 ---
 title: Règles du Mölkky : le jeu, le score et les pénalités
 description: Les règles du Mölkky expliquées simplement : placer les quilles, compter les points, finir à 50 pile, les trois ratés. Et une app pour tenir le score.
+date: 2026-09-25
+updated: 2026-09-29
+answer: Au Mölkky, on renverse des quilles numérotées de 1 à 12 avec un bâton de bois lancé à 3,5 mètres. Une quille seule rapporte son numéro, plusieurs quilles rapportent leur nombre. Il faut atteindre exactement 50 points : au-delà, le score retombe à 25. Trois lancers ratés d'affilée éliminent le joueur.
 ---
 
 # Règles du Mölkky : comment on joue et comment on compte
@@ -9,7 +12,7 @@ Le Mölkky est un jeu d'adresse d'origine finlandaise. Il se joue dehors, sur l'
 
 ## Le matériel et la mise en place
 
-Un jeu de Mölkky contient douze quilles en bois numérotées de 1 à 12, et un bâton de lancer appelé le mölkky.
+Un jeu de Mölkky contient douze quilles en bois numérotées de 1 à 12, et un bâton de lancer : le tikku, qu'on appelle aussi le mölkky.
 
 Au début de la partie, les quilles sont regroupées, serrées les unes contre les autres, dans un ordre précis. Vu depuis la ligne de lancer :
 
@@ -18,7 +21,7 @@ Au début de la partie, les quilles sont regroupées, serrées les unes contre l
 - au troisième rang, les quilles 5, 11, 12 et 6 ;
 - au fond, les quilles 7, 9 et 8.
 
-Les joueurs lancent depuis une ligne tracée à environ 3 à 4 mètres des quilles. L'ordre de passage se décide au départ, souvent par tirage au sort, puis chacun lance à son tour. Le mölkky se lance d'une main, en général par en dessous.
+Les quilles sont placées à 3,5 mètres de la ligne de lancer : c'est la distance du règlement de la Fédération française de Mölkky. L'ordre de passage se décide au départ, puis chacun lance à son tour. Tous les types de lancer sont autorisés, à condition de ne mettre personne en danger.
 
 ## Compter les points
 
@@ -28,7 +31,7 @@ C'est la règle qui surprend le plus les débutants :
 2. **Plusieurs quilles tombent** : vous marquez le nombre de quilles tombées, quels que soient leurs numéros. Les quilles 3, 7 et 12 ensemble rapportent 3 points, pas 22.
 3. **Aucune quille ne tombe** : vous marquez 0, et c'est un raté.
 
-Une quille compte comme tombée quand elle est couchée. Une quille qui reste appuyée sur une autre quille ou sur le mölkky ne compte pas.
+Une quille compte comme tombée quand elle repose complètement au sol. Une quille qui reste appuyée sur une autre quille ou sur le tikku ne compte pas.
 
 Après chaque lancer, on relève les quilles tombées à l'endroit exact où elles sont tombées. Au fil de la partie, le jeu s'étale donc sur le terrain, et viser une quille isolée devient une vraie décision tactique.
 
@@ -38,7 +41,7 @@ Le premier joueur qui atteint **exactement 50 points** gagne la partie.
 
 Si un lancer vous fait dépasser 50, votre score **retombe à 25**. Exemple : vous avez 45 points et vous faites tomber la quille 8 seule. 45 + 8 = 53, vous repartez donc de 25.
 
-En fin de partie, tout se joue sur le calcul. À 44 points, il vous faut 6 : soit la quille 6 seule, soit six quilles d'un coup. À 45, n'importe quelle quille de 6 à 12 tombée seule vous renvoie à 25, tout comme six quilles ou plus d'un coup : une petite quille isolée devient la cible idéale.
+En fin de partie, tout se joue sur le calcul. À 44 points, il vous faut 6 : soit la quille 6 seule, soit six quilles d'un coup. À 45, n'importe quelle quille de 6 à 12 tombée seule vous renvoie à 25, tout comme six quilles ou plus d'un coup : une petite quille isolée devient la cible idéale. Ces calculs sont détaillés dans notre page sur la [stratégie au Mölkky](strategie-au-molkky.html).
 
 ## Les trois ratés
 
@@ -84,3 +87,9 @@ On les relève debout, à l'endroit où elles sont tombées. On ne les remet pas
 ### Faut-il une connexion internet pour compter les points ?
 
 Une fois l'application chargée, le comptage sur un seul téléphone fonctionne sans réseau. Le suivi de la partie sur plusieurs téléphones, lui, demande une connexion.
+
+## Sources
+
+- [Fédération française de Mölkky : les règles](https://ff-molkky.fr/regles/)
+- [Fédération française de Mölkky : le manuel d'arbitrage des tournois fédéraux (PDF)](https://drive.google.com/file/d/13_n2o8ZtCWjx6FrrauT5fP6_ih3nHitv/view?usp=drive_link)
+- [Wikipédia : Mölkky](https://fr.wikipedia.org/wiki/M%C3%B6lkky)
