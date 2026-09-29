@@ -20,6 +20,11 @@ import { applyUpdate } from '@mister-guiiug/dev-pwa-config/sw-update';
 import { AppFooter } from '../components/layout/AppFooter';
 import { useSyncStore } from '../../store/useSyncStore';
 import type { MergeReport, MergeStats } from '../../sync/merge';
+import {
+  SyncKeyBadge,
+  SyncKeyDangerZone,
+  SyncKeySetup,
+} from '../components/SyncKey';
 import { dateSlug, downloadJson } from '@mister-guiiug/dev-pwa-config/download';
 import { FamilyApps } from '@mister-guiiug/dev-pwa-config/react';
 
@@ -487,13 +492,15 @@ export function SettingsView() {
 }
 
 /**
- * "Sync cloud" Settings section. Opt-in toggle + push/pull buttons.
+ * "Sync cloud" Settings section. Opt-in toggle, then the sync key (create it,
+ * or scan the one of another device), then push/pull.
  * Hidden when Supabase isn't configured (avoids tempting the user
  * with a feature that can't work without a backend).
  */
 function CloudSyncSection() {
   const { t, locale } = useI18n();
   const enabled = useSyncStore(s => s.enabled);
+  const syncKey = useSyncStore(s => s.key);
   const status = useSyncStore(s => s.status);
   const lastSyncAt = useSyncStore(s => s.lastSyncAt);
   const error = useSyncStore(s => s.error);
@@ -501,9 +508,10 @@ function CloudSyncSection() {
   const pushNow = useSyncStore(s => s.pushNow);
   const pullNow = useSyncStore(s => s.pullNow);
   const lastOutcome = useSyncStore(s => s.lastOutcome);
-  // Envoyer/récupérer parlent à Supabase (connexion anonyme + une requête) :
-  // rien de tout cela n'aboutit hors ligne. Le BASCULE, lui, n'est pas gardée —
-  // c'est un simple drapeau local, on peut l'armer sans réseau pour plus tard.
+  // Envoyer/récupérer parlent à Supabase : rien n'aboutit hors ligne. La
+  // BASCULE, elle, n'est pas gardée — c'est un simple drapeau local, on peut
+  // l'armer sans réseau pour plus tard. La clé non plus : la créer ou la
+  // scanner ne sort pas de l'appareil.
   const guard = useActionGuard({ online: true });
 
   return (
@@ -515,8 +523,10 @@ function CloudSyncSection() {
           label={t('settings.cloudSync')}
           hint={t('settings.cloudSyncHint')}
         />
-        {enabled && (
+        {enabled && !syncKey && <SyncKeySetup />}
+        {enabled && syncKey && (
           <>
+            <SyncKeyBadge />
             <div className="flex gap-2">
               <button
                 type="button"
@@ -603,6 +613,7 @@ function CloudSyncSection() {
                 {error}
               </p>
             )}
+            <SyncKeyDangerZone />
           </>
         )}
       </div>

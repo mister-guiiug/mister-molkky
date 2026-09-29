@@ -294,6 +294,24 @@ export interface Messages {
     cloudMergedNothing: string;
     cloudCurrentMatchKept: string;
     cloudSettingsNote: string;
+    cloudKeyIntro: string;
+    cloudKeyCreate: string;
+    cloudKeyScan: string;
+    cloudKeyInputLabel: string;
+    cloudKeyUse: string;
+    cloudKeyInvalid: string;
+    cloudKeyLabel: string;
+    cloudKeyShow: string;
+    cloudKeyShowTitle: string;
+    cloudKeyQrAlt: string;
+    cloudKeyShowHint: string;
+    cloudKeyWarning: string;
+    cloudKeyForget: string;
+    cloudKeyForgetConfirm: string;
+    cloudKeyForgetHint: string;
+    cloudDelete: string;
+    cloudDeleteConfirm: string;
+    cloudDeleteHint: string;
     export: string;
     import: string;
     importFailed: string;
@@ -713,6 +731,30 @@ const fr: Messages = {
       'La partie EN COURS n’est pas synchronisée : elle reste sur cet appareil.',
     cloudSettingsNote:
       'Les réglages ne se réunissent pas : « Envoyer » impose ceux de cet appareil, « Récupérer » applique ceux du cloud.',
+    cloudKeyIntro:
+      'Tes appareils partagent une même clé de synchro. Crée-la sur le premier, puis scanne-la (ou saisis-la) sur les autres.',
+    cloudKeyCreate: 'Créer une clé',
+    cloudKeyScan: 'Scanner une clé',
+    cloudKeyInputLabel: 'Clé de synchro',
+    cloudKeyUse: 'Utiliser',
+    cloudKeyInvalid:
+      'Ce n’est pas une clé de synchro complète (28 caractères).',
+    cloudKeyLabel: 'Clé :',
+    cloudKeyShow: 'Montrer la clé',
+    cloudKeyShowTitle: 'Ta clé de synchro',
+    cloudKeyQrAlt: 'QR code de la clé de synchro',
+    cloudKeyShowHint:
+      'Sur ton autre appareil : Paramètres → Sync cloud → « Scanner une clé ».',
+    cloudKeyWarning:
+      'Qui a cette clé peut lire et remplacer tes données synchronisées : ne la montre qu’à tes propres appareils.',
+    cloudKeyForget: 'Oublier la clé ici',
+    cloudKeyForgetConfirm: 'Oublier la clé sur cet appareil ?',
+    cloudKeyForgetHint:
+      'Les données du cloud restent. Garde la clé sur un autre appareil : sans elle, plus personne ne pourra les lire ni les effacer.',
+    cloudDelete: 'Effacer du cloud',
+    cloudDeleteConfirm: 'Effacer les données du cloud ?',
+    cloudDeleteHint:
+      'Chaque appareil garde ses propres données. Un autre appareil qui a encore la clé recréera le cloud à son prochain envoi : oublie-la aussi là-bas.',
     export: 'Exporter mes données (JSON)',
     import: 'Importer un fichier',
     importFailed: 'Import impossible',
@@ -1124,6 +1166,29 @@ const en: Messages = {
       'The match IN PROGRESS is not synced: it stays on this device.',
     cloudSettingsNote:
       'Settings are not merged: “Push” imposes this device’s, “Pull” applies the cloud’s.',
+    cloudKeyIntro:
+      'Your devices share one sync key. Create it on the first one, then scan (or type) it on the others.',
+    cloudKeyCreate: 'Create a key',
+    cloudKeyScan: 'Scan a key',
+    cloudKeyInputLabel: 'Sync key',
+    cloudKeyUse: 'Use',
+    cloudKeyInvalid: 'That is not a complete sync key (28 characters).',
+    cloudKeyLabel: 'Key:',
+    cloudKeyShow: 'Show the key',
+    cloudKeyShowTitle: 'Your sync key',
+    cloudKeyQrAlt: 'Sync key QR code',
+    cloudKeyShowHint:
+      'On your other device: Settings → Cloud sync → “Scan a key”.',
+    cloudKeyWarning:
+      'Anyone holding this key can read and replace your synced data: only show it to your own devices.',
+    cloudKeyForget: 'Forget the key here',
+    cloudKeyForgetConfirm: 'Forget the key on this device?',
+    cloudKeyForgetHint:
+      'The cloud data stays. Keep the key on another device: without it, nobody can read or delete that data any more.',
+    cloudDelete: 'Delete from the cloud',
+    cloudDeleteConfirm: 'Delete the cloud data?',
+    cloudDeleteHint:
+      'Each device keeps its own data. Another device that still holds the key will recreate the cloud data on its next push: forget the key there too.',
     export: 'Export my data (JSON)',
     import: 'Import a file',
     importFailed: 'Import failed',

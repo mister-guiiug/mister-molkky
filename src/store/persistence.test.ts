@@ -153,7 +153,7 @@ beforeEach(() => {
   useMatchStore.setState({ current: null, history: [], pendingFeedback: null });
   usePlayersStore.setState({ players: [] });
   useTemplatesStore.setState({ templates: [] });
-  useSyncStore.setState({ enabled: false, lastSyncAt: null });
+  useSyncStore.setState({ enabled: false, key: null, lastSyncAt: null });
   useSettingsStore.getState().reset();
 });
 
@@ -194,9 +194,35 @@ describe('persistance versionnée', () => {
     // Les dix réglages, y compris ceux qui valent l'inverse du défaut.
     expect(useSettingsStore.getState()).toMatchObject(SETTINGS);
 
-    // Le choix de synchro et la date du dernier échange.
+    // Le choix de synchro et la date du dernier échange. Une installation
+    // d'avant la clé de synchro n'en a pas : elle en créera ou en scannera une.
     expect(useSyncStore.getState().enabled).toBe(true);
     expect(useSyncStore.getState().lastSyncAt).toBe('2026-09-01T10:00:00.000Z');
+    expect(useSyncStore.getState().key).toBeNull();
+  });
+
+  it('garde la clé de synchro, et laisse tomber une clé abîmée sans le reste', async () => {
+    localStorage.setItem(
+      'mm_sync',
+      legacyEnvelope(
+        {
+          enabled: true,
+          key: 'AAAABBBBCCCCDDDDEEEEFFFFGGGG',
+          lastSyncAt: null,
+        },
+        1
+      )
+    );
+    await useSyncStore.persist.rehydrate();
+    expect(useSyncStore.getState().key).toBe('AAAABBBBCCCCDDDDEEEEFFFFGGGG');
+
+    localStorage.setItem(
+      'mm_sync',
+      legacyEnvelope({ enabled: true, key: 'TRONQU', lastSyncAt: null }, 1)
+    );
+    await useSyncStore.persist.rehydrate();
+    expect(useSyncStore.getState().key).toBeNull();
+    expect(useSyncStore.getState().enabled).toBe(true);
   });
 
   it('réécrit la clé sous l’enveloppe du socle, l’ancienne mise de côté', async () => {

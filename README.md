@@ -112,12 +112,14 @@ Sanction configurable après X ratés : **élimination** (officiel), **remise à
 <details>
 <summary><strong>☁️ Sync cloud multi-device (opt-in)</strong></summary>
 
-- Auth anonyme Supabase (pas de compte à créer)
+- Une **clé de synchro** partagée par QR entre vos appareils : ni compte, ni connexion
 - Push / pull manuel : les joueurs, les parties terminées et les modèles de
   tous vos appareils sont **réunis**, jamais remplacés
-- Fusion par identifiant ; à identifiant égal, le plus récent gagne
+- Fusion par identifiant ; à identifiant égal, le plus récent gagne ; un envoi
+  devancé par un autre appareil relit et refusionne au lieu d'écraser
 - La partie **en cours** reste sur son appareil, et l'écran le dit
-- Voir [`docs/cloud-sync.md`](./docs/cloud-sync.md) pour le SQL à appliquer
+- « Oublier la clé ici » et « Effacer du cloud », chacun avec sa confirmation
+- Voir [`docs/cloud-sync.md`](./docs/cloud-sync.md)
 
 </details>
 
@@ -130,7 +132,7 @@ Joueurs, parties et réglages restent dans le navigateur de l'appareil. Ce qui e
 - **Suivi des erreurs (Sentry)** : sur l'app publiée, Sentry (région UE) démarre à l'ouverture, sans consentement, et ne reçoit un rapport technique que lorsqu'une erreur survient.
 - **Mesure d'audience (PostHog, nuage européen)** : rien n'est chargé avant votre accord dans le bandeau. Ensuite : pages vues, parties démarrées et terminées, nombre de joueurs ; jamais les noms ni les scores.
 - **Mode direct** : la partie diffusée, noms des joueurs compris, part vers Supabase. Elle n'est lisible qu'avec son code à 6 caractères, donc par quiconque vous le donnez ; seul le téléphone hôte peut l'écrire ; elle est effacée 24 h après le dernier lancer.
-- **Sync cloud** (opt-in) : joueurs, parties terminées, modèles et réglages partent vers Supabase, sous une identité anonyme (sans les avatars ni les photos).
+- **Sync cloud** (opt-in) : joueurs, parties terminées, modèles et réglages partent vers Supabase (sans les avatars ni les photos), sous une clé de synchro que seuls vos appareils détiennent. Qui a la clé lit ces données ; elles restent jusqu'à ce que vous les effaciez depuis les Paramètres.
 
 ---
 
@@ -164,7 +166,7 @@ VITE_SUPABASE_URL=https://xxx.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJxxx...
 ```
 
-Puis appliquez les migrations de [`supabase/migrations/`](./supabase/migrations) (`supabase db push`, voir [`supabase/README.md`](./supabase/README.md)) et le SQL de [`docs/cloud-sync.md`](./docs/cloud-sync.md).
+Puis appliquez les migrations de [`supabase/migrations/`](./supabase/migrations) (`supabase db push`, voir [`supabase/README.md`](./supabase/README.md)). Aucun réglage du tableau de bord n'est nécessaire : ni compte, ni connexion anonyme.
 
 ---
 
@@ -180,6 +182,7 @@ Puis appliquez les migrations de [`supabase/migrations/`](./supabase/migrations)
 | **PWA**        | vite-plugin-pwa (Workbox precache, prompt registration)    |
 | **Routing**    | React Router 7 (BrowserRouter + 404.html SPA fallback)     |
 | **Live**       | Supabase Realtime (Broadcast) + fonctions RPC par code     |
+| **Sync**       | Fonctions RPC Supabase par clé de synchro (QR)             |
 | **Audio**      | Web Audio API (synth offline) + Web Speech API (TTS)       |
 | **Caméra**     | `<input capture="environment">` (native)                   |
 | **Partage**    | Canvas → Web Share API (avec fallback download)            |
@@ -202,7 +205,7 @@ src/
 ├── i18n/                # FR + EN (templates literals → MessageKey union TS-safe)
 ├── tts.ts               # Voice announcer (Web Speech API)
 ├── shareCard.ts         # Canvas → PNG export
-├── cloudSync.ts         # Supabase Auth + sync blob
+├── cloudSync.ts         # Clé de synchro + transport du blob (RPC Supabase)
 └── sounds.ts            # Table des sons (le synthé Web Audio est au socle : `audio`)
 ```
 
