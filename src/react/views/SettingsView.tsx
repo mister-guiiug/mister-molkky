@@ -22,6 +22,7 @@ import { useSyncStore } from '../../store/useSyncStore';
 import type { MergeReport, MergeStats } from '../../sync/merge';
 import { dateSlug, downloadJson } from '@mister-guiiug/dev-pwa-config/download';
 import { FamilyApps } from '@mister-guiiug/dev-pwa-config/react';
+import { ConsentSection } from '@mister-guiiug/dev-pwa-config/react/consent-section';
 
 const REPO_URL = 'https://github.com/mister-guiiug/mister-molkky';
 const BMAC_URL = 'https://buymeacoffee.com/mister.guiiug';
@@ -416,6 +417,17 @@ export function SettingsView() {
           </div>
         </div>
       </Section>
+
+      {/* Revenir sur son choix de mesure d’audience : le retrait se fait ici, en
+          un clic (RGPD, art. 7.3). Mêmes clé et chargeur que le bandeau. Les
+          classes redisent l'habit de `Section`, qui le pose en style en ligne. */}
+      <ConsentSection
+        posthogKey={import.meta.env.VITE_POSTHOG_KEY}
+        loader={() => import('posthog-js/dist/module.slim.js')}
+        className="mb-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3"
+        titleClassName="text-xs font-bold uppercase text-[var(--muted)]"
+        actionClassName="touch-target rounded-lg border border-[var(--border)] px-4 text-sm font-bold"
+      />
 
       {/* Nos autres applications — grille partagée (FamilyApps). Source /
           sponsor sont déjà couverts par la section « À propos » et l'AppFooter,
