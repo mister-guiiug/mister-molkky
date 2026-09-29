@@ -26,9 +26,12 @@ major_version = 17
 [db.migrations]
 enabled = true
 
-# Rouvert avec `0002_live_matches.sql` : le direct repose entièrement sur la
-# réplication (`postgres_changes`), et une pile locale qui la coupe ferait passer
-# pour un bug de l'application ce qui n'est qu'un service éteint.
+# Rouvert avec `0002_live_matches.sql`. Depuis `0003`, le direct ne passe plus
+# par la réplication (`postgres_changes`) mais par Broadcast : un signal sur le
+# canal de la partie, après lequel le spectateur relit la base. C'est toujours
+# ce service, et une pile locale qui le coupe ferait passer pour un bug de
+# l'application ce qui n'est qu'un service éteint. (La CI des tests pgTAP le
+# laisse éteint : ils n'écrivent qu'en SQL.)
 [realtime]
 enabled = true
 

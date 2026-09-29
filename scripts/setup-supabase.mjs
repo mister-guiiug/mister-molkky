@@ -10,13 +10,19 @@
  *  2. Looks for an existing project named "mister-molkky"
  *  3. If absent, creates it (region=eu-west-3 Paris, free tier) and waits
  *     for status ACTIVE_HEALTHY (provisioning ≈ 90s)
- *  4. Runs the SQL migration from docs/live-supabase.md (live_matches
- *     table, trigger, RLS policies, realtime publication)
+ *  4. Applies every file of supabase/migrations/, in order, one query per
+ *     file. They are all replayable (see supabase/README.md), so a second
+ *     run changes nothing — and an error is a real error, not a re-run.
  *  5. Fetches the anon key and prints the values to drop in .env.local
  *     and GitHub repository secrets — no secret is written to disk.
+ *
+ * Until 30/09/2026, step 4 read a ```sql block from docs/live-supabase.md.
+ * That block moved to supabase/migrations/0002 on 13/09 and the page no
+ * longer carries any SQL: the script stopped right there, before applying
+ * anything.
  */
 
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 const TOKEN = process.env.SUPABASE_ACCESS_TOKEN;
@@ -114,70 +120,29 @@ async function waitHealthy(projectRef) {
   throw new Error('Project did not become healthy within 5 minutes');
 }
 
-async function loadSql() {
-  const md = await readFile(
-    new URL('../docs/live-supabase.md', import.meta.url),
-    'utf-8'
+const MIGRATIONS_DIR = new URL('../supabase/migrations/', import.meta.url);
+
+/** The migration files, in the order `supabase db push` would apply them. */
+async function loadMigrations() {
+  const names = (await readdir(MIGRATIONS_DIR))
+    .filter(name => /^\d+_.+\.sql$/.test(name))
+    .sort();
+  if (names.length === 0) throw new Error('No file in supabase/migrations/');
+  return Promise.all(
+    names.map(async name => ({
+      name,
+      sql: await readFile(new URL(name, MIGRATIONS_DIR), 'utf-8'),
+    }))
   );
-  const match = md.match(/```sql\n([\s\S]*?)```/);
-  if (!match) throw new Error('Could not find ```sql block in docs');
-  return match[1].trim();
 }
 
-function splitSqlStatements(sql) {
-  // Naïve but correct enough for our migration: scans char-by-char and
-  // splits on top-level semicolons, ignoring those inside $$...$$
-  // dollar-quoted blocks and single-line comments.
-  const out = [];
-  let buf = '';
-  let inDollar = false;
-  let i = 0;
-  while (i < sql.length) {
-    const ch = sql[i];
-    if (!inDollar && ch === '-' && sql[i + 1] === '-') {
-      while (i < sql.length && sql[i] !== '\n') i += 1;
-      continue;
-    }
-    if (sql.startsWith('$$', i)) {
-      buf += '$$';
-      inDollar = !inDollar;
-      i += 2;
-      continue;
-    }
-    if (ch === ';' && !inDollar) {
-      const stmt = buf.trim();
-      if (stmt) out.push(stmt);
-      buf = '';
-      i += 1;
-      continue;
-    }
-    buf += ch;
-    i += 1;
-  }
-  const tail = buf.trim();
-  if (tail) out.push(tail);
-  return out;
-}
-
-async function runSql(projectRef, sql) {
-  const statements = splitSqlStatements(sql);
-  for (const stmt of statements) {
-    try {
-      await api(`/projects/${projectRef}/database/query`, {
-        method: 'POST',
-        body: JSON.stringify({ query: stmt + ';' }),
-      });
-    } catch (err) {
-      const msg = String(err.message);
-      // Tolerate idempotent re-runs: "already exists" on table/policy/etc.
-      if (
-        /already exists|duplicate|is already member of publication/i.test(msg)
-      ) {
-        console.log(`    ↳ skipped (already exists)`);
-        continue;
-      }
-      throw err;
-    }
+async function runMigrations(projectRef) {
+  for (const { name, sql } of await loadMigrations()) {
+    console.log(`  → ${name}`);
+    await api(`/projects/${projectRef}/database/query`, {
+      method: 'POST',
+      body: JSON.stringify({ query: sql }),
+    });
   }
 }
 
@@ -207,10 +172,9 @@ async function main() {
   const projectRef = project.id ?? project.ref;
   await waitHealthy(projectRef);
 
-  console.log('Applying SQL migration...');
-  const sql = await loadSql();
-  await runSql(projectRef, sql);
-  console.log('  ✓ migration applied');
+  console.log('Applying SQL migrations...');
+  await runMigrations(projectRef);
+  console.log('  ✓ migrations applied');
 
   const url = `https://${projectRef}.supabase.co`;
   const anonKey = await getAnonKey(projectRef);

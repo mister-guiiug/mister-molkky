@@ -61,7 +61,7 @@ beforeEach(() => {
   usePlayersStore.setState({ players: [] });
   useLiveStore.setState({
     role: 'none',
-    matchId: null,
+    hostToken: null,
     code: null,
     remote: null,
     error: null,

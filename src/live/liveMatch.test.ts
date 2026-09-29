@@ -1,63 +1,113 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ALPHABETS } from '@mister-guiiug/dev-pwa-config/pairing';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { CurrentMatchState } from '../schemas';
+import type { CurrentMatchState, Throw } from '../schemas';
 import { getSupabase } from '../supabase';
 import {
   buildLiveShareUrl,
   CODE_LENGTH,
   createLiveMatch,
   extractScannedCode,
+  finishLiveMatch,
   joinLiveMatch,
+  liveTopic,
   normalizeCode,
+  pushLiveThrows,
+  subscribeLiveMatch,
+  type LiveMatchRow,
 } from './liveMatch';
 
 vi.mock('../supabase', () => ({
   getSupabase: vi.fn(),
 }));
 
-/**
- * Client Supabase minimal : `rows` associe un code à sa ligne ; chaque
- * `.eq('code', …)` est journalisé dans `queried`, chaque insert dans
- * `inserted` (et réussit).
- */
-function fakeClient(rows: Record<string, { id: string; code: string }>) {
-  const queried: string[] = [];
-  const inserted: string[] = [];
-  const client = {
-    from: () => ({
-      select: () => ({
-        eq: (_column: string, value: string) => ({
-          single: () => {
-            queried.push(value);
-            const row = rows[value];
-            return Promise.resolve(
-              row
-                ? { data: row, error: null }
-                : { data: null, error: { code: 'PGRST116' } }
-            );
-          },
-        }),
-      }),
-      insert: (row: { code: string }) => {
-        inserted.push(row.code);
-        return {
-          select: () => ({
-            single: () =>
-              Promise.resolve({
-                data: { id: `id-${row.code}`, code: row.code },
-                error: null,
-              }),
-          }),
-        };
-      },
-    }),
+type RpcArgs = Record<string, unknown>;
+type RpcResult = { data: unknown; error: { code: string } | null };
+
+/** Un canal Realtime minimal : ce que le code en appelle, rien de plus. */
+function fakeChannel(topic: string) {
+  const channel = {
+    topic,
+    listeners: [] as Array<() => void>,
+    status: null as ((status: string, err?: Error) => void) | null,
+    sent: [] as Array<{ event: string; payload: unknown }>,
+    on(_type: string, _filter: unknown, listener: () => void) {
+      channel.listeners.push(listener);
+      return channel;
+    },
+    subscribe(callback: (status: string, err?: Error) => void) {
+      channel.status = callback;
+      return channel;
+    },
+    httpSend(event: string, payload: unknown) {
+      channel.sent.push({ event, payload });
+      return Promise.resolve({ success: true });
+    },
+    /** Ce que ferait le serveur : livrer un signal aux abonnés. */
+    ping() {
+      for (const listener of channel.listeners) listener();
+    },
   };
-  return { client: client as unknown as SupabaseClient, queried, inserted };
+  return channel;
 }
 
-function useClient(rows: Record<string, { id: string; code: string }> = {}) {
-  const fake = fakeClient(rows);
+/**
+ * Client Supabase minimal. `rows` associe un code à l'état que rend
+ * `live_match_get` ; chaque appel RPC est journalisé dans `calls`. `rpc`
+ * remplace, au besoin, la réponse par défaut d'une fonction.
+ */
+function fakeClient(
+  rows: Record<string, Partial<LiveMatchRow>>,
+  rpc?: (fn: string, args: RpcArgs) => Promise<RpcResult> | undefined
+) {
+  const calls: Array<{ fn: string; args: RpcArgs }> = [];
+  /** Les codes demandés à `live_match_get`, dans l'ordre. */
+  const queried: unknown[] = [];
+  /** Les codes proposés à `live_match_create`, dans l'ordre. */
+  const inserted: unknown[] = [];
+  const channels: Array<ReturnType<typeof fakeChannel>> = [];
+  const removed: Array<ReturnType<typeof fakeChannel>> = [];
+  const client = {
+    rpc: (fn: string, args: RpcArgs): Promise<RpcResult> => {
+      calls.push({ fn, args });
+      if (fn === 'live_match_get') queried.push(args.p_code);
+      if (fn === 'live_match_create') inserted.push(args.p_code);
+      const custom = rpc?.(fn, args);
+      if (custom) return custom;
+      if (fn === 'live_match_get') {
+        const row = rows[args.p_code as string] ?? null;
+        return Promise.resolve({ data: row, error: null });
+      }
+      if (fn === 'live_match_create') {
+        return Promise.resolve({ data: `hote-${args.p_code}`, error: null });
+      }
+      return Promise.resolve({ data: null, error: null });
+    },
+    channel: (topic: string) => {
+      const channel = fakeChannel(topic);
+      channels.push(channel);
+      return channel;
+    },
+    removeChannel: (channel: ReturnType<typeof fakeChannel>) => {
+      removed.push(channel);
+      return Promise.resolve('ok');
+    },
+  };
+  return {
+    client: client as unknown as SupabaseClient,
+    calls,
+    queried,
+    inserted,
+    channels,
+    removed,
+  };
+}
+
+function useClient(
+  rows: Record<string, Partial<LiveMatchRow>> = {},
+  rpc?: (fn: string, args: RpcArgs) => Promise<RpcResult> | undefined
+) {
+  const fake = fakeClient(rows, rpc);
   vi.mocked(getSupabase).mockResolvedValue(fake.client);
   return fake;
 }
@@ -164,7 +214,7 @@ describe('URL de partage ↔ scan — l’aller-retour sur la route réelle', ()
 describe('joinLiveMatch — résolution Crockford avec repli hérité', () => {
   it('trouve un nouveau code (0/1) via la normalisation Crockford', async () => {
     const { queried } = useClient({
-      MZ1K0W: { id: 'a', code: 'MZ1K0W' },
+      MZ1K0W: { code: 'MZ1K0W' },
     });
     const row = await joinLiveMatch('mz1k0w');
     expect(row.code).toBe('MZ1K0W');
@@ -173,7 +223,7 @@ describe('joinLiveMatch — résolution Crockford avec repli hérité', () => {
 
   it('corrige les confusions I/L/O vers un nouveau code', async () => {
     const { queried } = useClient({
-      AB11K0: { id: 'b', code: 'AB11K0' },
+      AB11K0: { code: 'AB11K0' },
     });
     // I → 1, L → 1, O → 0 : les corrections Crockford, DANS l’alphabet.
     const row = await joinLiveMatch('abILkO');
@@ -183,7 +233,7 @@ describe('joinLiveMatch — résolution Crockford avec repli hérité', () => {
 
   it('retombe sur la normalisation héritée pour un ancien code (L, U)', async () => {
     const { queried } = useClient({
-      MZLKUW: { id: 'c', code: 'MZLKUW' },
+      MZLKUW: { code: 'MZLKUW' },
     });
     // Normalisé Crockford, 'mzlkuw' donnerait 'MZ1KW' (L → 1, U écarté) :
     // 5 caractères, candidat écarté — seul le repli hérité part en requête.
@@ -194,7 +244,7 @@ describe('joinLiveMatch — résolution Crockford avec repli hérité', () => {
 
   it('essaie Crockford d’abord, l’hérité ensuite, quand les deux sont plausibles', async () => {
     const { queried } = useClient({
-      ABLK2A: { id: 'd', code: 'ABLK2A' },
+      ABLK2A: { code: 'ABLK2A' },
     });
     const row = await joinLiveMatch('AB1LK2A');
     expect(row.code).toBe('ABLK2A');
@@ -216,13 +266,164 @@ describe('joinLiveMatch — résolution Crockford avec repli hérité', () => {
 });
 
 describe('createLiveMatch — génération par le socle', () => {
+  const state = { config: {}, throws: [] } as unknown as CurrentMatchState;
+
   it('engendre des codes crockford32 de 6 caractères, jamais I/L/O/U', async () => {
-    const { inserted } = useClient();
-    const state = { config: {}, throws: [] } as unknown as CurrentMatchState;
+    const fake = useClient();
     for (let i = 0; i < 25; i += 1) {
       const { code } = await createLiveMatch(state);
       expect(code).toMatch(/^[0-9ABCDEFGHJKMNPQRSTVWXYZ]{6}$/);
     }
-    expect(inserted).toHaveLength(25);
+    expect(fake.inserted).toHaveLength(25);
+  });
+
+  it('rend le secret d’hôte que la base a tiré, avec le code proposé', async () => {
+    const fake = useClient();
+    const { code, hostToken } = await createLiveMatch(state);
+    expect(fake.inserted).toEqual([code]);
+    expect(hostToken).toBe(`hote-${code}`);
+  });
+
+  it('tire un autre code quand la base répond 23505 (code déjà pris)', async () => {
+    let first = true;
+    const fake = useClient({}, fn => {
+      if (fn !== 'live_match_create' || !first) return undefined;
+      first = false;
+      return Promise.resolve({ data: null, error: { code: '23505' } });
+    });
+    const { code } = await createLiveMatch(state);
+    expect(fake.inserted).toHaveLength(2);
+    expect(code).toBe(fake.inserted[1]);
+  });
+
+  it('relaie toute autre erreur sans réessayer', async () => {
+    const fake = useClient({}, () =>
+      Promise.resolve({ data: null, error: { code: '42501' } })
+    );
+    await expect(createLiveMatch(state)).rejects.toMatchObject({
+      code: '42501',
+    });
+    expect(fake.inserted).toHaveLength(1);
+  });
+});
+
+describe('écritures de l’hôte — le secret, puis le signal', () => {
+  const throws = [{ id: 't1' }] as unknown as Throw[];
+
+  it('pousse les lancers avec le secret, puis signale sur le canal du code', async () => {
+    const fake = useClient();
+    await pushLiveThrows('MZ7K2A', 'secret', throws);
+
+    expect(fake.calls).toEqual([
+      {
+        fn: 'live_match_push',
+        args: { p_code: 'MZ7K2A', p_host_token: 'secret', p_throws: throws },
+      },
+    ]);
+    const [channel] = fake.channels;
+    expect(channel?.topic).toBe(liveTopic('MZ7K2A'));
+    // Le signal ne porte AUCUNE donnée : le spectateur relit la base.
+    expect(channel?.sent).toEqual([{ event: 'update', payload: {} }]);
+    expect(fake.removed).toEqual([channel]);
+  });
+
+  it('clôt avec les derniers lancers et le vainqueur, puis signale', async () => {
+    const fake = useClient();
+    await finishLiveMatch('MZ7K2A', 'secret', throws, 'p-a');
+
+    expect(fake.calls).toEqual([
+      {
+        fn: 'live_match_finish',
+        args: {
+          p_code: 'MZ7K2A',
+          p_host_token: 'secret',
+          p_throws: throws,
+          p_winner_id: 'p-a',
+        },
+      },
+    ]);
+    expect(fake.channels[0]?.sent).toHaveLength(1);
+  });
+
+  it('ne signale rien quand la base refuse l’écriture', async () => {
+    const fake = useClient({}, () =>
+      Promise.resolve({ data: null, error: { code: 'P0002' } })
+    );
+    await expect(
+      pushLiveThrows('MZ7K2A', 'mauvais-secret', throws)
+    ).rejects.toMatchObject({ code: 'P0002' });
+    expect(fake.channels).toHaveLength(0);
+  });
+});
+
+describe('subscribeLiveMatch — un signal, une relecture', () => {
+  const row = { code: 'MZ7K2A', throws: [] } as Partial<LiveMatchRow>;
+
+  it('relit l’état à l’abonnement, puis à chaque signal', async () => {
+    const fake = useClient({ MZ7K2A: row });
+    const onChange = vi.fn();
+    await subscribeLiveMatch('MZ7K2A', onChange);
+    const [channel] = fake.channels;
+    expect(channel?.topic).toBe(liveTopic('MZ7K2A'));
+
+    channel?.status?.('SUBSCRIBED');
+    await vi.waitFor(() => expect(onChange).toHaveBeenCalledTimes(1));
+
+    channel?.ping();
+    await vi.waitFor(() => expect(onChange).toHaveBeenCalledTimes(2));
+    expect(onChange).toHaveBeenLastCalledWith(row);
+    expect(fake.queried).toEqual(['MZ7K2A', 'MZ7K2A']);
+  });
+
+  it('une seule relecture en vol : trois signaux rapprochés en coûtent deux', async () => {
+    let release: () => void = () => undefined;
+    let held = true;
+    const fake = useClient({ MZ7K2A: row }, fn => {
+      if (fn !== 'live_match_get' || !held) return undefined;
+      held = false;
+      return new Promise(resolve => {
+        release = () => resolve({ data: row, error: null });
+      });
+    });
+    const onChange = vi.fn();
+    await subscribeLiveMatch('MZ7K2A', onChange);
+    const [channel] = fake.channels;
+
+    channel?.ping();
+    channel?.ping();
+    channel?.ping();
+    await vi.waitFor(() => expect(fake.queried).toHaveLength(1));
+
+    release();
+    await vi.waitFor(() => expect(onChange).toHaveBeenCalledTimes(2));
+    expect(fake.queried).toHaveLength(2);
+  });
+
+  it('se tait une fois désabonné, et retire son canal', async () => {
+    const fake = useClient({ MZ7K2A: row });
+    const onChange = vi.fn();
+    const subscription = await subscribeLiveMatch('MZ7K2A', onChange);
+    const [channel] = fake.channels;
+
+    await subscription.unsubscribe();
+    channel?.ping();
+    channel?.status?.('SUBSCRIBED');
+    await Promise.resolve();
+
+    expect(fake.removed).toEqual([channel]);
+    expect(fake.queried).toEqual([]);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('remonte une erreur de canal', async () => {
+    const fake = useClient({ MZ7K2A: row });
+    const onError = vi.fn();
+    await subscribeLiveMatch('MZ7K2A', vi.fn(), onError);
+
+    fake.channels[0]?.status?.('TIMED_OUT');
+
+    expect(onError).toHaveBeenCalledWith(
+      new Error('Realtime channel status: TIMED_OUT')
+    );
   });
 });

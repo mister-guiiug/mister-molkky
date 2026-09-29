@@ -79,7 +79,7 @@ describe('MatchView — the chosen voice reaches the announcements', () => {
     usePlayersStore.setState({ players: [] });
     useLiveStore.setState({
       role: 'none',
-      matchId: null,
+      hostToken: null,
       code: null,
       remote: null,
       error: null,
