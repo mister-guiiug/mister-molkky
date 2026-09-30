@@ -66,7 +66,13 @@ select set_eq(
     'live_match_create',
     'live_match_finish',
     'live_match_get',
-    'live_match_push'
+    'live_match_push',
+    -- La synchro (0004) : la clé est l'identité. Chaque fonction exige une clé
+    -- bien formée et ne touche que le blob de son haché. Éprouvées une à une
+    -- dans `user_data.test.sql`.
+    'sync_delete',
+    'sync_pull',
+    'sync_push'
   ],
   'les fonctions SECURITY DEFINER exécutables par anon sont exactement la liste relue'
 );

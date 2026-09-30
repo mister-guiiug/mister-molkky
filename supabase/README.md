@@ -1,9 +1,9 @@
 # Supabase — Mister Mölkky
 
-Mister Mölkky fonctionne **entièrement hors ligne**. Supabase n'alimente qu'une
-couche optionnelle (le direct multi-appareils) et le ping anti-pause. Ce dossier
-décrit l'état de la base du projet hébergé, **comment le SQL y arrive**, et où
-il est éprouvé.
+Mister Mölkky fonctionne **entièrement hors ligne**. Supabase n'alimente que deux
+couches optionnelles (le direct multi-appareils et la synchro par clé) et le
+ping anti-pause. Ce dossier décrit l'état de la base du projet hébergé,
+**comment le SQL y arrive**, et où il est éprouvé.
 
 ## Comment une migration est appliquée ici
 
@@ -40,10 +40,11 @@ que ferait un `supabase db push` ici — puis joue les tests pgTAP de
 de développement n'a pas de démon Docker : c'est le seul endroit où les
 migrations s'exécutent avant la production.
 
-| Fichier                       | Ce qu'il tient                                                                                                                                  |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `structure-securite.test.sql` | aucune table de `public` sans RLS ; les fonctions `security definer` exécutables par `anon` sont exactement la liste relue (le fichier du parc) |
-| `live_matches.test.sql`       | la table fermée à `anon` et `authenticated` ; lire au code, écrire au code et au secret ; la partie finie gelée ; l'expiration et la purge      |
+| Fichier                       | Ce qu'il tient                                                                                                                                                            |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `structure-securite.test.sql` | aucune table de `public` sans RLS ; les fonctions `security definer` exécutables par `anon` sont exactement la liste relue (le fichier du parc)                           |
+| `live_matches.test.sql`       | la table fermée à `anon` et `authenticated` ; lire au code, écrire au code et au secret ; la partie finie gelée ; l'expiration et la purge                                |
+| `user_data.test.sql`          | la table fermée ; une clé ne lit, n'écrit et n'efface que son blob ; l'envoi sur une version périmée refusé sans rien écraser ; les clés mal formées ; un an sans échange |
 
 Les tests jouent sous `set local role anon` : c'est le rôle que PostgREST prend
 pour la clé publiée. Sans lui, la session garde les droits de `postgres`, TOUT
@@ -52,15 +53,21 @@ passe, et un test serait vert et faux.
 ## État de la base
 
 Relevé en lecture seule le 29/09/2026 : `0001` et `0002` sont en base,
-**`0003` reste à appliquer**.
+**`0003` et `0004` restent à appliquer**.
 
-| Objet                                            | En base                 | Décrit où                              |
-| ------------------------------------------------ | ----------------------- | -------------------------------------- |
-| `public.keep_alive`                              | oui                     | `migrations/0001_keep_alive.sql`       |
-| `public.live_matches`                            | oui                     | `0002`, fermée par `0003`              |
-| `public.touch_updated_at()`                      | oui                     | `migrations/0002_live_matches.sql`     |
-| publication `supabase_realtime` → `live_matches` | oui, retirée par `0003` | `0002`, `0003`                         |
-| `live_match_create`, `_get`, `_push`, `_finish`  | **non**                 | `migrations/0003_live_matches_rpc.sql` |
+| Objet                                            | En base                 | Décrit où                               |
+| ------------------------------------------------ | ----------------------- | --------------------------------------- |
+| `public.keep_alive`                              | oui                     | `migrations/0001_keep_alive.sql`        |
+| `public.live_matches`                            | oui                     | `0002`, fermée par `0003`               |
+| `public.touch_updated_at()`                      | oui                     | `migrations/0002_live_matches.sql`      |
+| publication `supabase_realtime` → `live_matches` | oui, retirée par `0003` | `0002`, `0003`                          |
+| `live_match_create`, `_get`, `_push`, `_finish`  | **non**                 | `migrations/0003_live_matches_rpc.sql`  |
+| `public.user_data`                               | **non** (404)           | `migrations/0004_user_data_par_cle.sql` |
+| `sync_pull`, `sync_push`, `sync_delete`          | **non**                 | `migrations/0004_user_data_par_cle.sql` |
+
+La connexion anonyme est coupée sur le projet (`anonymous_users: false` dans
+`/auth/v1/settings`), et c'est très bien ainsi : plus rien ne s'en sert depuis
+`0004`.
 
 ### `live_matches` après `0003`
 
@@ -85,6 +92,28 @@ lister toutes les parties en cours, codes et noms de joueurs compris ; la
 policy `update` laissait réécrire les lancers de toute partie non finie à
 quiconque en tenait l'`id`, rendu à chaque spectateur ; et rien n'était purgé.
 
+### `user_data` après `0004`
+
+- **La clé de synchro est l'identité** : 28 caractères crockford32 tirés sur
+  l'appareil et partagés par QR. Ni compte, ni connexion anonyme. La base n'en
+  garde que le haché (SHA-256), clé primaire de la table.
+- **Aucun accès direct** pour `anon` ni `authenticated`, RLS active sans
+  policy. **Trois fonctions `security definer`**, exécutables par `anon`
+  seul, exigent une clé bien formée : `sync_pull` lit, `sync_push` écrit,
+  `sync_delete` efface.
+- **L'écriture est conditionnelle** : `sync_push` prend la version lue avant la
+  fusion, et refuse (`40001`) si un autre appareil a écrit entre-temps.
+- **Un an sans échange, et le blob s'efface** : `seen_at` date la dernière
+  lecture ou le dernier envoi ; chaque échange purge les blobs expirés, et un
+  blob expiré est introuvable d'ici là. La purge passe AVANT l'écriture : une
+  clé qui revient après un an lit `null`, envoie en version 0, et doit trouver
+  la place libre.
+
+Le SQL que `docs/cloud-sync.md` demandait de coller à la main (une table
+indexée par `auth.uid()`, plus la connexion anonyme à activer) n'a jamais été
+appliqué, et ne l'est plus nulle part : il ne pouvait rien réunir, chaque
+navigateur ayant sa propre identité anonyme.
+
 ### Vérifier après `supabase db push`
 
 Avec l'URL du projet et sa clé **anonyme** (celle du bundle — jamais la clé
@@ -98,14 +127,24 @@ curl -s "$SUPABASE_URL/rest/v1/live_matches?select=code" -H "apikey: $ANON_KEY"
 curl -s -X POST "$SUPABASE_URL/rest/v1/rpc/live_match_get" \
   -H "apikey: $ANON_KEY" -H "Content-Type: application/json" \
   -d '{"p_code":"ZZZZZZ"}'
+
+# Même chose pour la synchro : la table ne se lit pas (401)…
+curl -s "$SUPABASE_URL/rest/v1/user_data?select=version" -H "apikey: $ANON_KEY"
+
+# … et une clé bien formée qui n'a rien envoyé ne lit rien : null.
+curl -s -X POST "$SUPABASE_URL/rest/v1/rpc/sync_pull" \
+  -H "apikey: $ANON_KEY" -H "Content-Type: application/json" \
+  -d '{"p_key":"0000000000000000000000000000"}'
 ```
 
 Puis une partie réelle : diffuser depuis un téléphone, suivre depuis un autre,
 jouer jusqu'au vainqueur. Le spectateur doit recevoir chaque lancer, **le
-lancer gagnant compris**.
+lancer gagnant compris**. Et pour la synchro : créer une clé sur un appareil,
+la scanner sur un autre, « Envoyer » des deux côtés — chacun doit retrouver
+les parties de l'autre.
 
 > **Le cache de schéma de PostgREST.** Il sert ses 404 depuis un cache rechargé
-> de façon asynchrone après un DDL : `0003` finit donc par
+> de façon asynchrone après un DDL : `0003` et `0004` finissent donc par
 > `notify pgrst, 'reload schema'`. Si les fonctions répondent encore 404 juste
 > après l'application, attendre quelques dizaines de secondes avant de
 > chercher ailleurs.

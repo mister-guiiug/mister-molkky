@@ -2,7 +2,16 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { z } from 'zod';
 import { STORE_KEYS, versionedPersistStorage } from './persistence';
-import { pullSync, pushSync, type SyncPayload } from '../cloudSync';
+import {
+  deleteSync,
+  generateSyncKey,
+  parseSyncKey,
+  pullSync,
+  pushSync,
+  SYNC_KEY_LENGTH,
+  SyncConflictError,
+  type SyncPayload,
+} from '../cloudSync';
 import {
   EMPTY_SNAPSHOT,
   mergeSnapshots,
@@ -28,15 +37,33 @@ export interface LastSyncOutcome {
   currentMatchKept: boolean;
 }
 
-/** Ce qui survit à un rechargement : le choix de l'utilisateur, pas l'état d'un appel. */
+/**
+ * Ce qui survit à un rechargement : le choix de l'utilisateur, pas l'état d'un
+ * appel. Une clé abîmée retombe à `null` (`catch`) sans emporter le reste : il
+ * suffira de la rescanner.
+ */
 const PersistedSyncSchema = z.object({
   enabled: z.boolean().default(false),
+  key: z.string().length(SYNC_KEY_LENGTH).nullable().catch(null),
   lastSyncAt: z.string().nullable().default(null),
 });
+
+/**
+ * Un envoi refusé pour conflit est relu, refusionné et renvoyé. Trois
+ * tentatives suffisent : il faudrait qu'un autre appareil écrive entre chaque
+ * lecture et chaque envoi de celui-ci.
+ */
+const MAX_PUSH_ATTEMPTS = 3;
 
 interface SyncStoreState {
   /** When true, the next push/pull will run; toggle via toggleEnabled. */
   enabled: boolean;
+  /**
+   * La clé de synchro de cet appareil — la même sur tous ceux qu'on réunit.
+   * Elle ouvre le blob à qui la détient : elle ne quitte l'appareil que par
+   * le QR ou la copie que l'utilisateur choisit d'afficher.
+   */
+  key: string | null;
   status: SyncStatus;
   lastSyncAt: string | null;
   error: string | null;
@@ -44,9 +71,25 @@ interface SyncStoreState {
   lastOutcome: LastSyncOutcome | null;
 
   toggleEnabled: () => void;
+  /** Tire une clé neuve : le premier appareil d'un groupe. */
+  createKey: () => void;
+  /** Reprend une clé scannée ou saisie ; `false` si ce n'en est pas une. */
+  adoptKey: (input: string) => boolean;
+  /** Oublie la clé ICI ; le blob, lui, reste dans le cloud. */
+  forgetKey: () => void;
+  /** Efface le blob du cloud, puis oublie la clé ici. */
+  deleteCloud: () => Promise<void>;
   pushNow: () => Promise<void>;
   pullNow: () => Promise<void>;
 }
+
+/** L'état d'une clé qui arrive (ou s'en va) : aucun échange ne la concerne encore. */
+const FRESH_KEY_STATE = {
+  status: 'idle',
+  lastSyncAt: null,
+  error: null,
+  lastOutcome: null,
+} as const;
 
 /** L'état local des trois collections fusionnables, à l'instant de l'appel. */
 function localSnapshot(): SyncSnapshot {
@@ -133,12 +176,41 @@ export const useSyncStore = create<SyncStoreState>()(
   persist(
     (set, get) => ({
       enabled: false,
+      key: null,
       status: 'idle',
       lastSyncAt: null,
       error: null,
       lastOutcome: null,
 
       toggleEnabled: () => set(s => ({ enabled: !s.enabled })),
+
+      createKey: () => set({ key: generateSyncKey(), ...FRESH_KEY_STATE }),
+
+      adoptKey: input => {
+        const key = parseSyncKey(input);
+        if (!key) return false;
+        set({ key, ...FRESH_KEY_STATE });
+        return true;
+      },
+
+      forgetKey: () => set({ key: null, ...FRESH_KEY_STATE }),
+
+      /**
+       * « Effacer du cloud ». La clé n'est oubliée qu'APRÈS l'effacement
+       * réussi : un échec la laisse en place, sans quoi le blob deviendrait
+       * inaccessible — et donc ineffaçable — depuis cet appareil.
+       */
+      deleteCloud: async () => {
+        const { key } = get();
+        if (!key) return;
+        set({ status: 'syncing', error: null });
+        try {
+          await deleteSync(key);
+          set({ key: null, ...FRESH_KEY_STATE });
+        } catch (err) {
+          set({ status: 'error', error: (err as Error).message });
+        }
+      },
 
       /**
        * « Envoyer » — qui commence par LIRE.
@@ -151,28 +223,50 @@ export const useSyncStore = create<SyncStoreState>()(
        * Si la LECTURE échoue, on n'écrit PAS. Envoyer à l'aveugle après un
        * échec de lecture, c'est exactement l'écrasement d'avant : mieux vaut
        * une erreur à l'écran qu'un blob qui a perdu la moitié de son contenu.
+       *
+       * ET L'ÉCRITURE EST CONDITIONNELLE : elle porte la version lue. Si un
+       * autre appareil a écrit entre la lecture et l'envoi, la base refuse
+       * sans rien écraser, et on recommence — lecture, fusion, envoi. Sans ce
+       * contrôle, deux envois simultanés perdaient l'union de l'un des deux.
        */
       pushNow: async () => {
-        if (!get().enabled) return;
+        const { enabled, key } = get();
+        if (!enabled || !key) return;
         set({ status: 'syncing', error: null });
         try {
-          const remote = await pullSync();
-          const { merged, report } = mergeSnapshots(
-            localSnapshot(),
-            remote ? readRemoteSnapshot(remote.payload) : EMPTY_SNAPSHOT
-          );
-          applySnapshot(merged);
-          const result = await pushSync(buildPayload(merged));
-          set({
-            status: 'ok',
-            lastSyncAt: result.updatedAt,
-            error: null,
-            lastOutcome: {
-              direction: 'push',
-              report,
-              currentMatchKept: useMatchStore.getState().current !== null,
-            },
-          });
+          for (let attempt = 1; ; attempt += 1) {
+            const remote = await pullSync(key);
+            const { merged, report } = mergeSnapshots(
+              localSnapshot(),
+              remote ? readRemoteSnapshot(remote.payload) : EMPTY_SNAPSHOT
+            );
+            applySnapshot(merged);
+            try {
+              const result = await pushSync(
+                key,
+                buildPayload(merged),
+                remote?.version ?? 0
+              );
+              set({
+                status: 'ok',
+                lastSyncAt: result.updatedAt,
+                error: null,
+                lastOutcome: {
+                  direction: 'push',
+                  report,
+                  currentMatchKept: useMatchStore.getState().current !== null,
+                },
+              });
+              return;
+            } catch (err) {
+              if (
+                !(err instanceof SyncConflictError) ||
+                attempt >= MAX_PUSH_ATTEMPTS
+              ) {
+                throw err;
+              }
+            }
+          }
         } catch (err) {
           set({
             status: 'error',
@@ -189,10 +283,11 @@ export const useSyncStore = create<SyncStoreState>()(
        * réglages, eux, suivent le sens du geste et viennent du nuage.
        */
       pullNow: async () => {
-        if (!get().enabled) return;
+        const { enabled, key } = get();
+        if (!enabled || !key) return;
         set({ status: 'syncing', error: null });
         try {
-          const result = await pullSync();
+          const result = await pullSync(key);
           if (!result) {
             // Rien dans le nuage : `lastOutcome` est REMIS À ZÉRO, pas laissé
             // en place. L'écran affiche le rapport dès que `status` vaut
@@ -241,12 +336,13 @@ export const useSyncStore = create<SyncStoreState>()(
           const parsed = PersistedSyncSchema.safeParse(data);
           if (parsed.success) return parsed.data;
           reject(data);
-          return { enabled: false, lastSyncAt: null };
+          return { enabled: false, key: null, lastSyncAt: null };
         },
       }),
       // Only persist user choice — status/error are transient.
       partialize: state => ({
         enabled: state.enabled,
+        key: state.key,
         lastSyncAt: state.lastSyncAt,
       }),
     }

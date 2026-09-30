@@ -2,9 +2,18 @@
 
 L'interrupteur **Sync cloud** de l'écran **Paramètres** réunit, sur tous les
 appareils du même utilisateur, ses **joueurs**, ses **parties terminées** et ses
-**modèles de partie**. Une ligne Supabase par utilisateur, un blob JSON,
-deux boutons manuels — et, depuis la fusion par identifiant, **plus aucune
-donnée écrasée**.
+**modèles de partie**. Une **clé de synchro** partagée par QR, une ligne
+Supabase par clé, un blob JSON, deux boutons manuels — et, depuis la fusion par
+identifiant et l'écriture conditionnelle, **plus aucune donnée écrasée**.
+
+> **Avant le 30/09/2026, cette fonction n'a jamais marché.** Elle reposait sur
+> la connexion anonyme de Supabase et une table `user_data` indexée par
+> `auth.uid()`. Relevé du 29/09 : la table n'existait pas sur le projet, et la
+> connexion anonyme y était coupée. Les rétablir n'aurait rien réuni : une
+> identité anonyme vit dans **un** navigateur, chaque appareil aurait eu la
+> sienne — et le client ne gardait même pas sa session
+> (`persistSession: false`), si bien que chaque lancement en créait une neuve.
+> D'où la clé : c'est elle, et non un compte, qui désigne les données.
 
 ## La règle, en une phrase
 
@@ -39,6 +48,13 @@ ne remplace plus : la ligne est tirée, l'union calculée, puis écrite des deux
 côtés. Si la **lecture** échoue, **rien n'est écrit** — envoyer à l'aveugle
 après un échec de lecture, ce serait exactement l'écrasement qu'on vient de
 retirer.
+
+**Et l'écriture est conditionnelle.** L'envoi porte la **version** lue juste
+avant la fusion ; si un autre appareil a écrit entre-temps, la base refuse
+(`40001`) sans rien écrire, et l'app recommence : lecture, fusion, envoi. Sans
+ce contrôle, deux téléphones qui envoient au même moment perdaient l'union de
+l'un des deux. Après trois refus de suite, l'app renonce et affiche l'erreur
+plutôt que d'écraser.
 
 ## Ce qui ne se fusionne pas, et pourquoi
 
@@ -80,62 +96,73 @@ La fusion respecte les plafonds de l'app : **200 parties** et **50 modèles**,
 les plus récents gardés. Au-delà, le compte d'enregistrements écartés remonte
 dans le rapport de fusion.
 
-## Cohabitation avec les versions antérieures
+## Le format du blob
 
-Le format de la ligne **ne change pas** (`v: 1`). Les enregistrements portent un
-`updatedAt` de plus, que les versions antérieures ignorent : un appareil resté
-sur l'ancienne version continue de lire ce blob. **Il continue aussi de
-l'écraser en entier quand il envoie** — la fusion ne protège une donnée que si
-les deux appareils ont la version qui fusionne.
-
-## Mise en service dans votre projet Supabase
-
-1. Appliquer la migration SQL ci-dessous (une fois, dans l'éditeur SQL).
-2. Activer **Anonymous sign-ins** dans **Authentication → Providers**.
-
-### Migration SQL
-
-```sql
--- Une ligne par utilisateur authentifié, avec le blob JSON de ses données.
-create table if not exists public.user_data (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  payload jsonb not null,
-  updated_at timestamptz not null default now()
-);
-
-alter table public.user_data enable row level security;
-
--- Chacun ne voit et ne modifie que sa propre ligne.
-create policy "user_data_select_own"
-  on public.user_data for select
-  using (auth.uid() = user_id);
-
-create policy "user_data_insert_own"
-  on public.user_data for insert
-  with check (auth.uid() = user_id);
-
-create policy "user_data_update_own"
-  on public.user_data for update
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
-```
+Le format de la ligne est `v: 1`. Les enregistrements peuvent porter un
+`updatedAt`, que la fusion lit (voir plus haut). Les versions de l'app d'avant
+la clé n'ont jamais pu envoyer quoi que ce soit : aucun blob ancien n'existe,
+et aucune n'écrit dans celui-ci.
 
 ## Comment l'utilisateur y entre
 
-Paramètres → interrupteur **Sync cloud (multi-appareils)** → l'app appelle
-`signInAnonymously()` au premier envoi. L'identité anonyme persiste dans le
-navigateur via le jeton de session Supabase (`localStorage`), donc les visites
-suivantes reprennent la même identité automatiquement.
+Paramètres → interrupteur **Sync cloud (multi-appareils)**, puis :
 
-Si l'utilisateur vide les données de son navigateur, l'identité anonyme est
-perdue — c'est voulu, aucun parcours « supprimer mon compte » n'est nécessaire.
+1. **Sur le premier appareil, « Créer une clé ».** Elle est tirée sur place :
+   28 caractères de l'alphabet de Crockford (140 bits), par le module
+   `/pairing` du socle. Rien ne part tant qu'on n'envoie pas.
+2. **« Montrer la clé »** l'affiche en entier et en QR (`molkky:sync?key=…`),
+   avec l'avertissement : qui a la clé lit et remplace les données. Masquée le
+   reste du temps (`ABCD-…-WXYZ`).
+3. **Sur chaque autre appareil, « Scanner une clé »**, ou la saisir : groupée
+   par quatre ou non, en minuscules, avec les confusions I/L → 1 et O → 0 —
+   mais ni URL, ni phrase, qui retomberaient par hasard sur une clé
+   prévisible.
+4. Puis **« Envoyer »** sur chacun : la fusion fait le reste.
+
+La clé est gardée dans le navigateur de l'appareil (`mm_sync`, avec
+l'interrupteur et la date du dernier échange).
+
+Deux gestes pour en sortir, chacun avec sa confirmation :
+
+- **« Oublier la clé ici »** : l'appareil ne synchronise plus ; le blob reste
+  dans le cloud, pour les autres appareils.
+- **« Effacer du cloud »** : le blob est effacé, puis la clé oubliée ici. Les
+  données de chaque appareil restent. Un autre appareil qui a encore la clé
+  recréera le blob à son prochain envoi : l'écran le dit.
+
+## Mise en service dans votre projet Supabase
+
+Appliquer les migrations de [`supabase/migrations/`](../supabase/migrations),
+dont `0004_user_data_par_cle.sql` — voir
+[`supabase/README.md`](../supabase/README.md). **Aucun réglage du tableau de
+bord** : ni connexion anonyme, ni fournisseur d'identité.
+
+Ce que la base garantit, éprouvé par pgTAP en CI
+([`supabase/tests/user_data.test.sql`](../supabase/tests/user_data.test.sql)) :
+
+- ni `anon` ni `authenticated` n'ont d'accès direct à `user_data` ; trois
+  fonctions `security definer` (`sync_pull`, `sync_push`, `sync_delete`) sont
+  la seule porte, et chacune exige une clé bien formée ;
+- une clé ne lit, n'écrit et n'efface que **son** blob ; la base n'en garde que
+  le haché (SHA-256) ;
+- un envoi fondé sur une version périmée est refusé sans rien écraser ;
+- un blob sans envoi ni récupération depuis un an est introuvable, puis effacé
+  au premier échange suivant, de n'importe quelle clé ; une clé qui revient
+  repart d'un blob neuf, sans conflit.
 
 ## Limites qui restent
 
 - **Pas de miroir temps réel.** L'utilisateur appuie sur « Envoyer » /
   « Récupérer » quand il le décide. La synchro automatique à chaque
   enregistrement n'est volontairement pas implémentée.
-- **La récupération de compte demande le jeton de session anonyme.** Le perdre
-  équivaut à perdre les données côté nuage ; il n'y a pas (encore) de passage
-  vers un compte e-mail / mot de passe.
-- **La suppression ne se propage pas** (voir plus haut).
+- **La clé est le seul verrou.** Qui la détient lit et remplace les données
+  synchronisées, noms des joueurs compris. Elle ne quitte l'appareil que par le
+  QR ou la copie qu'on choisit d'afficher.
+- **Perdre la clé partout, c'est perdre l'accès au blob** — et donc aussi le
+  moyen de l'effacer. Il n'y a pas de récupération : aucun compte ne la
+  double. Le blob s'efface alors de lui-même, un an après le dernier échange.
+- **Un an sans envoi ni récupération, et le cloud efface le blob** (choix du
+  30/09/2026). Rien n'est perdu : le cloud n'est qu'un relais, chaque appareil
+  garde ses propres données, et le prochain « Envoyer » recrée le blob.
+  L'écran le dit sous l'interrupteur, avant même la première clé.
+- **La suppression d'une partie ne se propage pas** (voir plus haut).
