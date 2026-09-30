@@ -282,16 +282,21 @@ textarea:focus-visible {
    ce que le bandeau maison faisait et que le socle ne fait pas :
      · le faire FLOTTER en bas d'écran plutôt que de le poser dans le flux ;
      · reprendre le fond `--surface` au lieu de la teinte primaire de la base ;
-     · l'encre des deux boutons (le second, « Plus tard », est nouveau : le
-       bandeau maison n'offrait aucune sortie).
+     · la forme des deux boutons, et l'encre du second, « Plus tard » (il
+       est nouveau : le bandeau maison n'offrait aucune sortie).
    CSS non layered : il l'emporte sur le @layer components du socle.
    ───────────────────────────────────────────────────────────────────── */
 
 [data-dwc='update-banner'] {
   position: fixed;
   bottom: calc(1rem + max(env(safe-area-inset-bottom), 0px));
-  left: 50%;
-  transform: translateX(-50%);
+  /* Centré par ses deux bords et des marges automatiques, pas par
+     `left: 50%` + `translateX(-50%)` : sans largeur posée, une boîte fixe ne
+     s'étend qu'à droite de son `left`, donc sur la moitié de l'écran. Sur
+     393 px, le bandeau plafonnait à 197 px et empilait ses deux boutons. */
+  inset-inline: 0;
+  margin-inline: auto;
+  width: max-content;
   z-index: 9999;
   max-width: calc(100vw - 2rem);
   background: var(--surface);
@@ -301,18 +306,25 @@ textarea:focus-visible {
   color: var(--text);
 }
 
+/* L'encre de « Mettre à jour » vient du socle depuis la 6.21.0 : la paire
+   `--dwc-primary` / `--dwc-primary-contrast`, qui tient le contraste dans les
+   deux thèmes. Le blanc posé ici en dur ne tenait que 2,4:1 sur le vert clair
+   du thème sombre (voir `tokens.css`). Reste la forme, commune aux deux
+   boutons. */
 [data-dwc='update-banner-update'] {
-  background: var(--primary);
-  color: #fff;
-  border: none;
   border-radius: 0.5rem;
   padding: 0.375rem 0.75rem;
-  cursor: pointer;
   white-space: nowrap;
 }
 
-[data-dwc='update-banner-update']:hover {
+/* Le survol reste celui de l'app. `--primary-hover` s'éloigne de l'encre dans
+   les deux thèmes (plus sombre sous le blanc, plus clair sous l'encre
+   sombre) ; l'éclaircissement du socle (`brightness(1.08)`) rapprochait au
+   contraire le vert du blanc en thème clair : 4,39:1 au survol. */
+[data-dwc='update-banner-update']:hover:not([aria-busy='true']) {
+  border-color: var(--primary-hover);
   background: var(--primary-hover);
+  filter: none;
 }
 
 [data-dwc='update-banner-dismiss'] {
