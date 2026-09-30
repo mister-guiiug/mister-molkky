@@ -34,11 +34,14 @@ forward them at build time:
 
 Restart `npm run dev` after editing `.env.local`.
 
-## 3. Apply the SQL migration
+## 3. Apply the SQL migrations
 
 The schema lives in
 [`supabase/migrations/0002_live_matches.sql`](../supabase/migrations/0002_live_matches.sql)
-— apply it with the CLI, not by hand:
+(the table) and
+[`supabase/migrations/0003_live_matches_rpc.sql`](../supabase/migrations/0003_live_matches_rpc.sql)
+(the functions that are now its only door) — apply them with the CLI, not by
+hand:
 
 ```bash
 supabase link --project-ref <ref>   # Project Settings → General → Reference ID
@@ -57,33 +60,47 @@ hosted project and what is currently in the database.
 ## 4. How it works
 
 - The **host** creates the match locally. When they toggle "Share live" in
-  the match menu, the app inserts a row in `live_matches` with a short code
-  (6 chars base32). Subsequent throws/edits/finish are mirrored to that row.
+  the match menu, the app calls `live_match_create` with a short code (6
+  chars, Crockford base32) and the current state. The database answers with a
+  **host secret**, returned this once and stored only as a SHA-256 hash.
+- Every throw, edit or finish goes through `live_match_push` or
+  `live_match_finish`, which demand the code **and** the host secret. Right
+  after each write, the host sends a **signal** on the Realtime Broadcast
+  channel `molkky-live:<code>`.
 - A **viewer** joins from another device by typing the code or scanning the
-  QR. The app subscribes to changes on that row via Supabase Realtime and
-  re-renders the read-only scoreboard on every update.
-- Only the host can write. Viewers see live updates with sub-second latency
-  but cannot modify the match.
+  QR. The app reads the match with `live_match_get(code)`, listens to the
+  channel, and reads the match again on every signal — and on every
+  (re)subscription, which catches up on anything missed during a drop. The
+  signal carries **no data**: a forged one only triggers a re-read of the
+  database, never a fake score on screen.
+- Only the host can write. Viewers see live updates within a round trip but
+  cannot modify the match.
 
 ## 5. Security notes
 
-- The anon key is intentionally exposed in the bundle. What limits it is the
-  migration's RLS policies **and** its table privileges — `select`, `insert`
-  and `update` for `anon`, nothing else. A brand-new table in `public` hands
-  `anon` INSERT/UPDATE/DELETE/**TRUNCATE** by default, and RLS does not cover
-  `truncate`: the migration revokes the lot and grants back verb by verb.
-- **The 6-char code does not gate reads.** An earlier version of this page
-  claimed it did. A policy filters rows by what the row contains, not by what
-  the client asked for — it cannot require that you filtered on `code`. So
-  anyone holding the anon key can list the live matches, codes and player
-  names included, and update any of them. That is acceptable for casual play
-  among friends; it is not isolation.
-- Closing that properly means changing the **app**, not the policies: reads
-  behind a `security definer` function taking the code as an argument, plus a
-  host secret to tell host from viewer (a viewer is handed the full row,
-  `id` included, when it joins). Realtime also replays the `select` policy as
-  `anon` before delivering each update, so the read cannot simply be shut.
-- A **finished** match is frozen: the update policy only accepts rows whose
-  `finished_at` is still null, so a result cannot be rewritten after the fact.
-- Player names are stored as strings inside the match config payload, and are
-  readable by anyone with the anon key — see the second point above.
+- The anon key is intentionally exposed in the bundle. Since `0003`, it has
+  **no direct access** to `live_matches` at all: no table privilege, no
+  policy. Row level security stays on, without a policy, as a second barrier.
+  The four `security definer` functions above are the only door, and only
+  `anon` may execute them — `authenticated` gets nothing, this app has no
+  accounts.
+- **The code gates reads.** `live_match_get` returns the match whose code is
+  given, and nothing else — no listing, and neither the internal `id` nor the
+  host secret in the answer. A policy could never do that: it filters rows by
+  what they contain, not by what the client asked for. Until `0003`, a single
+  request listed every live match, codes and player names included.
+- **The code alone does not let you write.** Writes need the host secret,
+  which the viewers never see. Until `0003`, anyone holding a match `id` —
+  handed to every viewer — could rewrite its throws.
+- **The code is still the only secret for reading.** Anyone you give it to
+  sees the player names and the scores. With 32⁶ ≈ 10⁹ codes and few matches
+  alive at any time, guessing one is impractical, not impossible: do not use
+  the live mode for anything you would not show a stranger.
+- A **finished** match is frozen: neither function writes a match whose
+  `finished_at` is set.
+- **Matches are erased 24 hours after their last write.** Every function
+  ignores an expired match, and each new match purges the expired ones — see
+  the comments at the top of `0003` for why this is not a cron job.
+- The database side of all of this is exercised by pgTAP in CI
+  ([`supabase/tests/live_matches.test.sql`](../supabase/tests/live_matches.test.sql)),
+  under the `anon` role PostgREST uses for the published key.

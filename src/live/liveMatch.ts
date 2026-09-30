@@ -1,4 +1,4 @@
-import type { RealtimeChannel } from '@supabase/supabase-js';
+import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 import {
   ALPHABETS,
   generateCode,
@@ -9,8 +9,11 @@ import { LEGACY_SPECTATOR_PATH, ROUTES } from '../routes';
 import { getSupabase } from '../supabase';
 import type { CurrentMatchState, MatchConfig, Throw } from '../schemas';
 
+/**
+ * L'état d'une partie tel que `live_match_get` le rend : ni `id` ni secret
+ * d'hôte (migration 0003). Le code est la seule clé qu'un spectateur détient.
+ */
 export interface LiveMatchRow {
-  id: string;
   code: string;
   config: MatchConfig;
   throws: Throw[];
@@ -139,34 +142,74 @@ async function requireClient() {
   return client;
 }
 
+/*
+ * LE CODE EST UNE CLÉ (migration 0003). La table `live_matches` n'est plus
+ * lisible ni modifiable directement par la clé anonyme : quatre fonctions
+ * `security definer` sont la seule porte. Lire exige le code exact ; écrire
+ * exige le code ET le secret d'hôte, que la base rend une fois, à la création,
+ * et ne garde que haché. Avant, une seule requête listait toutes les parties
+ * en cours, noms de joueurs compris, et quiconque en tenait l'`id` — rendu à
+ * chaque spectateur — pouvait en réécrire les lancers.
+ *
+ * LE TEMPS RÉEL PASSE PAR BROADCAST. `postgres_changes` rejoue la policy
+ * `select` sous le rôle de l'abonné avant de livrer : sans lecture ouverte, il
+ * ne livre plus rien. L'hôte émet donc, après chaque écriture, un SIGNAL sur le
+ * canal de la partie, et le spectateur relit l'état par son code. Le signal
+ * ne porte aucune donnée : un porteur du code qui en forgerait un ne
+ * provoquerait qu'une relecture de la base, jamais un faux score à l'écran.
+ */
+const LIVE_EVENT = 'update';
+
+/** Le canal d'une partie : le code, et rien que le code, le désigne. */
+export function liveTopic(code: string): string {
+  return `molkky-live:${code}`;
+}
+
+/**
+ * Crée la partie en base et rend le secret d'hôte — la base ne le rendra plus
+ * jamais : il ne vit que dans le store de l'hôte, le temps de la diffusion.
+ */
 export async function createLiveMatch(
   state: CurrentMatchState
-): Promise<{ id: string; code: string }> {
+): Promise<{ code: string; hostToken: string }> {
   const client = await requireClient();
   // Tirage socle : `crypto.getRandomValues` + rejet (équiprobable, sans le
   // biais `% taille`). Avec 32^6 ≈ 10⁹ combinaisons, la boucle de retry sur
   // contrainte d'unicité ci-dessous ne rejoue presque jamais.
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const code = generateCode(CODE_LENGTH, { alphabet: CODE_ALPHABET });
-    const { data, error } = await client
-      .from('live_matches')
-      .insert({
-        code,
-        config: state.config,
-        throws: state.throws,
-      })
-      .select('id, code')
-      .single();
-    if (!error && data) {
-      return { id: data.id, code: data.code };
+    const { data, error } = await client.rpc('live_match_create', {
+      p_code: code,
+      p_config: state.config,
+      p_throws: state.throws,
+    });
+    if (!error && typeof data === 'string') {
+      return { code, hostToken: data };
     }
-    if (error?.code !== '23505') throw error;
+    if (error?.code !== '23505') {
+      throw error ?? new Error('live_match_create returned no host token');
+    }
   }
   throw new Error('Could not generate a unique code after 5 attempts');
 }
 
-export async function joinLiveMatch(rawCode: string): Promise<LiveMatchRow> {
+/**
+ * L'état d'une partie, relu par son code EXACT (aucune normalisation ici).
+ * `null` quand aucune partie ne porte ce code — ou plus : une partie muette
+ * depuis 24 h est introuvable, purgée ou non.
+ */
+export async function fetchLiveMatch(
+  code: string
+): Promise<LiveMatchRow | null> {
   const client = await requireClient();
+  const { data, error } = await client.rpc('live_match_get', {
+    p_code: code,
+  });
+  if (error) throw error;
+  return (data as LiveMatchRow | null) ?? null;
+}
+
+export async function joinLiveMatch(rawCode: string): Promise<LiveMatchRow> {
   // Rustine n° 2 : normalisation Crockford d'abord (les codes engendrés
   // ici), repli hérité ensuite (les codes d'avant la migration, où L et U
   // sont légitimes). Sur l'immense majorité des saisies les deux candidats
@@ -186,65 +229,140 @@ export async function joinLiveMatch(rawCode: string): Promise<LiveMatchRow> {
     throw new Error('Invalid code');
   }
   for (const code of candidates) {
-    const { data, error } = await client
-      .from('live_matches')
-      .select('*')
-      .eq('code', code)
-      .single<LiveMatchRow>();
-    if (!error && data) return data;
+    const row = await fetchLiveMatch(code);
+    if (row) return row;
   }
   throw new Error('Match not found');
 }
 
-export async function pushLiveState(
-  matchId: string,
-  patch: Partial<
-    Pick<LiveMatchRow, 'throws' | 'winner_id' | 'finished_at' | 'config'>
-  >
+/**
+ * Le signal aux spectateurs, par l'API REST de Realtime : l'hôte n'a aucune
+ * websocket à tenir ouverte pendant la partie, il n'écoute rien. Un spectateur
+ * qui n'était pas encore abonné rattrape l'état à son abonnement (voir
+ * `subscribeLiveMatch`). Un échec REMONTE : l'état est en base, mais personne
+ * ne le sait — c'est à l'hôte de le voir (puce d'erreur du store), pas au
+ * spectateur de se figer en silence.
+ */
+async function signalLiveUpdate(
+  client: SupabaseClient,
+  code: string
+): Promise<void> {
+  const channel = client.channel(liveTopic(code));
+  try {
+    await channel.httpSend(LIVE_EVENT, {});
+  } finally {
+    void client.removeChannel(channel);
+  }
+}
+
+/** L'hôte recopie ses lancers, puis prévient les spectateurs. */
+export async function pushLiveThrows(
+  code: string,
+  hostToken: string,
+  throws: Throw[]
 ): Promise<void> {
   const client = await requireClient();
-  const { error } = await client
-    .from('live_matches')
-    .update(patch)
-    .eq('id', matchId);
+  const { error } = await client.rpc('live_match_push', {
+    p_code: code,
+    p_host_token: hostToken,
+    p_throws: throws,
+  });
   if (error) throw error;
+  await signalLiveUpdate(client, code);
+}
+
+/**
+ * L'hôte clôt la partie : derniers lancers, vainqueur et heure de fin (posée
+ * par la base) d'un seul geste. Les lancers voyagent ici parce que le lancer
+ * gagnant fait passer la partie de `current` à l'historique dans le même
+ * rendu : le miroir de `pushLiveThrows` ne le voit jamais.
+ */
+export async function finishLiveMatch(
+  code: string,
+  hostToken: string,
+  throws: Throw[],
+  winnerId: string
+): Promise<void> {
+  const client = await requireClient();
+  const { error } = await client.rpc('live_match_finish', {
+    p_code: code,
+    p_host_token: hostToken,
+    p_throws: throws,
+    p_winner_id: winnerId,
+  });
+  if (error) throw error;
+  await signalLiveUpdate(client, code);
 }
 
 export interface LiveSubscription {
   channel: RealtimeChannel;
-  unsubscribe: () => void;
+  /**
+   * Résolue une fois le canal RETIRÉ du client. Le client Realtime rend le
+   * canal existant pour un même sujet : se réabonner avant la fin du retrait
+   * rendrait le canal en train de fermer, et le spectateur n'entendrait plus
+   * rien.
+   */
+  unsubscribe: () => Promise<void>;
 }
 
+/**
+ * Le spectateur écoute le canal de la partie et relit l'état à chaque signal
+ * — ainsi qu'à chaque (ré)abonnement réussi : c'est ce qui rattrape un signal
+ * émis entre la première lecture et l'abonnement, ou pendant une coupure.
+ *
+ * UNE SEULE RELECTURE EN VOL. Des signaux rapprochés ne lancent pas autant de
+ * requêtes concurrentes, dont la plus ancienne pourrait répondre la dernière
+ * et remettre un état périmé à l'écran : un signal reçu pendant une relecture
+ * en commande une seule autre, après elle.
+ */
 export async function subscribeLiveMatch(
-  matchId: string,
+  code: string,
   onChange: (row: LiveMatchRow) => void,
   onError?: (err: Error) => void
 ): Promise<LiveSubscription> {
   const client = await requireClient();
+  let closed = false;
+  let inFlight = false;
+  let again = false;
+
+  const refresh = async (): Promise<void> => {
+    if (closed) return;
+    if (inFlight) {
+      again = true;
+      return;
+    }
+    inFlight = true;
+    try {
+      do {
+        again = false;
+        const row = await fetchLiveMatch(code);
+        if (row && !closed) onChange(row);
+      } while (again && !closed);
+    } catch (err) {
+      if (!closed) onError?.(err as Error);
+    } finally {
+      inFlight = false;
+    }
+  };
+
   const channel = client
-    .channel(`live_match:${matchId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'live_matches',
-        filter: `id=eq.${matchId}`,
-      },
-      payload => {
-        onChange(payload.new as LiveMatchRow);
-      }
-    )
-    .subscribe(status => {
-      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-        onError?.(new Error(`Realtime channel status: ${status}`));
+    .channel(liveTopic(code))
+    .on('broadcast', { event: LIVE_EVENT }, () => {
+      void refresh();
+    })
+    .subscribe((status, err) => {
+      if (status === 'SUBSCRIBED') {
+        void refresh();
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        onError?.(err ?? new Error(`Realtime channel status: ${status}`));
       }
     });
 
   return {
     channel,
-    unsubscribe: () => {
-      void client.removeChannel(channel);
+    unsubscribe: async () => {
+      closed = true;
+      await client.removeChannel(channel);
     },
   };
 }

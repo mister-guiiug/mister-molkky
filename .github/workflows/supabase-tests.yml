@@ -1,0 +1,37 @@
+# Tests pgTAP, délégués au réutilisable de la famille.
+#
+# LE SEUL ENDROIT OÙ LES MIGRATIONS S'EXÉCUTENT VRAIMENT. Le poste de
+# développement n'a pas de démon Docker qui démarre : les droits de 0003 n'y
+# sont que RELUS. Ici, la pile jetable du runner applique les migrations
+# depuis zéro — exactement ce que ferait un `supabase db push` sur ce projet,
+# dont le schéma `supabase_migrations` est vide — puis joue `supabase/tests/`.
+# Avant ce fichier, aucun test ne rejouait les droits de la base : ceux de
+# 0002 avaient été éprouvés une fois, à la main, sur le projet hébergé
+# (13/09/2026), et rien n'aurait vu une régression.
+#
+# AUCUN SECRET, aucune condition : tout se passe dans une base jetable. Rien ne
+# touche le projet hébergé, où les migrations s'appliquent toujours à la main
+# (voir `supabase/README.md`).
+name: Supabase tests
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/config.toml'
+      - 'supabase/migrations/**'
+      - 'supabase/tests/**'
+      - '.github/workflows/supabase-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/config.toml'
+      - 'supabase/migrations/**'
+      - 'supabase/tests/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pgtap:
+    uses: mister-guiiug/dev-pwa-config/.github/workflows/pwa-supabase-test.yml@v6

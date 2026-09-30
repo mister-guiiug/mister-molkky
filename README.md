@@ -87,8 +87,8 @@ Sanction configurable après X ratés : **élimination** (officiel), **remise à
 
 - L'hôte génère un code à 6 caractères + un QR code
 - Les viewers rejoignent via `/join` (l'ancien `/rejoindre` redirige) ou en scannant le QR
-- Sync temps réel via Supabase Realtime (WebSocket)
-- La partie diffusée n'est pas privée : voir « Vos données »
+- Temps réel via Supabase Realtime (Broadcast, WebSocket) : l'hôte signale chaque lancer, les viewers relisent la partie par son code
+- Seul le code ouvre la partie, seul le téléphone hôte l'écrit, et elle est effacée 24 h après le dernier lancer : voir « Vos données »
 - Auto-reconnexion en cas de drop réseau (jusqu'à 5 tentatives)
 - Notifications browser : lancer / élimination / victoire
 - Voir [`docs/live-supabase.md`](./docs/live-supabase.md) pour activer Supabase
@@ -129,7 +129,7 @@ Joueurs, parties et réglages restent dans le navigateur de l'appareil. Ce qui e
 
 - **Suivi des erreurs (Sentry)** : sur l'app publiée, Sentry (région UE) démarre à l'ouverture, sans consentement, et ne reçoit un rapport technique que lorsqu'une erreur survient.
 - **Mesure d'audience (PostHog, nuage européen)** : rien n'est chargé avant votre accord dans le bandeau. Ensuite : pages vues, parties démarrées et terminées, nombre de joueurs ; jamais les noms ni les scores.
-- **Mode direct** : la partie diffusée, noms des joueurs compris, est lisible par quiconque détient la clé publique Supabase ; le code à 6 caractères ne la protège pas.
+- **Mode direct** : la partie diffusée, noms des joueurs compris, part vers Supabase. Elle n'est lisible qu'avec son code à 6 caractères, donc par quiconque vous le donnez ; seul le téléphone hôte peut l'écrire ; elle est effacée 24 h après le dernier lancer.
 - **Sync cloud** (opt-in) : joueurs, parties terminées, modèles et réglages partent vers Supabase, sous une identité anonyme (sans les avatars ni les photos).
 
 ---
@@ -170,21 +170,21 @@ Puis appliquez les migrations de [`supabase/migrations/`](./supabase/migrations)
 
 ## 🧱 Stack
 
-| Catégorie      | Technos                                                   |
-| -------------- | --------------------------------------------------------- |
-| **Framework**  | Vite 8 · React 19 · TypeScript strict                     |
-| **State**      | Zustand 5 + persist middleware + IndexedDB pour les blobs |
-| **Validation** | Zod 4 (branded types : `PlayerId`, `MatchId`)             |
-| **Styling**    | Tailwind CSS 4 + CSS variables pour le theming            |
-| **Icons**      | lucide-react (sized + wrapped centralement)               |
-| **PWA**        | vite-plugin-pwa (Workbox precache, prompt registration)   |
-| **Routing**    | React Router 7 (BrowserRouter + 404.html SPA fallback)    |
-| **Live**       | Supabase Realtime (WebSocket CDC) + Auth anonyme          |
-| **Audio**      | Web Audio API (synth offline) + Web Speech API (TTS)      |
-| **Caméra**     | `<input capture="environment">` (native)                  |
-| **Partage**    | Canvas → Web Share API (avec fallback download)           |
-| **Tests**      | Vitest + jsdom + Testing Library ; Playwright + axe (e2e) |
-| **CI**         | GitHub Actions (CI + Deploy GH Pages + Lighthouse)        |
+| Catégorie      | Technos                                                    |
+| -------------- | ---------------------------------------------------------- |
+| **Framework**  | Vite 8 · React 19 · TypeScript strict                      |
+| **State**      | Zustand 5 + persist middleware + IndexedDB pour les blobs  |
+| **Validation** | Zod 4 (branded types : `PlayerId`, `MatchId`)              |
+| **Styling**    | Tailwind CSS 4 + CSS variables pour le theming             |
+| **Icons**      | lucide-react (sized + wrapped centralement)                |
+| **PWA**        | vite-plugin-pwa (Workbox precache, prompt registration)    |
+| **Routing**    | React Router 7 (BrowserRouter + 404.html SPA fallback)     |
+| **Live**       | Supabase Realtime (Broadcast) + fonctions RPC par code     |
+| **Audio**      | Web Audio API (synth offline) + Web Speech API (TTS)       |
+| **Caméra**     | `<input capture="environment">` (native)                   |
+| **Partage**    | Canvas → Web Share API (avec fallback download)            |
+| **Tests**      | Vitest + jsdom + Testing Library ; Playwright + axe (e2e)  |
+| **CI**         | GitHub Actions (CI + Deploy GH Pages + Lighthouse + pgTAP) |
 
 ---
 

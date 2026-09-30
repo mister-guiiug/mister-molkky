@@ -142,7 +142,6 @@ export function MatchView() {
   const liveCode = useLiveStore(s => s.code);
   const pushLiveThrows = useLiveStore(s => s.pushThrows);
   const pushLiveFinish = useLiveStore(s => s.pushFinish);
-  const lastFinishedRef = useRef<string | null>(null);
   const lastVictoryRef = useRef<string | null>(null);
 
   // Écran allumé pendant la partie — mais seulement si le joueur l'a demandé
@@ -219,21 +218,34 @@ export function MatchView() {
     void pushLiveThrows(current.throws);
   }, [liveRole, current?.throws, pushLiveThrows, current]);
 
+  // LA CLÔTURE DU DIRECT ne part que pour une partie NOUVELLE en tête
+  // d'historique pendant la diffusion. La tête déjà vue est posée au montage,
+  // puis suivie tant qu'on ne diffuse pas. Partie de `null`, elle envoyait la
+  // dernière partie archivée — vainqueur compris — dès l'ouverture du partage
+  // ou au retour sur cet écran : la partie diffusée était gelée à peine créée.
+  //
+  // Elle emporte les lancers de la partie ARCHIVÉE : le lancer gagnant fait
+  // passer la partie de `current` à l'historique dans le même rendu, et le
+  // miroir ci-dessus ne l'a jamais vu passer.
+  const lastFinishedRef = useRef<string | null>(lastFinished?.id ?? null);
   useEffect(() => {
-    if (liveRole !== 'host' || !lastFinished) return;
-    if (lastFinished.id === lastFinishedRef.current) return;
+    if (liveRole !== 'host') {
+      lastFinishedRef.current = lastFinished?.id ?? null;
+      return;
+    }
+    if (!lastFinished || lastFinished.id === lastFinishedRef.current) return;
     lastFinishedRef.current = lastFinished.id;
-    void pushLiveFinish(String(lastFinished.winnerId));
+    void pushLiveFinish(String(lastFinished.winnerId), lastFinished.throws);
   }, [liveRole, lastFinished, pushLiveFinish]);
 
   /*
    * LA FIN DE PARTIE — avec SON PROPRE garde, et non celui d'à côté.
    *
-   * `lastFinishedRef` ci-dessus ne se pose que si `liveRole === 'host'` : s'y
-   * adosser ne compterait que les parties diffusées en direct, c'est-à-dire
-   * une minorité, sans que le chiffre n'ait l'air faux. Un identifiant de
-   * partie mémorisé à part est la seule façon de compter chaque fin UNE fois,
-   * quel que soit le mode.
+   * `lastFinishedRef` ci-dessus est le garde du direct : il n'envoie une fin
+   * que pendant une diffusion. S'y adosser ne compterait que les parties
+   * diffusées en direct, c'est-à-dire une minorité, sans que le chiffre n'ait
+   * l'air faux. Un identifiant de partie mémorisé à part est la seule façon de
+   * compter chaque fin UNE fois, quel que soit le mode.
    *
    * Ni le vainqueur, ni les scores, ni les pronostics : ce sont des personnes.
    */
