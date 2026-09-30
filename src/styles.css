@@ -317,6 +317,16 @@ textarea:focus-visible {
   white-space: nowrap;
 }
 
+/* Le survol reste celui de l'app. `--primary-hover` s'éloigne de l'encre dans
+   les deux thèmes (plus sombre sous le blanc, plus clair sous l'encre
+   sombre) ; l'éclaircissement du socle (`brightness(1.08)`) rapprochait au
+   contraire le vert du blanc en thème clair : 4,39:1 au survol. */
+[data-dwc='update-banner-update']:hover:not([aria-busy='true']) {
+  border-color: var(--primary-hover);
+  background: var(--primary-hover);
+  filter: none;
+}
+
 [data-dwc='update-banner-dismiss'] {
   background: transparent;
   color: var(--muted);
