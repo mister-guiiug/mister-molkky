@@ -290,8 +290,13 @@ textarea:focus-visible {
 [data-dwc='update-banner'] {
   position: fixed;
   bottom: calc(1rem + max(env(safe-area-inset-bottom), 0px));
-  left: 50%;
-  transform: translateX(-50%);
+  /* Centré par ses deux bords et des marges automatiques, pas par
+     `left: 50%` + `translateX(-50%)` : sans largeur posée, une boîte fixe ne
+     s'étend qu'à droite de son `left`, donc sur la moitié de l'écran. Sur
+     393 px, le bandeau plafonnait à 197 px et empilait ses deux boutons. */
+  inset-inline: 0;
+  margin-inline: auto;
+  width: max-content;
   z-index: 9999;
   max-width: calc(100vw - 2rem);
   background: var(--surface);
