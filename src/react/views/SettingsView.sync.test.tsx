@@ -72,6 +72,11 @@ describe('Réglages — la clé de synchro', () => {
     expect(
       screen.queryByRole('button', { name: 'Envoyer vers le cloud' })
     ).toBeNull();
+    // La durée de conservation est dite AVANT la première clé : c'est à ce
+    // moment qu'on décide d'envoyer ses données.
+    expect(
+      screen.getByText(/efface une synchro restée un an sans envoi/)
+    ).toBeInTheDocument();
   });
 
   it('créer une clé la montre masquée, et ouvre l’envoi', () => {

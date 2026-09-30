@@ -616,6 +616,13 @@ function CloudSyncSection() {
             <SyncKeyDangerZone />
           </>
         )}
+        {/* LA DURÉE DE CONSERVATION, DITE AVANT MÊME LA PREMIÈRE CLÉ : un an
+            sans envoi ni récupération, et la base efface le blob (0004). */}
+        {enabled && (
+          <p className="m-0 text-xs" style={{ color: 'var(--muted)' }}>
+            {t('settings.cloudRetention')}
+          </p>
+        )}
       </div>
     </Section>
   );

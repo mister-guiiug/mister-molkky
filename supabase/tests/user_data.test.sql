@@ -5,13 +5,14 @@
 -- ║ CE QUE CES TESTS PROUVENT, et qu'une relecture de 0004 ne prouve pas :   ║
 -- ║ la table est fermée à la clé anonyme ; une clé ne lit et n'écrit que son ║
 -- ║ propre blob ; une écriture fondée sur une version périmée est refusée    ║
--- ║ sans rien écraser ; une clé mal formée ne passe jamais ; effacer efface. ║
+-- ║ sans rien écraser ; une clé mal formée ne passe jamais ; effacer efface ;║
+-- ║ un an sans échange, et le blob disparaît.                                ║
 -- ║                                                                          ║
 -- ║ Tout se joue sous `set local role anon`, le rôle de la clé publiée.      ║
 -- ╚══════════════════════════════════════════════════════════════════════════╝
 
 begin;
-select plan(29);
+select plan(34);
 
 -- Deux clés bien formées (28 caractères crockford32) et une presque bonne.
 -- A = AAAABBBBCCCCDDDDEEEEFFFFGGGG, B = 0000111122223333444455556666.
@@ -196,6 +197,67 @@ select throws_ok(
   $$ select public.sync_delete('AAAA') $$,
   '22023', null,
   'et une clé mal formée n''efface rien'
+);
+
+-- ── Un an sans échange ────────────────────────────────────────────────────
+--
+-- Deux blobs posés sous `postgres`, à la date de leur dernier échange :
+-- H (HHHHJJJJKKKKMMMMNNNNPPPPQQQQ) muet depuis 366 jours, R
+-- (RRRRSSSSTTTTVVVVWWWWXXXXYYYY) depuis 364.
+
+reset role;
+
+insert into public.user_data (key_hash, payload, version, seen_at)
+values
+  (sha256(convert_to('HHHHJJJJKKKKMMMMNNNNPPPPQQQQ', 'UTF8')),
+   '{"v":1}', 7, now() - interval '366 days'),
+  (sha256(convert_to('RRRRSSSSTTTTVVVVWWWWXXXXYYYY', 'UTF8')),
+   '{"v":1}', 3, now() - interval '364 days');
+
+set local role anon;
+
+select is(
+  public.sync_pull('HHHHJJJJKKKKMMMMNNNNPPPPQQQQ'),
+  null,
+  'un an sans échange : le blob est introuvable'
+);
+select is(
+  public.sync_pull('RRRRSSSSTTTTVVVVWWWWXXXXYYYY') ->> 'version',
+  '3',
+  'à 364 jours, il se lit encore'
+);
+
+reset role;
+
+select is(
+  (select count(*)::int from public.user_data
+    where key_hash = sha256(convert_to('HHHHJJJJKKKKMMMMNNNNPPPPQQQQ', 'UTF8'))),
+  0,
+  'et la lecture suivante l''a purgé'
+);
+select is(
+  (select seen_at from public.user_data
+    where key_hash = sha256(convert_to('RRRRSSSSTTTTVVVVWWWWXXXXYYYY', 'UTF8'))),
+  now(),
+  'lire est un échange : le compteur de l''autre repart de zéro'
+);
+
+-- Le cas délicat : une clé qui revient après un an lit `null`, donc envoie en
+-- version 0, alors que son vieux blob attend peut-être encore la purge. Sans
+-- la purge AVANT l'écriture, l'insertion buterait sur la clé primaire.
+insert into public.user_data (key_hash, payload, version, seen_at)
+values
+  (sha256(convert_to('HHHHJJJJKKKKMMMMNNNNPPPPQQQQ', 'UTF8')),
+   '{"v":1}', 7, now() - interval '400 days');
+
+set local role anon;
+
+select is(
+  public.sync_push(
+    'HHHHJJJJKKKKMMMMNNNNPPPPQQQQ', '{"v":1,"history":["neuf"]}', 0
+  ) ->> 'version',
+  '1',
+  'une clé revenue après un an repart d''un blob neuf, sans conflit'
 );
 
 select * from finish();

@@ -40,11 +40,11 @@ que ferait un `supabase db push` ici — puis joue les tests pgTAP de
 de développement n'a pas de démon Docker : c'est le seul endroit où les
 migrations s'exécutent avant la production.
 
-| Fichier                       | Ce qu'il tient                                                                                                                                       |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `structure-securite.test.sql` | aucune table de `public` sans RLS ; les fonctions `security definer` exécutables par `anon` sont exactement la liste relue (le fichier du parc)      |
-| `live_matches.test.sql`       | la table fermée à `anon` et `authenticated` ; lire au code, écrire au code et au secret ; la partie finie gelée ; l'expiration et la purge           |
-| `user_data.test.sql`          | la table fermée ; une clé ne lit, n'écrit et n'efface que son blob ; l'envoi sur une version périmée refusé sans rien écraser ; les clés mal formées |
+| Fichier                       | Ce qu'il tient                                                                                                                                                            |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `structure-securite.test.sql` | aucune table de `public` sans RLS ; les fonctions `security definer` exécutables par `anon` sont exactement la liste relue (le fichier du parc)                           |
+| `live_matches.test.sql`       | la table fermée à `anon` et `authenticated` ; lire au code, écrire au code et au secret ; la partie finie gelée ; l'expiration et la purge                                |
+| `user_data.test.sql`          | la table fermée ; une clé ne lit, n'écrit et n'efface que son blob ; l'envoi sur une version périmée refusé sans rien écraser ; les clés mal formées ; un an sans échange |
 
 Les tests jouent sous `set local role anon` : c'est le rôle que PostgREST prend
 pour la clé publiée. Sans lui, la session garde les droits de `postgres`, TOUT
@@ -103,8 +103,11 @@ quiconque en tenait l'`id`, rendu à chaque spectateur ; et rien n'était purgé
   `sync_delete` efface.
 - **L'écriture est conditionnelle** : `sync_push` prend la version lue avant la
   fusion, et refuse (`40001`) si un autre appareil a écrit entre-temps.
-- **Pas de purge automatique** : c'est la donnée de l'utilisateur, elle reste
-  jusqu'à ce qu'il l'efface depuis l'app.
+- **Un an sans échange, et le blob s'efface** : `seen_at` date la dernière
+  lecture ou le dernier envoi ; chaque échange purge les blobs expirés, et un
+  blob expiré est introuvable d'ici là. La purge passe AVANT l'écriture : une
+  clé qui revient après un an lit `null`, envoie en version 0, et doit trouver
+  la place libre.
 
 Le SQL que `docs/cloud-sync.md` demandait de coller à la main (une table
 indexée par `auth.uid()`, plus la connexion anonyme à activer) n'a jamais été

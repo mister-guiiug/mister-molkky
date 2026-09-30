@@ -119,6 +119,7 @@ Sanction configurable après X ratés : **élimination** (officiel), **remise à
   devancé par un autre appareil relit et refusionne au lieu d'écraser
 - La partie **en cours** reste sur son appareil, et l'écran le dit
 - « Oublier la clé ici » et « Effacer du cloud », chacun avec sa confirmation
+- Le cloud efface une synchro restée un an sans envoi ni récupération
 - Voir [`docs/cloud-sync.md`](./docs/cloud-sync.md)
 
 </details>
@@ -132,7 +133,7 @@ Joueurs, parties et réglages restent dans le navigateur de l'appareil. Ce qui e
 - **Suivi des erreurs (Sentry)** : sur l'app publiée, Sentry (région UE) démarre à l'ouverture, sans consentement, et ne reçoit un rapport technique que lorsqu'une erreur survient.
 - **Mesure d'audience (PostHog, nuage européen)** : rien n'est chargé avant votre accord dans le bandeau. Ensuite : pages vues, parties démarrées et terminées, nombre de joueurs ; jamais les noms ni les scores.
 - **Mode direct** : la partie diffusée, noms des joueurs compris, part vers Supabase. Elle n'est lisible qu'avec son code à 6 caractères, donc par quiconque vous le donnez ; seul le téléphone hôte peut l'écrire ; elle est effacée 24 h après le dernier lancer.
-- **Sync cloud** (opt-in) : joueurs, parties terminées, modèles et réglages partent vers Supabase (sans les avatars ni les photos), sous une clé de synchro que seuls vos appareils détiennent. Qui a la clé lit ces données ; elles restent jusqu'à ce que vous les effaciez depuis les Paramètres.
+- **Sync cloud** (opt-in) : joueurs, parties terminées, modèles et réglages partent vers Supabase (sans les avatars ni les photos), sous une clé de synchro que seuls vos appareils détiennent. Qui a la clé lit ces données ; elles sont effacées après un an sans envoi ni récupération, ou dès que vous les effacez depuis les Paramètres.
 
 ---
 

@@ -27,21 +27,33 @@
 -- envoient au même moment écrasaient l'union de l'autre — exactement la perte
 -- que la fusion par identifiant (`src/sync/merge.ts`) devait supprimer.
 --
--- PAS DE PURGE AUTOMATIQUE, à la différence du direct (0003) : ce blob est la
--- donnée de l'utilisateur, pas une trace éphémère. Il reste jusqu'à ce qu'on
--- l'efface (`sync_delete`, bouton « Effacer du cloud »).
+-- UN AN SANS ÉCHANGE, ET LE BLOB S'EFFACE (choix du 30/09/2026). Un échange,
+-- c'est une lecture OU un envoi : `seen_at` en garde la date. Chaque échange
+-- purge les blobs expirés, et un blob expiré est introuvable d'ici là, purgé
+-- ou non. Rien de perdu : le cloud n'est qu'un relais, chaque appareil garde
+-- ses propres données, et un envoi recrée le blob. Sans cette borne, le blob
+-- d'une clé perdue sur tous les appareils — noms de joueurs compris — serait
+-- resté pour toujours, sans que personne ne puisse plus l'effacer. La durée
+-- revient en deux endroits de ce fichier, éprouvés dans
+-- `supabase/tests/user_data.test.sql`.
 --
 -- REJOUABLE, comme les migrations précédentes : le schéma
 -- `supabase_migrations` du projet est vide.
 
 -- `version` compte les écritures : 1 à la création, +1 à chaque envoi.
+-- `seen_at` date le dernier échange, lecture comprise.
 create table if not exists public.user_data (
   key_hash bytea primary key,
   payload jsonb not null,
   version bigint not null default 1,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  seen_at timestamptz not null default now()
 );
+
+-- La purge filtre sur `seen_at`.
+create index if not exists user_data_seen_at_idx
+  on public.user_data (seen_at);
 
 alter table public.user_data enable row level security;
 
@@ -57,11 +69,14 @@ revoke all on table public.user_data from anon, authenticated;
 -- choisie à la main serait devinable : elle est refusée (`22023`).
 
 -- LIRE. Le blob, sa version et sa date, à qui donne la clé ; `null` si la clé
--- n'a encore rien envoyé (ou si son blob a été effacé).
+-- n'a encore rien envoyé, si son blob a été effacé, ou s'il a expiré. Une
+-- lecture est un échange : elle purge les blobs expirés, puis remet le
+-- compteur de celui-ci à zéro — d'où `volatile`, et un `update … returning`
+-- au lieu d'un `select`.
 create or replace function public.sync_pull(p_key text)
 returns jsonb
 language plpgsql
-stable
+volatile
 security definer
 set search_path = ''
 as $$
@@ -72,14 +87,18 @@ begin
     raise exception 'sync: invalid key' using errcode = '22023';
   end if;
 
-  select jsonb_build_object(
-           'payload', d.payload,
-           'version', d.version,
-           'updated_at', d.updated_at
-         )
-    into v_result
-    from public.user_data d
-   where d.key_hash = sha256(convert_to(p_key, 'UTF8'));
+  delete from public.user_data
+   where seen_at < now() - interval '365 days';
+
+  update public.user_data d
+     set seen_at = now()
+   where d.key_hash = sha256(convert_to(p_key, 'UTF8'))
+  returning jsonb_build_object(
+              'payload', d.payload,
+              'version', d.version,
+              'updated_at', d.updated_at
+            )
+    into v_result;
 
   return v_result;
 end;
@@ -91,6 +110,11 @@ $$;
 -- simultanées se départagent par la clé primaire (`on conflict do nothing`),
 -- deux remplacements par le verrou de ligne : le second relit la version
 -- après le premier et ne la trouve plus.
+--
+-- LA PURGE PASSE AVANT L'ÉCRITURE. Une clé qui revient après un an lit
+-- `null` et envoie donc en version 0 : si son vieux blob attendait encore la
+-- purge, l'insertion buterait sur la clé primaire, et le client relirait
+-- `null` et buterait encore — trois conflits, puis une erreur à l'écran.
 --
 -- La borne de taille est large — deux cents parties d'une quarantaine de Kio
 -- chacune — et sert seulement à ce qu'une clé publique ne puisse pas déposer
@@ -123,6 +147,9 @@ begin
     raise exception 'sync: invalid version' using errcode = '22023';
   end if;
 
+  delete from public.user_data
+   where seen_at < now() - interval '365 days';
+
   v_hash := sha256(convert_to(p_key, 'UTF8'));
 
   if p_version = 0 then
@@ -134,7 +161,8 @@ begin
     update public.user_data
        set payload = p_payload,
            version = version + 1,
-           updated_at = now()
+           updated_at = now(),
+           seen_at = now()
      where key_hash = v_hash
        and version = p_version
     returning version, updated_at into v_version, v_updated_at;

@@ -312,6 +312,7 @@ export interface Messages {
     cloudDelete: string;
     cloudDeleteConfirm: string;
     cloudDeleteHint: string;
+    cloudRetention: string;
     export: string;
     import: string;
     importFailed: string;
@@ -755,6 +756,8 @@ const fr: Messages = {
     cloudDeleteConfirm: 'Effacer les données du cloud ?',
     cloudDeleteHint:
       'Chaque appareil garde ses propres données. Un autre appareil qui a encore la clé recréera le cloud à son prochain envoi : oublie-la aussi là-bas.',
+    cloudRetention:
+      'Le cloud efface une synchro restée un an sans envoi ni récupération. Rien n’est perdu : chaque appareil garde ses propres données.',
     export: 'Exporter mes données (JSON)',
     import: 'Importer un fichier',
     importFailed: 'Import impossible',
@@ -1189,6 +1192,8 @@ const en: Messages = {
     cloudDeleteConfirm: 'Delete the cloud data?',
     cloudDeleteHint:
       'Each device keeps its own data. Another device that still holds the key will recreate the cloud data on its next push: forget the key there too.',
+    cloudRetention:
+      'The cloud deletes sync data left a year without any push or pull. Nothing is lost: each device keeps its own data.',
     export: 'Export my data (JSON)',
     import: 'Import a file',
     importFailed: 'Import failed',

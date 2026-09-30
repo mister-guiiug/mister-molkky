@@ -145,7 +145,10 @@ Ce que la base garantit, éprouvé par pgTAP en CI
   la seule porte, et chacune exige une clé bien formée ;
 - une clé ne lit, n'écrit et n'efface que **son** blob ; la base n'en garde que
   le haché (SHA-256) ;
-- un envoi fondé sur une version périmée est refusé sans rien écraser.
+- un envoi fondé sur une version périmée est refusé sans rien écraser ;
+- un blob sans envoi ni récupération depuis un an est introuvable, puis effacé
+  au premier échange suivant, de n'importe quelle clé ; une clé qui revient
+  repart d'un blob neuf, sans conflit.
 
 ## Limites qui restent
 
@@ -157,7 +160,9 @@ Ce que la base garantit, éprouvé par pgTAP en CI
   QR ou la copie qu'on choisit d'afficher.
 - **Perdre la clé partout, c'est perdre l'accès au blob** — et donc aussi le
   moyen de l'effacer. Il n'y a pas de récupération : aucun compte ne la
-  double.
-- **Pas d'effacement automatique.** Un blob reste tant qu'on ne l'efface pas,
-  y compris celui d'une clé perdue.
+  double. Le blob s'efface alors de lui-même, un an après le dernier échange.
+- **Un an sans envoi ni récupération, et le cloud efface le blob** (choix du
+  30/09/2026). Rien n'est perdu : le cloud n'est qu'un relais, chaque appareil
+  garde ses propres données, et le prochain « Envoyer » recrée le blob.
+  L'écran le dit sous l'interrupteur, avant même la première clé.
 - **La suppression d'une partie ne se propage pas** (voir plus haut).
