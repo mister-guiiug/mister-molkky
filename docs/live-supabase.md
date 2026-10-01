@@ -40,8 +40,10 @@ The schema lives in
 [`supabase/migrations/0002_live_matches.sql`](../supabase/migrations/0002_live_matches.sql)
 (the table) and
 [`supabase/migrations/0003_live_matches_rpc.sql`](../supabase/migrations/0003_live_matches_rpc.sql)
-(the functions that are now its only door) — apply them with the CLI, not by
-hand:
+(the functions that are now its only door). On this repository's project, the
+CI applies them: [`supabase-migrations.yml`](../.github/workflows/supabase-migrations.yml)
+runs on every push to `main` that touches `supabase/migrations/`, once its two
+secrets are set. On your own project, use the CLI, not the dashboard:
 
 ```bash
 supabase link --project-ref <ref>   # Project Settings → General → Reference ID

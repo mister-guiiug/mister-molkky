@@ -7,29 +7,47 @@ ping anti-pause. Ce dossier décrit l'état de la base du projet hébergé,
 
 ## Comment une migration est appliquée ici
 
-**À la main, pour l'instant.** Ce dépôt n'a pas de workflow
-`supabase-migrations.yml`, parce qu'il n'a aucun des secrets qu'il exigerait
-(`SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_ID`). Un
-workflow qui les réclamerait rougirait à chaque poussée sans rien appliquer.
+**Par la CI.** [`supabase-migrations.yml`](../.github/workflows/supabase-migrations.yml)
+appelle le réutilisable du socle (`supabase link`, puis `supabase db push`) à
+chaque poussée sur `main` qui touche `migrations/`. On le lance aussi à la main :
 
 ```bash
-supabase link --project-ref <ref>   # Project Settings → General → Reference ID
-supabase db push
+gh workflow run "Supabase migrations" -R mister-guiiug/mister-molkky --ref main
 ```
+
+Il lui faut deux secrets, à poser une fois (Settings → Secrets and variables →
+Actions). Sans eux, il s'arrête en le disant, avant tout lien au projet.
+
+| Secret                  | Où le trouver                                                                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SUPABASE_ACCESS_TOKEN` | jeton d'accès personnel du compte : supabase.com → Account → Access Tokens                                                                  |
+| `SUPABASE_DB_PASSWORD`  | mot de passe de la base : Project Settings → Database. Le réinitialiser ne casse rien ici : l'app ne parle à la base que par la clé anonyme |
+
+```bash
+gh secret set SUPABASE_ACCESS_TOKEN -R mister-guiiug/mister-molkky
+gh secret set SUPABASE_DB_PASSWORD -R mister-guiiug/mister-molkky
+```
+
+`gh` demande la valeur sans l'écrire dans l'historique du terminal. La
+référence du projet, elle, est publique (elle est dans l'URL) : le workflow
+l'écrit en clair.
 
 > **Un fichier présent n'est pas un fichier appliqué.** C'est la leçon qui a
 > coûté trois jours de ping rouge, puis onze jours de direct en panne : le SQL
 > du direct a vécu dans [`../docs/live-supabase.md`](../docs/live-supabase.md)
 > depuis la naissance du dépôt, avec sa consigne « à coller dans l'éditeur
-> SQL », et personne ne l'a jamais collé. Après chaque ajout ici, **vérifier
-> la base**, pas le dossier.
+> SQL », et personne ne l'a jamais collé. Elle a resservi le 01/10/2026 :
+> `0003` et `0004` étaient fusionnées et déployées depuis la veille, mais
+> absentes de la base. Après chaque ajout ici, **vérifier la base**, pas le
+> dossier.
 
-`0001` et `0002` ont été appliquées par l'API de gestion
-(`POST /v1/projects/<ref>/database/query`), qui ne demande pas le mot de passe
-de la base. Le schéma `supabase_migrations` est donc resté **vide** : un futur
-`supabase db push` rejouera tout depuis `0001`. C'est pour cela que chaque
-migration doit rester rejouable sans effet de bord — ce n'est pas une précaution
-théorique, c'est l'état réel du projet.
+**Le premier run rejoue tout, et c'est voulu.** `0001` et `0002` ont été
+appliquées par l'API de gestion (`POST /v1/projects/<ref>/database/query`),
+qui ne demande pas le mot de passe de la base. Le schéma `supabase_migrations`
+est donc resté **vide** : le premier `supabase db push` rejouera tout depuis
+`0001`, puis l'inscrira. C'est pour cela que chaque migration doit rester
+rejouable sans effet de bord — ce n'est pas une précaution théorique, c'est
+l'état réel du projet. Ensuite, `db push` ne joue que ce qui manque.
 
 ## Où le SQL est éprouvé : la CI
 
@@ -52,18 +70,20 @@ passe, et un test serait vert et faux.
 
 ## État de la base
 
-Relevé en lecture seule le 29/09/2026 : `0001` et `0002` sont en base,
-**`0003` et `0004` restent à appliquer**.
+Relevé en lecture seule le 01/10/2026, avec la clé anonyme du bundle et
+`limit=0` (aucune ligne lue) : `0001` et `0002` sont en base, **`0003` et
+`0004` n'y sont pas** — alors que l'app qui les appelle est déployée depuis le
+30/09.
 
-| Objet                                            | En base                 | Décrit où                               |
-| ------------------------------------------------ | ----------------------- | --------------------------------------- |
-| `public.keep_alive`                              | oui                     | `migrations/0001_keep_alive.sql`        |
-| `public.live_matches`                            | oui                     | `0002`, fermée par `0003`               |
-| `public.touch_updated_at()`                      | oui                     | `migrations/0002_live_matches.sql`      |
-| publication `supabase_realtime` → `live_matches` | oui, retirée par `0003` | `0002`, `0003`                          |
-| `live_match_create`, `_get`, `_push`, `_finish`  | **non**                 | `migrations/0003_live_matches_rpc.sql`  |
-| `public.user_data`                               | **non** (404)           | `migrations/0004_user_data_par_cle.sql` |
-| `sync_pull`, `sync_push`, `sync_delete`          | **non**                 | `migrations/0004_user_data_par_cle.sql` |
+| Objet                                            | En base                       | Décrit où                               |
+| ------------------------------------------------ | ----------------------------- | --------------------------------------- |
+| `public.keep_alive`                              | oui                           | `migrations/0001_keep_alive.sql`        |
+| `public.live_matches`                            | oui, **encore lisible** (200) | `0002`, fermée par `0003`               |
+| `public.touch_updated_at()`                      | oui                           | `migrations/0002_live_matches.sql`      |
+| publication `supabase_realtime` → `live_matches` | oui, retirée par `0003`       | `0002`, `0003`                          |
+| `live_match_create`, `_get`, `_push`, `_finish`  | **non** (`PGRST202`)          | `migrations/0003_live_matches_rpc.sql`  |
+| `public.user_data`                               | **non** (`PGRST205`)          | `migrations/0004_user_data_par_cle.sql` |
+| `sync_pull`, `sync_push`, `sync_delete`          | **non**                       | `migrations/0004_user_data_par_cle.sql` |
 
 La connexion anonyme est coupée sur le projet (`anonymous_users: false` dans
 `/auth/v1/settings`), et c'est très bien ainsi : plus rien ne s'en sert depuis
@@ -114,14 +134,15 @@ indexée par `auth.uid()`, plus la connexion anonyme à activer) n'a jamais ét�
 appliqué, et ne l'est plus nulle part : il ne pouvait rien réunir, chaque
 navigateur ayant sa propre identité anonyme.
 
-### Vérifier après `supabase db push`
+### Vérifier après une migration
 
 Avec l'URL du projet et sa clé **anonyme** (celle du bundle — jamais la clé
-`service_role`) :
+`service_role`). `limit=0` : si la migration n'est pas passée, la sonde ne
+ramène quand même aucune ligne.
 
 ```bash
 # La table ne se lit plus : 401, « permission denied for table live_matches ».
-curl -s "$SUPABASE_URL/rest/v1/live_matches?select=code" -H "apikey: $ANON_KEY"
+curl -s "$SUPABASE_URL/rest/v1/live_matches?select=code&limit=0" -H "apikey: $ANON_KEY"
 
 # La lecture par code répond, et ne rend rien pour un code inconnu : null.
 curl -s -X POST "$SUPABASE_URL/rest/v1/rpc/live_match_get" \
@@ -129,7 +150,7 @@ curl -s -X POST "$SUPABASE_URL/rest/v1/rpc/live_match_get" \
   -d '{"p_code":"ZZZZZZ"}'
 
 # Même chose pour la synchro : la table ne se lit pas (401)…
-curl -s "$SUPABASE_URL/rest/v1/user_data?select=version" -H "apikey: $ANON_KEY"
+curl -s "$SUPABASE_URL/rest/v1/user_data?select=version&limit=0" -H "apikey: $ANON_KEY"
 
 # … et une clé bien formée qui n'a rien envoyé ne lit rien : null.
 curl -s -X POST "$SUPABASE_URL/rest/v1/rpc/sync_pull" \
