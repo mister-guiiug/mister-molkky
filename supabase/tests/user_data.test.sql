@@ -112,7 +112,7 @@ select is(
 select throws_ok(
   $$ select public.sync_push(
        'AAAABBBBCCCCDDDDEEEEFFFFGGGG', '{"v":1,"history":["autre"]}', 0) $$,
-  '40001', null,
+  'PT409', null,
   'une création alors qu''un blob existe déjà est refusée'
 );
 select is(
@@ -125,7 +125,7 @@ select is(
 select throws_ok(
   $$ select public.sync_push(
        'AAAABBBBCCCCDDDDEEEEFFFFGGGG', '{"v":1,"history":["m9"]}', 1) $$,
-  '40001', null,
+  'PT409', null,
   'un envoi fondé sur une version périmée est refusé'
 );
 select is(

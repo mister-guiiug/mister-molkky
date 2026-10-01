@@ -127,12 +127,24 @@ describe('le transport', () => {
     ]);
   });
 
-  it('traduit le refus de la base (40001) en conflit, à relire', async () => {
+  it('traduit le refus de la base (PT409) en conflit, à relire', async () => {
     useRpc({
       data: null,
-      error: { code: '40001', message: 'sync: version conflict' },
+      error: { code: 'PT409', message: 'sync: version conflict' },
     });
     await expect(pushSync(CLE, payload, 3)).rejects.toBeInstanceOf(
+      SyncConflictError
+    );
+  });
+
+  // L'ancien code ne doit plus rien vouloir dire : la base ne le lève plus,
+  // et PostgREST le rejouait sans fin au lieu de le rendre.
+  it('ne tient plus 40001 pour un conflit', async () => {
+    useRpc({
+      data: null,
+      error: { code: '40001', message: 'could not serialize access' },
+    });
+    await expect(pushSync(CLE, payload, 3)).rejects.not.toBeInstanceOf(
       SyncConflictError
     );
   });
