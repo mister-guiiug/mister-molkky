@@ -29,10 +29,11 @@
 # bundle et dans `vars.VITE_SUPABASE_URL` : écrite ici en clair plutôt que
 # dans une variable de plus à tenir à jour.
 #
-# `cli-version` ÉPINGLÉE. `latest` se résout par l'API GitHub sans jeton, et la
-# limite de débit a fait échouer ce même job sur miss-carbook le 30/09/2026,
-# sans rien appliquer. 2.118.0 est la version qui a appliqué 0001 → 0004 dans
-# la CI pgTAP du 30/09.
+# `cli-version` : CELLE DU SOCLE, sans la répéter ici. Le réutilisable
+# l'épingle depuis la 6.21.3 (2.119.0, tenue à jour par Renovate), parce que
+# `latest` se résout par l'API GitHub sans jeton : la limite de débit avait
+# fait échouer ce même job sur miss-carbook le 30/09/2026, sans rien
+# appliquer. Ce dépôt épinglait lui-même 2.118.0 en attendant.
 name: Supabase migrations
 
 on:
@@ -55,5 +56,3 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_ID: ${{ 'ajrfrxiwvcmtbzodbwey' }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-    with:
-      cli-version: '2.118.0'
