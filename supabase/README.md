@@ -32,22 +32,28 @@ gh secret set SUPABASE_DB_PASSWORD -R mister-guiiug/mister-molkky
 référence du projet, elle, est publique (elle est dans l'URL) : le workflow
 l'écrit en clair.
 
+Le jeton doit venir d'un compte qui **voit le projet**. Sinon, `supabase link`
+répond 403 (« Your account does not have the necessary privileges to access
+this endpoint ») et rien n'est appliqué. Le jeton est valide (un jeton faux
+donnerait 401), mais son compte n'a pas accès au projet. C'est arrivé au
+premier essai, le 01/10/2026 ; un nouveau jeton a réglé le problème.
+
 > **Un fichier présent n'est pas un fichier appliqué.** C'est la leçon qui a
 > coûté trois jours de ping rouge, puis onze jours de direct en panne : le SQL
 > du direct a vécu dans [`../docs/live-supabase.md`](../docs/live-supabase.md)
 > depuis la naissance du dépôt, avec sa consigne « à coller dans l'éditeur
 > SQL », et personne ne l'a jamais collé. Elle a resservi le 01/10/2026 :
 > `0003` et `0004` étaient fusionnées et déployées depuis la veille, mais
-> absentes de la base. Après chaque ajout ici, **vérifier la base**, pas le
-> dossier.
+> absentes de la base jusqu'au premier run de la CI, le jour même. Après
+> chaque ajout ici, **vérifier la base**, pas le dossier.
 
-**Le premier run rejoue tout, et c'est voulu.** `0001` et `0002` ont été
-appliquées par l'API de gestion (`POST /v1/projects/<ref>/database/query`),
-qui ne demande pas le mot de passe de la base. Le schéma `supabase_migrations`
-est donc resté **vide** : le premier `supabase db push` rejouera tout depuis
-`0001`, puis l'inscrira. C'est pour cela que chaque migration doit rester
-rejouable sans effet de bord — ce n'est pas une précaution théorique, c'est
-l'état réel du projet. Ensuite, `db push` ne joue que ce qui manque.
+**Le premier run a tout rejoué, et c'était voulu.** `0001` et `0002` avaient
+été appliquées par l'API de gestion (`POST /v1/projects/<ref>/database/query`),
+qui ne demande pas le mot de passe de la base : le schéma `supabase_migrations`
+était resté **vide**. Le premier `supabase db push`, le 01/10/2026, a donc
+rejoué `0001` → `0004`, puis les a inscrites. C'est pour cela que chaque
+migration devait rester rejouable sans effet de bord. Désormais, `db push` ne
+joue que ce qui manque.
 
 ## Où le SQL est éprouvé : la CI
 
@@ -70,20 +76,26 @@ passe, et un test serait vert et faux.
 
 ## État de la base
 
-Relevé en lecture seule le 01/10/2026, avec la clé anonyme du bundle et
-`limit=0` (aucune ligne lue) : `0001` et `0002` sont en base, **`0003` et
-`0004` n'y sont pas** — alors que l'app qui les appelle est déployée depuis le
-30/09.
+Relevé en lecture seule le 01/10/2026, juste après le premier run de la CI,
+avec la clé anonyme du bundle (aucune ligne lue) : **tout `migrations/` est en
+base**.
 
-| Objet                                            | En base                       | Décrit où                               |
-| ------------------------------------------------ | ----------------------------- | --------------------------------------- |
-| `public.keep_alive`                              | oui                           | `migrations/0001_keep_alive.sql`        |
-| `public.live_matches`                            | oui, **encore lisible** (200) | `0002`, fermée par `0003`               |
-| `public.touch_updated_at()`                      | oui                           | `migrations/0002_live_matches.sql`      |
-| publication `supabase_realtime` → `live_matches` | oui, retirée par `0003`       | `0002`, `0003`                          |
-| `live_match_create`, `_get`, `_push`, `_finish`  | **non** (`PGRST202`)          | `migrations/0003_live_matches_rpc.sql`  |
-| `public.user_data`                               | **non** (`PGRST205`)          | `migrations/0004_user_data_par_cle.sql` |
-| `sync_pull`, `sync_push`, `sync_delete`          | **non**                       | `migrations/0004_user_data_par_cle.sql` |
+| Objet                                            | En base                                          | Décrit où                               |
+| ------------------------------------------------ | ------------------------------------------------ | --------------------------------------- |
+| `public.keep_alive`                              | oui                                              | `migrations/0001_keep_alive.sql`        |
+| `public.live_matches`                            | oui, **fermée** (401, `42501`)                   | `0002`, fermée par `0003`               |
+| `public.touch_updated_at()`                      | oui                                              | `migrations/0002_live_matches.sql`      |
+| publication `supabase_realtime` → `live_matches` | non, retirée par `0003`                          | `0002`, `0003`                          |
+| `live_match_create`, `_get`, `_push`, `_finish`  | oui (`_get` d'un code inconnu : `null`)          | `migrations/0003_live_matches_rpc.sql`  |
+| `public.user_data`                               | oui, **fermée** (401, `42501`)                   | `migrations/0004_user_data_par_cle.sql` |
+| `sync_pull`, `sync_push`, `sync_delete`          | oui (`sync_pull` d'une clé mal formée : `22023`) | `migrations/0004_user_data_par_cle.sql` |
+
+Les refus de `live_match_push` et `_finish` (`P0002`) et le conflit de
+`sync_push` (`40001`) arrivent en **HTTP 500** : PostgREST range les classes
+`P0` (sauf `P0001`) et `40` parmi les erreurs serveur, là où une entrée refusée
+(`22023`) donne 400. L'app ne regarde jamais le statut : la synchro
+reconnaît `40001` à son code, et le direct traite tout refus comme un échec.
+Dans les journaux de Supabase, ces 500 sont des refus, pas des pannes.
 
 La connexion anonyme est coupée sur le projet (`anonymous_users: false` dans
 `/auth/v1/settings`), et c'est très bien ainsi : plus rien ne s'en sert depuis
