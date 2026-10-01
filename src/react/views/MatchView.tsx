@@ -247,9 +247,15 @@ export function MatchView() {
    * l'air faux. Un identifiant de partie mémorisé à part est la seule façon de
    * compter chaque fin UNE fois, quel que soit le mode.
    *
+   * Comme celui du direct, il part de la tête d'historique au montage. Parti de
+   * `null`, il comptait la dernière partie archivée à chaque ouverture de cet
+   * écran : une fin de plus par visite. La tête ne bouge ensuite que quand une
+   * partie finit ici ; import, synchro et suppressions passent par d'autres
+   * écrans.
+   *
    * Ni le vainqueur, ni les scores, ni les pronostics : ce sont des personnes.
    */
-  const finMesureeRef = useRef<string | null>(null);
+  const finMesureeRef = useRef<string | null>(lastFinished?.id ?? null);
   useEffect(() => {
     if (!lastFinished) return;
     if (lastFinished.id === finMesureeRef.current) return;
