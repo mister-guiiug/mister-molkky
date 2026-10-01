@@ -170,6 +170,22 @@ curl -s -X POST "$SUPABASE_URL/rest/v1/rpc/sync_pull" \
   -d '{"p_key":"0000000000000000000000000000"}'
 ```
 
+Ensuite, le cycle complet du direct, Realtime compris :
+[`../scripts/verify-live-cycle.mjs`](../scripts/verify-live-cycle.mjs) joue
+l'hôte et le spectateur avec deux clients, les appels de l'app et les refus
+attendus.
+
+```bash
+VITE_SUPABASE_URL=https://ajrfrxiwvcmtbzodbwey.supabase.co \
+VITE_SUPABASE_ANON_KEY=$(gh variable get VITE_SUPABASE_ANON_KEY -R mister-guiiug/mister-molkky) \
+node scripts/verify-live-cycle.mjs
+```
+
+Le script refuse toute autre clé que l'anonyme. Il laisse une partie de test,
+finie et sans donnée personnelle, introuvable au bout de 24 h et effacée à la
+création suivante. Premiers passages le 01/10/2026 : 18 contrôles sur 18 ; le
+spectateur relit 0,1 à 0,5 s après chaque signal.
+
 Puis une partie réelle : diffuser depuis un téléphone, suivre depuis un autre,
 jouer jusqu'au vainqueur. Le spectateur doit recevoir chaque lancer, **le
 lancer gagnant compris**. Et pour la synchro : créer une clé sur un appareil,
