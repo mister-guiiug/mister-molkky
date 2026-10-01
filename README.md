@@ -167,7 +167,7 @@ VITE_SUPABASE_URL=https://xxx.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJxxx...
 ```
 
-Puis appliquez les migrations de [`supabase/migrations/`](./supabase/migrations) (`supabase db push`, voir [`supabase/README.md`](./supabase/README.md)). Aucun réglage du tableau de bord n'est nécessaire : ni compte, ni connexion anonyme.
+Puis appliquez les migrations de [`supabase/migrations/`](./supabase/migrations) (`supabase db push`, voir [`supabase/README.md`](./supabase/README.md)) ; sur le projet de ce dépôt, la CI s'en charge (`supabase-migrations.yml`). Aucun réglage du tableau de bord n'est nécessaire : ni compte, ni connexion anonyme.
 
 ---
 

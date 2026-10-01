@@ -1,0 +1,59 @@
+# Migrations Supabase, appliquées par la CI — déléguées au réutilisable du
+# socle (`supabase link`, puis `supabase db push`).
+#
+# POURQUOI CE FICHIER. Jusqu'au 01/10/2026, chaque migration de ce dépôt
+# attendait qu'on la passe à la main, faute des secrets que ce workflow exige.
+# Relevé ce jour-là en lecture seule : 0003 et 0004 étaient fusionnées et
+# déployées depuis la veille, mais absentes de la base. Le direct ne démarrait
+# plus, la synchro répondait 404, et la fuite de `live_matches` relevée le
+# 29/09 restait ouverte. Un fichier présent n'est pas un fichier appliqué.
+#
+# DÉCLENCHEMENT : chaque poussée sur `main` qui touche `supabase/migrations/`,
+# et à la main. Ce fichier n'est PAS dans les chemins : sa fusion ne doit pas
+# lancer un run qui échouerait faute des secrets. Le premier run se lance à la
+# main, une fois les secrets posés :
+#   gh workflow run "Supabase migrations" -R mister-guiiug/mister-molkky --ref main
+#
+# LE PREMIER RUN REJOUE TOUT, et c'est voulu. Le schéma `supabase_migrations`
+# du projet est vide (0001 et 0002 y ont été posées par l'API de gestion, hors
+# historique) : `db push` rejouera 0001 → 0004, puis les inscrira. Chacune a
+# été écrite rejouable pour ce jour-là, et la CI pgTAP les applique depuis zéro
+# à chaque changement. Ensuite, `db push` ne joue que ce qui manque.
+#
+# SECRETS, à poser une fois (Settings → Secrets and variables → Actions) :
+#   SUPABASE_ACCESS_TOKEN  jeton d'accès personnel du compte Supabase
+#   SUPABASE_DB_PASSWORD   mot de passe de la base du projet
+# S'il en manque un, le réutilisable le dit en clair et s'arrête avant tout lien.
+#
+# La référence du projet est PUBLIQUE — elle est dans l'URL, donc dans le
+# bundle et dans `vars.VITE_SUPABASE_URL` : écrite ici en clair plutôt que
+# dans une variable de plus à tenir à jour.
+#
+# `cli-version` ÉPINGLÉE. `latest` se résout par l'API GitHub sans jeton, et la
+# limite de débit a fait échouer ce même job sur miss-carbook le 30/09/2026,
+# sans rien appliquer. 2.118.0 est la version qui a appliqué 0001 → 0004 dans
+# la CI pgTAP du 30/09.
+name: Supabase migrations
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Pas de `concurrency` ici : le réutilisable porte le sien (groupe
+# `supabase-migrate`, sans annulation), et le répéter provoque un interblocage.
+jobs:
+  migrate:
+    uses: mister-guiiug/dev-pwa-config/.github/workflows/pwa-supabase-migrate.yml@v6
+    # Nommés, pas hérités : le réutilisable déclare exactement ces trois-là.
+    secrets:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ 'ajrfrxiwvcmtbzodbwey' }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    with:
+      cli-version: '2.118.0'
