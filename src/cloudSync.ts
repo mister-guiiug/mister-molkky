@@ -151,7 +151,9 @@ export async function pushSync(
     p_payload: payload,
     p_version: version,
   });
-  if (error?.code === '40001') throw new SyncConflictError();
+  // `PT409` (HTTP 409), et non `40001` : PostgREST rejouait ce dernier sans
+  // fin, et la requête ne répondait jamais (migration 0005).
+  if (error?.code === 'PT409') throw new SyncConflictError();
   if (error) throw new Error(error.message);
   const row = data as PushedRow;
   return { payload, updatedAt: row.updated_at, version: row.version };

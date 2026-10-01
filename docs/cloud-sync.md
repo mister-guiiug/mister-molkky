@@ -51,7 +51,9 @@ retirer.
 
 **Et l'écriture est conditionnelle.** L'envoi porte la **version** lue juste
 avant la fusion ; si un autre appareil a écrit entre-temps, la base refuse
-(`40001`) sans rien écrire, et l'app recommence : lecture, fusion, envoi. Sans
+(`PT409`, HTTP 409) sans rien écrire, et l'app recommence : lecture, fusion,
+envoi. Jusqu'à la migration `0005`, ce refus portait le code `40001`, que
+PostgREST rejouait sans fin au lieu de le rendre (voir `supabase/README.md`). Sans
 ce contrôle, deux téléphones qui envoient au même moment perdaient l'union de
 l'un des deux. Après trois refus de suite, l'app renonce et affiche l'erreur
 plutôt que d'écraser.

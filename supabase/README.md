@@ -88,14 +88,26 @@ base**.
 | publication `supabase_realtime` → `live_matches` | non, retirée par `0003`                          | `0002`, `0003`                          |
 | `live_match_create`, `_get`, `_push`, `_finish`  | oui (`_get` d'un code inconnu : `null`)          | `migrations/0003_live_matches_rpc.sql`  |
 | `public.user_data`                               | oui, **fermée** (401, `42501`)                   | `migrations/0004_user_data_par_cle.sql` |
-| `sync_pull`, `sync_push`, `sync_delete`          | oui (`sync_pull` d'une clé mal formée : `22023`) | `migrations/0004_user_data_par_cle.sql` |
+| `sync_pull`, `sync_push`, `sync_delete`          | oui (`sync_pull` d'une clé mal formée : `22023`) | `0004`, `sync_push` repris par `0005`   |
 
-Les refus de `live_match_push` et `_finish` (`P0002`) et le conflit de
-`sync_push` (`40001`) arrivent en **HTTP 500** : PostgREST range les classes
-`P0` (sauf `P0001`) et `40` parmi les erreurs serveur, là où une entrée refusée
-(`22023`) donne 400. L'app ne regarde jamais le statut : la synchro
-reconnaît `40001` à son code, et le direct traite tout refus comme un échec.
-Dans les journaux de Supabase, ces 500 sont des refus, pas des pannes.
+Les refus de `live_match_push` et `_finish` (`P0002`) arrivent en **HTTP 500** :
+PostgREST range la classe `P0` (sauf `P0001`) parmi les erreurs serveur, là où
+une entrée refusée (`22023`) donne 400. L'app ne regarde jamais le statut : le
+direct traite tout refus comme un échec. Dans les journaux de Supabase, ces 500
+sont des refus, pas des pannes. Le conflit de `sync_push`, lui, est en `PT409`
+depuis `0005` : HTTP 409.
+
+> **Jamais `40001` dans une fonction qu'atteint PostgREST.** Il prend ce code
+> pour un échec de sérialisation passager et rejoue la transaction **sans
+> fin** : la requête ne répond jamais, et le backend tourne à plein jusqu'à ce
+> qu'on le tue ([fiche Supabase](https://supabase.com/docs/guides/troubleshooting/high-cpu-and-infinite-transaction-retries-when-using-custom-error-codes-in-rpc-functions-77326b) ;
+> PostgREST 14, corrigé en 16). `sync_push` le levait pour un conflit de
+> version jusqu'à `0005`. Le script de vérification de la synchro l'a révélé le
+> 01/10/2026, en laissant une boucle en production. Un conflit métier se
+> signale par `PT409`, et `tests/structure-securite.test.sql` y veille. Pour
+> arrêter une boucle déjà lancée, redémarrer le projet, ou appeler
+> `pg_terminate_backend` sur les lignes de `pg_stat_activity` dont `usename`
+> vaut `authenticator`. Corriger la fonction ne l'arrête pas.
 
 La connexion anonyme est coupée sur le projet (`anonymous_users: false` dans
 `/auth/v1/settings`), et c'est très bien ainsi : plus rien ne s'en sert depuis
@@ -134,7 +146,8 @@ quiconque en tenait l'`id`, rendu à chaque spectateur ; et rien n'était purgé
   seul, exigent une clé bien formée : `sync_pull` lit, `sync_push` écrit,
   `sync_delete` efface.
 - **L'écriture est conditionnelle** : `sync_push` prend la version lue avant la
-  fusion, et refuse (`40001`) si un autre appareil a écrit entre-temps.
+  fusion, et refuse (`PT409`, depuis `0005`) si un autre appareil a écrit
+  entre-temps.
 - **Un an sans échange, et le blob s'efface** : `seen_at` date la dernière
   lecture ou le dernier envoi ; chaque échange purge les blobs expirés, et un
   blob expiré est introuvable d'ici là. La purge passe AVANT l'écriture : une
@@ -185,6 +198,24 @@ Le script refuse toute autre clé que l'anonyme. Il laisse une partie de test,
 finie et sans donnée personnelle, introuvable au bout de 24 h et effacée à la
 création suivante. Premiers passages le 01/10/2026 : 18 contrôles sur 18 ; le
 spectateur relit 0,1 à 0,5 s après chaque signal.
+
+Et celui de la synchro :
+[`../scripts/verify-sync-cycle.mjs`](../scripts/verify-sync-cycle.mjs) fait
+partager une clé neuve à deux appareils. Il enchaîne envoi, récupération, envoi
+refusé sur une version périmée, conflit rattrapé comme le fait « Envoyer »
+(relire, refusionner, renvoyer), effacement, et les refus attendus.
+
+```bash
+VITE_SUPABASE_URL=https://ajrfrxiwvcmtbzodbwey.supabase.co \
+VITE_SUPABASE_ANON_KEY=$(gh variable get VITE_SUPABASE_ANON_KEY -R mister-guiiug/mister-molkky) \
+node scripts/verify-sync-cycle.mjs
+```
+
+Même garde sur la clé. Celui-ci ne laisse rien : il efface sa clé à la fin,
+même après un échec. **Il exige `0005`** : contre une base qui lève encore
+`40001`, son premier conflit relance la boucle décrite plus haut. Chaque requête
+y est bornée à 15 s, ce qui signale une boucle tout de suite, mais ne l'arrête
+pas.
 
 Puis une partie réelle : diffuser depuis un téléphone, suivre depuis un autre,
 jouer jusqu'au vainqueur. Le spectateur doit recevoir chaque lancer, **le
