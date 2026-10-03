@@ -15,7 +15,7 @@ export default defineConfig(
     // server (5173) éventuellement lancé à côté.
     port: 4173,
     command:
-      'cross-env VITE_BASE_PATH=/ npm run build && cross-env VITE_BASE_PATH=/ vite preview --port 4173 --strictPort',
+      'node scripts/with-env.mjs VITE_BASE_PATH=/ -- npm run build && node scripts/with-env.mjs VITE_BASE_PATH=/ -- vite preview --port 4173 --strictPort',
     // LA LANGUE DU NAVIGATEUR EST FIXÉE, PAS SUBIE. Les specs sont écrites en
     // français (« Nouvelle partie », « Joueurs »…) et l'app suit
     // `navigator.language` : lancée depuis un poste ou un runner en `en-US`,
