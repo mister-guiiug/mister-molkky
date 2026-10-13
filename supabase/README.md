@@ -235,5 +235,5 @@ les parties de l'autre.
 gh workflow run "Supabase keep-alive" -R mister-guiiug/mister-molkky --ref main
 ```
 
-Le cron ne passe que tous les trois jours : un correctif qu'on ne déclenche pas
+Le cron ne passe qu'une fois par jour : un correctif qu'on ne déclenche pas
 à la main n'est pas vérifié, il est espéré.

@@ -7,7 +7,7 @@ name: Supabase keep-alive
 
 on:
   schedule:
-    - cron: '47 4 */3 * *' # ~tous les 3 jours (< 7 j) — décaler par dépôt
+    - cron: '47 4 * * *' # chaque jour : tous les 3 jours n'a pas empêché la pause (miss-uwh, 13/10/2026)
   workflow_dispatch:
 
 jobs:
