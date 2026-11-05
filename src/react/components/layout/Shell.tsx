@@ -8,6 +8,8 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useI18n } from '../../../i18n';
 import { ROUTES } from '../../../routes';
 import { ConnectionBanner } from '../ConnectionBanner';
+import { LivePendingNotice } from '../LivePendingNotice';
+import { useLiveRetry } from '../../hooks/useLiveRetry';
 import { useLiveStore } from '../../../store/useLiveStore';
 import {
   ChartIcon,
@@ -52,6 +54,9 @@ export function Shell({ children }: ShellProps) {
   const [ciblePendante, setCiblePendante] = useState<string | null>(null);
   const isMatch = location.pathname === ROUTES.match;
   const liveRole = useLiveStore(s => s.role);
+  // Ce qu'un direct n'a pas pu envoyer repart au retour du réseau, quel que
+  // soit l'écran où l'hôte se trouve alors.
+  useLiveRetry();
 
   /**
    * LA TRANSITION EST LA NÔTRE, et c'est tout l'intérêt.
@@ -105,6 +110,9 @@ export function Shell({ children }: ShellProps) {
   return (
     <div className="flex min-h-dvh flex-col">
       {showConnection && <ConnectionBanner />}
+      {/* Pas soumis au silence de l'écran de partie : une clôture en attente
+          concerne les spectateurs, et elle ne s'affiche qu'à l'hôte. */}
+      <LivePendingNotice />
       <main className="flex-1 pb-24 sm:pb-28">{children}</main>
       <nav
         className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t backdrop-blur-md"
