@@ -376,6 +376,8 @@ export interface Messages {
     settingsConfigured: string;
     settingsNotConfigured: string;
     reconnecting: string;
+    finishPending: string;
+    retry: string;
     notifThrowTitle: string;
     notifThrow: string;
     notifElimination: string;
@@ -828,6 +830,9 @@ const fr: Messages = {
     settingsNotConfigured:
       'Backend non configuré. Voir docs/live-supabase.md pour activer.',
     reconnecting: 'Reconnexion à la partie…',
+    finishPending:
+      'Fin du direct en attente : les spectateurs la recevront au retour du réseau.',
+    retry: 'Réessayer',
     notifThrowTitle: 'Mister Mölkky — direct',
     notifThrow: 'Nouveau lancer : +{n}',
     notifElimination: 'Joueur éliminé !',
@@ -1262,6 +1267,9 @@ const en: Messages = {
     settingsNotConfigured:
       'Backend not configured. See docs/live-supabase.md to enable.',
     reconnecting: 'Reconnecting to the match…',
+    finishPending:
+      'Live finish pending: viewers will get it once the network is back.',
+    retry: 'Retry',
     notifThrowTitle: 'Mister Mölkky — live',
     notifThrow: 'New throw: +{n}',
     notifElimination: 'Player eliminated!',

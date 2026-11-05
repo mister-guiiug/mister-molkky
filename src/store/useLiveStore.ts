@@ -15,6 +15,12 @@ const log = createLogger('store');
 
 export type LiveRole = 'none' | 'host' | 'viewer';
 
+/** La clôture d'un direct, telle qu'elle part au serveur. */
+export interface PendingFinish {
+  winnerId: string;
+  throws: Throw[];
+}
+
 interface LiveState {
   role: LiveRole;
   /**
@@ -33,12 +39,41 @@ interface LiveState {
   subscription: LiveSubscription | null;
   /** Auto-reconnect: tracks failed attempts so we give up after a few. */
   reconnectAttempts: number;
+  /**
+   * LA CLÔTURE QUI N'EST PAS PARTIE — hors ligne, le plus souvent.
+   *
+   * `status` passe à `'finished'` AVANT l'appel réseau, pour que les miroirs
+   * de lancers s'arrêtent net (voir `pushFinish`). Mais un échec ne laissait
+   * qu'une erreur : la clôture était perdue, jamais retentée, et le garde
+   * `status === 'finished'` refusait toute nouvelle tentative. Les
+   * spectateurs restaient devant une partie qui ne finissait jamais.
+   *
+   * Elle attend donc ICI, distincte du statut, jusqu'à ce que le serveur
+   * l'accepte : `retryPending` la renvoie au retour du réseau
+   * (`useLiveRetry`), et l'hôte voit qu'elle attend (`LivePendingNotice`).
+   *
+   * EN MÉMOIRE, PAS PERSISTÉE — comme tout ce magasin : le secret d'hôte ne
+   * survit pas à un rechargement, et sans lui aucune clôture ne peut partir.
+   */
+  pendingFinish: PendingFinish | null;
+  /**
+   * Le dernier miroir de lancers qui a échoué. Le lancer suivant le
+   * remplacerait, mais un hôte coupé du réseau en fin de manche n'en joue
+   * peut-être plus : il repart lui aussi au retour du réseau.
+   */
+  pendingThrows: Throw[] | null;
 
   startHost: (state: CurrentMatchState) => Promise<{ code: string }>;
   pushThrows: (throws: Throw[]) => Promise<void>;
   /** Les lancers d'ARRIVÉE, pas ceux du dernier miroir : voir `finishLiveMatch`. */
   pushFinish: (winnerId: string, throws: Throw[]) => Promise<void>;
   stopHost: () => void;
+  /**
+   * Renvoie ce qui attend : la clôture si elle attend (elle porte les lancers
+   * d'arrivée), sinon le dernier miroir. Sans effet si rien n'attend ou si un
+   * renvoi est déjà en vol.
+   */
+  retryPending: () => Promise<void>;
 
   startViewer: (code: string) => Promise<LiveMatchRow>;
   stopViewer: () => void;
@@ -50,6 +85,33 @@ const MAX_RECONNECT_ATTEMPTS = 5;
 const RECONNECT_DELAY_MS = 4000;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
+/**
+ * Le numéro du dernier miroir demandé. Les miroirs partent sans s'attendre
+ * (un par rendu) et peuvent revenir dans le désordre : seul l'échec du PLUS
+ * RÉCENT mérite d'être renvoyé — renvoyer un plus ancien effacerait des
+ * lancers chez les spectateurs.
+ */
+let throwsSeq = 0;
+/** Un renvoi est en vol : `retryPending` n'en lance pas un second. */
+let retrying = false;
+
+/**
+ * « Partie introuvable » : la base ne prend plus d'écriture sur cette ligne —
+ * déjà close (la clôture précédente était passée, seule sa réponse s'est
+ * perdue), expirée, ou visée avec un mauvais secret. Insister n'y changerait
+ * rien. `live_match_push` et `live_match_finish` lèvent alors `P0002`.
+ */
+function isGone(err: unknown): boolean {
+  const { code, message } = (err ?? {}) as {
+    code?: unknown;
+    message?: unknown;
+  };
+  return (
+    code === 'P0002' ||
+    (typeof message === 'string' && /live match: not found/i.test(message))
+  );
+}
+
 export const useLiveStore = create<LiveState>()((set, get) => ({
   role: 'none',
   hostToken: null,
@@ -59,6 +121,8 @@ export const useLiveStore = create<LiveState>()((set, get) => ({
   status: 'idle',
   subscription: null,
   reconnectAttempts: 0,
+  pendingFinish: null,
+  pendingThrows: null,
 
   startHost: async state => {
     set({ status: 'connecting', error: null });
@@ -84,11 +148,22 @@ export const useLiveStore = create<LiveState>()((set, get) => ({
     // of the NEW match into the old (finished) row, and the next finish
     // would target an already-archived row.
     if (!code || !hostToken || role !== 'host' || status === 'finished') return;
+    const seq = ++throwsSeq;
     try {
       await pushLiveThrows(code, hostToken, throws);
+      // Le miroir le plus récent est passé : plus rien n'attend.
+      if (seq === throwsSeq && get().pendingThrows) {
+        set({ pendingThrows: null, error: null });
+      }
     } catch (err) {
       log.warn('[live] pushThrows failed:', { error: err });
-      set({ error: (err as Error).message });
+      // Un miroir plus récent (ou la clôture) est déjà parti : celui-ci est
+      // périmé. Une partie introuvable ne prendra pas davantage un renvoi.
+      const latest = seq === throwsSeq;
+      set({
+        error: (err as Error).message,
+        ...(latest ? { pendingThrows: isGone(err) ? null : throws } : {}),
+      });
     }
   },
 
@@ -96,13 +171,21 @@ export const useLiveStore = create<LiveState>()((set, get) => ({
     const { code, hostToken, role, status } = get();
     if (!code || !hostToken || role !== 'host' || status === 'finished') return;
     // Flip status first so any concurrent pushThrows from the React
-    // effects can short-circuit before they hit the network.
-    set({ status: 'finished' });
+    // effects can short-circuit before they hit the network. La clôture
+    // emporte les lancers d'arrivée : un miroir en attente — ou encore en
+    // vol, d'où le numéro avancé — est périmé.
+    throwsSeq += 1;
+    set({ status: 'finished', pendingThrows: null });
     try {
       await finishLiveMatch(code, hostToken, throws, winnerId);
     } catch (err) {
       log.warn('[live] pushFinish failed:', { error: err });
-      set({ error: (err as Error).message });
+      // Le statut reste `finished` (les miroirs restent coupés) ; la clôture,
+      // elle, attend d'être renvoyée. Une partie introuvable ne se clôt pas.
+      set({
+        error: (err as Error).message,
+        pendingFinish: isGone(err) ? null : { winnerId, throws },
+      });
     }
   },
 
@@ -113,7 +196,40 @@ export const useLiveStore = create<LiveState>()((set, get) => ({
       code: null,
       remote: null,
       status: 'idle',
+      pendingFinish: null,
+      pendingThrows: null,
     });
+  },
+
+  retryPending: async () => {
+    const { code, hostToken, role, pendingFinish, pendingThrows } = get();
+    if (retrying || !code || !hostToken || role !== 'host') return;
+    if (!pendingFinish && !pendingThrows) return;
+    retrying = true;
+    try {
+      if (pendingFinish) {
+        try {
+          await finishLiveMatch(
+            code,
+            hostToken,
+            pendingFinish.throws,
+            pendingFinish.winnerId
+          );
+          set({ pendingFinish: null, error: null });
+        } catch (err) {
+          log.warn('[live] retry finish failed:', { error: err });
+          // Introuvable AU RENVOI : le plus souvent, la première clôture
+          // était passée et seule sa réponse s'est perdue. Plus rien à
+          // envoyer, et rien à reprocher à l'hôte.
+          if (isGone(err)) set({ pendingFinish: null, error: null });
+          else set({ error: (err as Error).message });
+        }
+        return;
+      }
+      if (pendingThrows) await get().pushThrows(pendingThrows);
+    } finally {
+      retrying = false;
+    }
   },
 
   startViewer: async code => {
@@ -197,6 +313,8 @@ export const useLiveStore = create<LiveState>()((set, get) => ({
       status: 'idle',
       subscription: null,
       reconnectAttempts: 0,
+      pendingFinish: null,
+      pendingThrows: null,
     });
   },
 }));
