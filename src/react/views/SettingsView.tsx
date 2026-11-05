@@ -28,6 +28,7 @@ import {
 import { dateSlug, downloadJson } from '@mister-guiiug/dev-pwa-config/download';
 import { FamilyApps } from '@mister-guiiug/dev-pwa-config/react';
 import { ConsentSection } from '@mister-guiiug/dev-pwa-config/react/consent-section';
+import { PrivacyNotice } from '@mister-guiiug/dev-pwa-config/react/privacy-notice';
 
 const REPO_URL = 'https://github.com/mister-guiiug/mister-molkky';
 const BMAC_URL = 'https://buymeacoffee.com/mister.guiiug';
@@ -423,6 +424,11 @@ export function SettingsView() {
         </div>
       </Section>
 
+      <PrivacyNotice
+        env={import.meta.env}
+        className="mb-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3"
+        titleClassName="text-xs font-bold uppercase text-[var(--muted)]"
+      />
       {/* Revenir sur son choix de mesure d’audience : le retrait se fait ici, en
           un clic (RGPD, art. 7.3). Mêmes clé et chargeur que le bandeau. Les
           classes redisent l'habit de `Section`, qui le pose en style en ligne. */}
