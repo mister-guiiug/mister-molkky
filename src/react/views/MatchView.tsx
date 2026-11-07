@@ -337,7 +337,7 @@ export function MatchView() {
           <button
             type="button"
             onClick={() => navigate(ROUTES.home)}
-            className="touch-target rounded-lg px-5 font-bold text-white"
+            className="touch-target rounded-lg px-5 font-bold text-[var(--primary-ink)]"
             style={{ background: 'var(--primary)' }}
           >
             {t('home.newMatch')}
@@ -593,7 +593,7 @@ export function MatchView() {
           className="flex items-center justify-between gap-2 rounded-lg border border-dashed px-3 py-1.5 text-xs"
           style={{
             borderColor: calledPin != null ? 'var(--accent)' : 'var(--border)',
-            color: calledPin != null ? 'var(--accent)' : 'var(--muted)',
+            color: calledPin != null ? 'var(--accent-text)' : 'var(--muted)',
           }}
         >
           <span className="flex items-center gap-1 font-semibold">
@@ -615,12 +615,14 @@ export function MatchView() {
           type="button"
           onClick={validateThrow}
           disabled={pinsCount === 0}
-          className="touch-target flex items-center justify-center gap-2 rounded-2xl py-4 text-base font-bold text-white shadow-lg disabled:opacity-50"
+          className="touch-target flex items-center justify-center gap-2 rounded-2xl py-4 text-base font-bold text-[var(--primary-ink)] shadow-lg disabled:opacity-50"
           style={{ background: 'var(--primary)' }}
         >
           <CheckIcon /> {t('match.validateThrow')}{' '}
           {pinsCount > 0 && (
-            <span className="ml-1 rounded-full bg-white/25 px-2 py-0.5 text-sm tabular-nums">
+            // Cerné et non teinté : un voile blanc sur le vert éclaircissait
+            // le fond sous l'encre (3,1:1 en clair, 1,92:1 en sombre).
+            <span className="ml-1 rounded-full border border-current px-2 py-0.5 text-sm tabular-nums">
               +{previewScore}
             </span>
           )}
@@ -923,7 +925,7 @@ export function MatchView() {
                   background: selected
                     ? 'color-mix(in srgb, var(--accent) 18%, var(--surface))'
                     : 'var(--surface)',
-                  color: selected ? 'var(--accent)' : 'var(--text)',
+                  color: selected ? 'var(--accent-text)' : 'var(--text)',
                 }}
                 aria-pressed={selected}
               >
@@ -1071,7 +1073,10 @@ function VictoryScreen({
         {correctPredictors.length > 0 && (
           <p
             className="m-0 rounded-full border px-3 py-1 text-xs font-bold"
-            style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
+            style={{
+              borderColor: 'var(--accent)',
+              color: 'var(--accent-text)',
+            }}
           >
             {t('match.predictionsCorrect', {
               names: correctPredictors.join(', '),
@@ -1116,7 +1121,7 @@ function VictoryScreen({
           onClick={handleShare}
           disabled={sharing}
           className="touch-target flex items-center justify-center gap-2 rounded-lg border px-4 font-semibold disabled:opacity-50"
-          style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
+          style={{ borderColor: 'var(--accent)', color: 'var(--accent-text)' }}
         >
           <ShareIcon size={18} />
           {sharing ? t('common.loading') : t('match.shareCard')}
@@ -1140,7 +1145,7 @@ function VictoryScreen({
         <button
           type="button"
           onClick={onRematch}
-          className="touch-target flex items-center justify-center gap-2 rounded-lg px-4 font-bold text-white"
+          className="touch-target flex items-center justify-center gap-2 rounded-lg px-4 font-bold text-[var(--primary-ink)]"
           style={{ background: 'var(--primary)' }}
         >
           <RematchIcon size={18} />
