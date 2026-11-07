@@ -42,7 +42,7 @@ export function MatchOnboardingHint() {
       <button
         type="button"
         onClick={dismiss}
-        className="touch-target rounded-lg px-3 text-sm font-bold text-white"
+        className="touch-target rounded-lg px-3 text-sm font-bold text-[var(--primary-ink)]"
         style={{ background: 'var(--primary)' }}
       >
         {t('common.confirm')}

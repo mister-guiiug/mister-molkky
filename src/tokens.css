@@ -36,7 +36,14 @@ html[data-theme='light'] {
   --primary-hover: #3c6622;
   --primary-light: #6da943;
   --primary-deep: #2f5018;
+  /* L'encre posée SUR un aplat `--primary` : blanc, ≈ 5:1 sur ce vert. */
+  --primary-ink: #ffffff;
   --accent: #d4892b;
+  /* L'accent ÉCRIT, et non plus peint : `--accent` ne tient que 2,83:1 en
+     texte sur la surface blanche (bouton « Partager le résultat » du podium,
+     relevé par axe). Ce brun-orangé tient 5,8:1 sur blanc, 5:1 sur la teinte
+     d'accent à 18 %. Les liserés et les aplats gardent `--accent`. */
+  --accent-text: #96550f;
   --danger: #c0392b;
   --danger-hover: #962d22;
   --warning: #d97706;
@@ -81,7 +88,13 @@ html[data-theme='dark'] {
   --primary-hover: #93c66c;
   --primary-light: #93c66c;
   --primary-deep: #5a8a37;
+  /* Le vert primaire sombre (#7eb455) est CLAIR : du blanc posé dessus ne
+     tient que 2,45:1 (relevé par axe sur l'écran de partie). L'encre sombre
+     de l'app porte le contraste (≈ 7:1). */
+  --primary-ink: #141813;
   --accent: #e1a566;
+  /* En sombre l'accent est clair, il tient seul (≈ 7:1 sur la surface). */
+  --accent-text: var(--accent);
   --danger: #e85a55;
   --danger-hover: #ef7773;
   --warning: #f3b347;
@@ -131,7 +144,7 @@ html[data-theme='dark'] {
      tient pas sur fond clair. `--muted` donne ≈4,9:1 en clair. */
   --dwc-border-strong: var(--muted);
   --dwc-primary: var(--primary);
-  --dwc-primary-contrast: #ffffff;
+  --dwc-primary-contrast: var(--primary-ink);
   --dwc-primary-soft: color-mix(in srgb, var(--primary) 15%, var(--surface));
   --dwc-success: var(--success);
   --dwc-danger: var(--danger);
@@ -143,8 +156,5 @@ html[data-theme='dark'] {
 }
 
 html[data-theme='dark'] {
-  /* Le vert primaire sombre (#7eb455) est CLAIR : du blanc posé dessus ne
-     tient que 2,4:1. L'encre sombre de l'app porte le contraste (≈7:1). */
-  --dwc-primary-contrast: #141813;
   --dwc-info: #38bdf8;
 }
