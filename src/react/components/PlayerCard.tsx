@@ -1,4 +1,5 @@
 import type { Player } from '../../schemas';
+import { inkOn } from '../../contrast';
 
 interface PlayerCardProps {
   player: Player;
@@ -43,8 +44,10 @@ export function PlayerCard({
       }}
     >
       <span
-        className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full text-xs font-black text-white"
-        style={{ background: player.color }}
+        className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full text-xs font-black"
+        // L'encre suit la couleur du joueur : un blanc fixe tombait à 2,83:1
+        // sur l'orange du deuxième joueur (cf. `inkOn`).
+        style={{ background: player.color, color: inkOn(player.color) }}
         aria-hidden
       >
         {avatarUrl ? (
