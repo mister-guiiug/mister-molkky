@@ -160,6 +160,21 @@ function molkkyStore(): Store {
 }
 
 /**
+ * « Effacer toutes les données » : les clés `mm_*` de l'app, ET RIEN D'AUTRE.
+ *
+ * Les applications de la famille partagent une seule origine
+ * (`mister-guiiug.github.io`), donc un seul `localStorage`. Un
+ * `localStorage.clear()` effaçait, avec les parties de Mölkky, le journal de
+ * contractions de miss-contraction, les notes de miss-genius, les jetons de
+ * miss-supaboss, les sessions de toutes les apps et leurs écritures en attente
+ * de synchronisation (relevé du 07/11/2026). La confirmation, elle, ne parlait
+ * que des joueurs, des parties et des réglages.
+ */
+export function effacerClesMolkky(): void {
+  molkkyStore().clear();
+}
+
+/**
  * Garde les enregistrements que le schéma accepte, met les autres de côté.
  *
  * Une partie mal formée sur deux cents ne doit pas coûter les cent
