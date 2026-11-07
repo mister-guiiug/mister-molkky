@@ -19,6 +19,8 @@ import { isSupabaseConfigured } from '../../supabase';
 import { applyUpdate } from '@mister-guiiug/dev-pwa-config/sw-update';
 import { AppFooter } from '../components/layout/AppFooter';
 import { useSyncStore } from '../../store/useSyncStore';
+import { effacerClesMolkky } from '../../store/persistence';
+import { idbEffacerTout } from '../../idb';
 import type { MergeReport, MergeStats } from '../../sync/merge';
 import {
   SyncKeyBadge,
@@ -81,12 +83,12 @@ export function SettingsView() {
     if (fileInput.current) fileInput.current.value = '';
   };
 
-  const onEraseAll = () => {
-    try {
-      localStorage.clear();
-    } catch {
-      /* ignore */
-    }
+  // Les données de l'app seulement : ses clés `mm_*` et sa base IndexedDB.
+  // Jamais `localStorage.clear()` : l'origine est partagée par toute la
+  // famille d'applications (voir `effacerClesMolkky`).
+  const onEraseAll = async () => {
+    effacerClesMolkky();
+    await idbEffacerTout();
     location.reload();
   };
 
@@ -481,7 +483,7 @@ export function SettingsView() {
         open={confirmErase}
         title={t('settings.eraseAllConfirm')}
         destructive
-        onConfirm={onEraseAll}
+        onConfirm={() => void onEraseAll()}
         onCancel={() => setConfirmErase(false)}
       />
 

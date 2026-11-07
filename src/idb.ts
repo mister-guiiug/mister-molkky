@@ -76,3 +76,26 @@ export async function idbDelBlob(key: string): Promise<boolean> {
     }
   });
 }
+
+/**
+ * Supprime la base IndexedDB de l'app (avatars, photos de situation), et
+ * seulement elle : les apps de la famille ont chacune la leur sur la même
+ * origine. La connexion ouverte est fermée d'abord, sinon la suppression
+ * resterait bloquée jusqu'au rechargement.
+ */
+export async function idbEffacerTout(): Promise<boolean> {
+  if (typeof indexedDB === 'undefined') return false;
+  const ouverte = dbPromise ? await dbPromise : null;
+  ouverte?.close();
+  dbPromise = null;
+  return new Promise<boolean>(resolve => {
+    try {
+      const req = indexedDB.deleteDatabase(DB_NAME);
+      req.onsuccess = () => resolve(true);
+      req.onerror = () => resolve(false);
+      req.onblocked = () => resolve(false);
+    } catch {
+      resolve(false);
+    }
+  });
+}
