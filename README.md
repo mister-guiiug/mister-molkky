@@ -20,6 +20,11 @@
 
 ---
 
+## Guides
+
+- [Règles du Mölkky](https://mister-guiiug.github.io/mister-molkky/regles-du-molkky.html)
+- [Stratégie au Mölkky](https://mister-guiiug.github.io/mister-molkky/strategie-au-molkky.html)
+
 ## ✨ Pourquoi Mister Mölkky ?
 
 Parce que compter les scores au Mölkky sur papier finit toujours mal après le 4ᵉ tour. Mister Mölkky vous donne :
